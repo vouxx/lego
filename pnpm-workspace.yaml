@@ -4,4 +4,5 @@ packages:
 allowBuilds:
   sharp: false
   unrs-resolver: false
+  esbuild: false
   supabase: true
