@@ -1,5 +1,7 @@
 import "server-only";
+import { reportError } from "@/lib/monitoring";
 import {
+  auditDependencies,
   codeContext,
   fingerprint,
   maskSecrets,
@@ -14,13 +16,17 @@ import {
   addTokenUsage,
   getScanForWorker,
   insertLlmCall,
+  listIgnoredFingerprintsBefore,
   replaceFindings,
   updateScan,
 } from "../repository";
 import { SEVERITIES, type ScanSummary } from "../schemas";
 import { explain, triage, type JudgeItem } from "./judge";
 
-const RULE_TITLES = new Map(STATIC_RULES.map((r) => [r.id, r.title]));
+const RULE_TITLES = new Map([
+  ...STATIC_RULES.map((r) => [r.id, r.title] as const),
+  ["SEC-014", "알려진 취약점이 있는 의존성 버전"] as const,
+]);
 const MAX_SNIPPET_LINES = 12;
 
 function stackLabel(detected: unknown) {
@@ -64,8 +70,18 @@ export async function processScan(scanId: string) {
     project.repo_full_name,
     scan.commit_sha,
   );
-  await setProgress(25);
   const { candidates } = runRules(snapshot);
+
+  // SEC-014 는 OSV 에 물어본다. 실패해도 나머지 결과는 저장한다.
+  let dependencyNote: string | null = null;
+  try {
+    candidates.push(...(await auditDependencies(snapshot)));
+  } catch (error) {
+    dependencyNote =
+      "의존성 취약점 데이터베이스(OSV)에 연결하지 못해 SEC-014 를 건너뛰었습니다.";
+    reportError(error, { area: "osv", extra: { scanId } });
+  }
+  await setProgress(25);
 
   const byFingerprint = new Map<string, Candidate>();
   for (const c of candidates) {
@@ -160,7 +176,9 @@ export async function processScan(scanId: string) {
     }
   }
 
-  // 3. 저장
+  // 3. 저장. 직전 스캔에서 무시한 항목은 계속 무시 상태로 둔다.
+  const { data: ignored } = await listIgnoredFingerprintsBefore(scanId);
+  const ignoredSet = new Set(ignored);
   const rows: Insert<"findings">[] = items.map((item) => ({
     scan_id: scanId,
     user_id: scan.user_id,
@@ -174,6 +192,7 @@ export async function processScan(scanId: string) {
     ai_verdict: verdicts.get(item.id)?.verdict ?? null,
     explanation: texts.get(item.id)?.explanation ?? null,
     fix_prompt: texts.get(item.id)?.fixPrompt ?? null,
+    status: ignoredSet.has(item.fingerprint) ? "ignored" : "open",
   }));
   const { error: saveError } = await replaceFindings(scanId, rows);
   if (saveError) throw new Error(`발견 항목 저장 실패: ${saveError.message}`);
@@ -192,6 +211,7 @@ export async function processScan(scanId: string) {
     truncated: snapshot.truncated,
     llm,
     llmNote,
+    dependencyNote,
     costUsd: Math.round(costUsd * 10000) / 10000,
   };
 

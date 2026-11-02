@@ -395,12 +395,25 @@ export type Database = {
       archive_scan_job: { Args: { p_msg_id: number }; Returns: boolean };
       consume_scan_quota: { Args: { p_user_id: string }; Returns: boolean };
       enqueue_scan: { Args: { p_scan_id: string }; Returns: number };
+      previous_scan_id: { Args: { p_scan_id: string }; Returns: string };
       read_scan_jobs: {
         Args: { p_qty: number; p_visibility_seconds: number };
         Returns: {
           msg_id: number;
           read_ct: number;
           scan_id: string;
+        }[];
+      };
+      scan_diff: {
+        Args: { p_scan_id: string };
+        Returns: {
+          change: string;
+          file_path: string;
+          finding_id: string;
+          fingerprint: string;
+          line_start: number;
+          rule_id: string;
+          severity: string;
         }[];
       };
     };

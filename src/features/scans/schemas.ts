@@ -49,6 +49,8 @@ export const scanSummarySchema = z.object({
   truncated: z.boolean(),
   llm: z.enum(["done", "partial", "skipped"]),
   llmNote: z.string().nullable(),
+  /** SEC-014 의존성 점검(OSV)을 하지 못한 이유. 예전 스캔에는 없다. */
+  dependencyNote: z.string().nullable().optional(),
   costUsd: z.number(),
 });
 export type ScanSummary = z.infer<typeof scanSummarySchema>;
@@ -80,4 +82,18 @@ export type FindingView = {
   explanation: string | null;
   fixPrompt: string | null;
   status: FindingStatus;
+};
+
+/** 직전 완료 스캔과 비교한 결과 (lego.scan_diff) */
+export type ScanDiffView = {
+  previousScanId: string;
+  newFindingIds: string[];
+  unchangedCount: number;
+  fixed: {
+    fingerprint: string;
+    ruleId: string;
+    severity: Severity;
+    filePath: string;
+    lineStart: number;
+  }[];
 };

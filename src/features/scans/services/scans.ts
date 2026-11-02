@@ -8,6 +8,8 @@ import {
   findActiveScan,
   findMyProject,
   getMyScan,
+  getPreviousScanId,
+  getScanDiffRows,
   insertScan,
   listProjectScans,
   listScanFindings,
@@ -17,6 +19,7 @@ import {
   scanSummarySchema,
   type FindingStatus,
   type FindingView,
+  type ScanDiffView,
   type ScanStatus,
   type ScanView,
   type Severity,
@@ -155,4 +158,38 @@ export async function changeFindingStatus(
   if (error) return err("db_error", "상태를 바꾸지 못했습니다.");
   if (!data) return err("not_found", "발견 항목을 찾을 수 없습니다.");
   return ok({ id: data.id, status: data.status as FindingStatus });
+}
+
+/** 직전 스캔 대비 새로 생긴/해결된 항목. 직전 스캔이 없으면 null. */
+export async function getScanDiff(
+  scanId: string,
+): Promise<Result<ScanDiffView | null>> {
+  const { data: previousScanId, error } = await getPreviousScanId(scanId);
+  if (error) return err("db_error", "이전 점검 결과를 불러오지 못했습니다.");
+  if (!previousScanId) return ok(null);
+
+  const { data: rows, error: diffError } = await getScanDiffRows(scanId);
+  if (diffError)
+    return err("db_error", "이전 점검 결과와 비교하지 못했습니다.");
+  return ok({
+    previousScanId,
+    newFindingIds: rows
+      .filter((r) => r.change === "new")
+      .map((r) => r.finding_id),
+    unchangedCount: rows.filter((r) => r.change === "unchanged").length,
+    fixed: rows
+      .filter((r) => r.change === "fixed")
+      .map((r) => ({
+        fingerprint: r.fingerprint,
+        ruleId: r.rule_id,
+        severity: r.severity as Severity,
+        filePath: r.file_path,
+        lineStart: r.line_start,
+      }))
+      .sort(
+        (a, b) =>
+          SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
+          a.filePath.localeCompare(b.filePath),
+      ),
+  });
 }

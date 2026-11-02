@@ -27,6 +27,11 @@ export function SeveritySummary({ summary }: Props) {
       {summary.llmNote ? (
         <p className="text-muted-foreground text-sm">⚠ {summary.llmNote}</p>
       ) : null}
+      {summary.dependencyNote ? (
+        <p className="text-muted-foreground text-sm">
+          ⚠ {summary.dependencyNote}
+        </p>
+      ) : null}
     </div>
   );
 }

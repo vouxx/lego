@@ -1,3 +1,4 @@
+import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type { FindingView } from "../schemas";
 import { CodeSnippet } from "./CodeSnippet";
@@ -10,9 +11,9 @@ const VERDICT_NOTE: Record<string, string> = {
   false_positive: "AI가 오탐으로 판단한 항목입니다.",
 };
 
-type Props = { finding: FindingView };
+type Props = { finding: FindingView; isNew?: boolean };
 
-export function FindingCard({ finding }: Props) {
+export function FindingCard({ finding, isNew = false }: Props) {
   const location =
     finding.lineStart === finding.lineEnd
       ? `${finding.filePath}:${finding.lineStart}`
@@ -26,6 +27,7 @@ export function FindingCard({ finding }: Props) {
           <code className="text-muted-foreground text-xs">
             {finding.ruleId}
           </code>
+          {isNew ? <Badge variant="outline">새로 생김</Badge> : null}
         </div>
         <CardTitle>{finding.ruleTitle}</CardTitle>
         <code className="text-muted-foreground text-xs break-all">

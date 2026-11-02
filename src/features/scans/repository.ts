@@ -148,3 +148,31 @@ export async function setFindingStatus(
     .select("id, status")
     .maybeSingle();
 }
+
+/** 직전 완료 스캔에서 사용자가 무시한 항목의 fingerprint. 새 스캔에 이어 준다. */
+export async function listIgnoredFingerprintsBefore(scanId: string) {
+  const admin = createAdminClient();
+  const { data: previousId, error } = await admin.rpc("previous_scan_id", {
+    p_scan_id: scanId,
+  });
+  if (error || !previousId) return { data: [] as string[], error };
+  const result = await admin
+    .from("findings")
+    .select("fingerprint")
+    .eq("scan_id", previousId)
+    .eq("status", "ignored");
+  return {
+    data: (result.data ?? []).map((r) => r.fingerprint),
+    error: result.error,
+  };
+}
+
+export async function getPreviousScanId(scanId: string) {
+  const supabase = await createClient();
+  return supabase.rpc("previous_scan_id", { p_scan_id: scanId });
+}
+
+export async function getScanDiffRows(scanId: string) {
+  const supabase = await createClient();
+  return supabase.rpc("scan_diff", { p_scan_id: scanId });
+}

@@ -1,4 +1,5 @@
 import "server-only";
+import { reportError } from "@/lib/monitoring";
 import {
   ackScanJob,
   archiveScanJob,
@@ -26,6 +27,10 @@ export async function runScanWorker({ maxJobs = 3 } = {}) {
       processed++;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
+      reportError(cause, {
+        area: "scan-worker",
+        extra: { scanId: job.scan_id, attempt: job.read_ct },
+      });
       if (job.read_ct >= MAX_ATTEMPTS) {
         await updateScan(job.scan_id, {
           status: "failed",
