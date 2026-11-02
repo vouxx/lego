@@ -1,0 +1,66 @@
+# 레고 (Lego) — 프로젝트 규칙
+
+레고는 바이브 코딩 동반자 플랫폼입니다. 전체 설계는 `docs/design.md`를 따릅니다.
+현재 단계: **1단계 보안 점검기** (GitHub 리포 연결 → 보안 실수 탐지 → 수정 프롬프트 제공).
+
+## 기술 스택
+
+Next.js 16 (App Router), React 19, TypeScript(strict), Supabase(PostgreSQL, Auth, Queues, Edge Functions), Tailwind CSS 4, shadcn/ui, TanStack Query, Zod, Vitest
+
+## 명령어
+
+pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
+
+- 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
+- 로컬 DB: pnpm supabase start
+- DB 타입 생성: pnpm db:types
+
+## 라우팅 (Next.js App Router)
+
+- app/ 에는 라우트 파일(page, layout, loading, error, route)만 둔다.
+- page.tsx 는 데이터를 조회해서 features 의 컴포넌트에 넘기는 역할만 한다. 50줄을 넘기지 않는다.
+- 기본은 Server Component. 상태·이벤트·브라우저 API가 필요한 가장 작은 컴포넌트에만 "use client" 를 붙인다.
+- 라우트 그룹으로 레이아웃을 나눈다: (marketing), (auth), (dashboard).
+- 쓰기 작업은 Server Action, 외부에서 들어오는 요청(webhook, OAuth 콜백)만 Route Handler 로 만든다.
+
+## 컴포넌트
+
+- 컴포넌트는 아주 작은 단위로 만든다. 한 파일에 한 컴포넌트, 150줄을 넘으면 쪼갠다.
+- 컴포넌트에는 비즈니스 로직을 넣지 않는다. 계산·검증·권한 판단은 features/*/services 에 둔다.
+- 컴포넌트에서 Supabase 를 직접 호출하지 않는다. 조회는 page 나 hooks, 쓰기는 actions 를 거친다.
+- 표시 컴포넌트는 props 만으로 동작한다. 로딩/빈 상태/에러 상태를 모두 처리한다.
+- 기본 UI 는 shared/ui(shadcn/ui) 를 쓰고 새로 만들지 않는다.
+
+## 폴더와 의존 방향
+
+- features/<기능>/{components, hooks, actions.ts, services, repository.ts, schemas.ts}
+- 의존 방향: app → components → hooks/actions → services → repository. 반대 방향 import 금지 (ESLint `import/no-restricted-paths` 가 막는다).
+- 다른 feature 의 내부 파일을 import 하지 않는다. 필요하면 shared 로 옮긴다.
+- 스캔 엔진은 packages/scanner (`@lego/scanner`) 에 둔다. 프레임워크(Next.js, Supabase)에 의존하지 않는 순수 TypeScript 로 작성한다.
+
+## 데이터 / Supabase
+
+- 스키마 변경은 반드시 supabase/migrations 새 파일로 한다. 기존 마이그레이션은 수정하지 않는다.
+- 새 테이블은 만든 직후 RLS 를 켜고 정책을 함께 작성한다. using (true) 금지.
+- service_role 키는 서버(Edge Function, Server Action)에서만 쓴다. NEXT_PUBLIC_ 접두사를 붙이지 않는다.
+- 쿼리는 repository.ts 에만 쓴다. 생성된 DB 타입을 사용한다.
+- findings.snippet 등 사용자 코드 조각은 저장 전에 비밀값을 마스킹한다.
+
+## TypeScript / 검증
+
+- any 금지. 외부 입력(폼, 요청, LLM 응답)은 Zod 로 검증한 뒤 사용한다.
+- Server Action 은 shared/lib/result.ts 의 Result 타입({ ok: true, data } | { ok: false, error })을 반환하고 throw 하지 않는다.
+
+## 스타일
+
+- Tailwind 유틸리티와 디자인 토큰만 쓴다. 임의 값(text-[#123456]) 금지.
+- 클래스 조합은 cn() 을 쓴다.
+
+## 테스트
+
+- services 와 scanner 규칙은 Vitest 단위 테스트를 함께 작성한다. 규칙마다 취약한 예시 / 안전한 예시 픽스처를 둔다.
+- 로그인 → 프로젝트 생성 → 스캔 → 결과 확인 흐름은 Playwright 로 검증한다.
+
+## 주의할 점 (보안 점검 결과에서 자동 추가)
+
+- 아직 없음.
