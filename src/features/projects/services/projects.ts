@@ -71,31 +71,34 @@ export async function listInstallableRepos(): Promise<
 
   const added = new Set(projects.data.map((p) => p.repoFullName));
 
-  try {
-    const perInstallation = await Promise.all(
-      installations.data.map(async ({ installationId }) => {
-        const octokit = await installationOctokit(installationId);
-        const repos = await octokit.paginate(
-          octokit.rest.apps.listReposAccessibleToInstallation,
-          { per_page: 100 },
-        );
-        return repos.map((r) => ({
-          fullName: r.full_name,
-          installationId,
-          defaultBranch: r.default_branch,
-          isPrivate: r.private,
-          alreadyAdded: added.has(r.full_name),
-        }));
-      }),
-    );
-    return ok(
-      perInstallation
-        .flat()
-        .sort((a, b) => a.fullName.localeCompare(b.fullName)),
-    );
-  } catch {
+  // 설치마다 따로 묻는다. 다른 GitHub App(개발용 등)의 설치나 이미 지운 설치는
+  // 이 App 으로 접근할 수 없으므로 건너뛰고, 모두 실패할 때만 오류로 본다.
+  const perInstallation = await Promise.allSettled(
+    installations.data.map(async ({ installationId }) => {
+      const octokit = await installationOctokit(installationId);
+      const repos = await octokit.paginate(
+        octokit.rest.apps.listReposAccessibleToInstallation,
+        { per_page: 100 },
+      );
+      return repos.map((r) => ({
+        fullName: r.full_name,
+        installationId,
+        defaultBranch: r.default_branch,
+        isPrivate: r.private,
+        alreadyAdded: added.has(r.full_name),
+      }));
+    }),
+  );
+  const repos = perInstallation.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : [],
+  );
+  if (
+    installations.data.length > 0 &&
+    perInstallation.every((r) => r.status === "rejected")
+  ) {
     return err("github_error", "GitHub에서 리포 목록을 불러오지 못했습니다.");
   }
+  return ok(repos.sort((a, b) => a.fullName.localeCompare(b.fullName)));
 }
 
 async function readRepoSnapshot(
