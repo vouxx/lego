@@ -37,7 +37,8 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 컴포넌트에는 비즈니스 로직을 넣지 않는다. 계산·검증·권한 판단은 features/*/services 에 둔다.
 - 컴포넌트에서 Supabase 를 직접 호출하지 않는다. 조회는 page 나 hooks, 쓰기는 actions 를 거친다.
 - 표시 컴포넌트는 props 만으로 동작한다. 로딩/빈 상태/에러 상태를 모두 처리한다.
-- 기본 UI 는 shared/ui(shadcn/ui) 를 쓰고 새로 만들지 않는다.
+- 기본 UI 는 shared/ui(shadcn/ui) 를 쓰고 새로 만들지 않는다. 추가: `npx shadcn@latest add <이름>` (pnpm 이 PATH 에 있어야 함). 생성된 파일의 `cn` import 는 `@/shared/lib/cn` 이어야 한다.
+- 쿠키·세션·searchParams 를 읽는 컴포넌트는 `<Suspense>` 안에 둔다(cacheComponents 가 켜져 있어 밖에서 읽으면 빌드 에러).
 
 ## 폴더와 의존 방향
 
@@ -45,6 +46,15 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 의존 방향: app → components → hooks/actions → services → repository. 반대 방향 import 금지 (ESLint `import/no-restricted-paths` 가 막는다).
 - 다른 feature 의 내부 파일을 import 하지 않는다. 필요하면 shared 로 옮긴다.
 - 스캔 엔진은 packages/scanner (`@lego/scanner`) 에 둔다. 프레임워크(Next.js, Supabase)에 의존하지 않는 순수 TypeScript 로 작성한다.
+- src/lib 은 인프라(supabase 클라이언트, GitHub App, env, 현재 사용자)만 둔다. features/app 을 import 하지 않는다.
+- 현재 사용자는 `@/lib/auth` 의 getCurrentUser / requireUser 로만 읽는다.
+
+## 인증 / 권한
+
+- 로그인은 Supabase GitHub OAuth, 리포 읽기는 GitHub App 설치 토큰. 설정은 docs/setup-github.md.
+- secret 키 클라이언트(`@/lib/supabase/admin`)는 RLS 를 우회한다. services 에서 권한을 확인한 뒤 repository 에서만 쓴다.
+- URL 로 들어온 id(installation_id, projectId 등)는 그대로 믿지 않고 소유자를 확인한다.
+- 로그인 후 이동 경로는 `safeNextPath` 로 검증한다.
 
 ## 데이터 / Supabase
 

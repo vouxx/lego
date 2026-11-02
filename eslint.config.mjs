@@ -18,6 +18,11 @@ const dependencyZones = [
     message: "shared 는 app/features 를 import 할 수 없습니다.",
   },
   {
+    target: "./src/lib/**",
+    from: ["./src/app/**", "./src/features/**"],
+    message: "lib 은 app/features 를 import 할 수 없습니다.",
+  },
+  {
     target: "./packages/**",
     from: "./src/**",
     message: "packages 는 src 를 import 할 수 없습니다.",
