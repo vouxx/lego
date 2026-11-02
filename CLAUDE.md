@@ -12,8 +12,16 @@ Next.js 16 (App Router), React 19, TypeScript(strict), Supabase(PostgreSQL, Auth
 pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
-- 로컬 DB: pnpm supabase start
+- 원격 DB 마이그레이션 적용: pnpm db:migrate
 - DB 타입 생성: pnpm db:types
+
+## Supabase 프로젝트 공유 (중요)
+
+- 원격 DB 는 다른 앱(zeek, wbs, resume)과 같이 쓰는 프로젝트 `kqspyogrfebnlitqchvd` 이다. 레고의 모든 객체는 `lego` 스키마에만 만든다.
+- `supabase db push`, `supabase migration repair`, `supabase config push`, `supabase db reset --linked` 는 절대 쓰지 않는다. 다른 앱의 마이그레이션 이력과 설정을 망가뜨린다.
+- 마이그레이션은 `pnpm db:migrate`(scripts/db-migrate.sh)로 적용한다. 이력은 `lego.schema_migrations` 에 남는다.
+- `auth.users` 는 다른 앱과 공유한다. auth 스키마에 트리거를 걸지 않고, profiles 는 로그인 콜백에서 upsert 한다.
+- Supabase 클라이언트는 `db: { schema: DB_SCHEMA }` 로 만든다(src/lib/supabase/env.ts).
 
 ## 라우팅 (Next.js App Router)
 

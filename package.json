@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",
     "format": "prettier --write .",
-    "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema lego > src/lib/supabase/database.types.ts",
+    "db:migrate": "scripts/db-migrate.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
