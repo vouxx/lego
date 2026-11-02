@@ -1,24 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { completeGitHubSignIn } from "@/features/auth/services/session";
-import { safeNextPath } from "@/shared/lib/safe-redirect";
+import { NEXT_PATH_COOKIE, safeNextPath } from "@/shared/lib/safe-redirect";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const code = searchParams.get("code");
-  const next = safeNextPath(searchParams.get("next"));
+  const code = request.nextUrl.searchParams.get("code");
+  const next = safeNextPath(request.cookies.get(NEXT_PATH_COOKIE)?.value);
 
-  if (!code) {
-    return NextResponse.redirect(
-      new URL("/login?error=missing_code", request.url),
-    );
-  }
+  const redirectTo = (path: string) => {
+    const response = NextResponse.redirect(new URL(path, request.url));
+    response.cookies.delete({ name: NEXT_PATH_COOKIE, path: "/auth/callback" });
+    return response;
+  };
+
+  if (!code) return redirectTo("/login?error=missing_code");
 
   const result = await completeGitHubSignIn(code);
-  if (!result.ok) {
-    return NextResponse.redirect(
-      new URL(`/login?error=${result.error.code}`, request.url),
-    );
-  }
+  if (!result.ok) return redirectTo(`/login?error=${result.error.code}`);
 
-  return NextResponse.redirect(new URL(next, request.url));
+  return redirectTo(next);
 }
