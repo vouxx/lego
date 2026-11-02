@@ -1,10 +1,13 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "./database.types";
 import { DB_SCHEMA, publicEnv } from "./env";
 
 export async function createClient() {
+  // supabase-js 가 세션 만료 확인에 Date.now() 를 쓴다. 미리 렌더링(prefetch 포함)에서 빠지도록 요청 시점까지 기다린다.
+  await connection();
   const cookieStore = await cookies();
   const env = publicEnv();
 
