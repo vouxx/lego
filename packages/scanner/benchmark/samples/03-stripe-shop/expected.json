@@ -1,0 +1,41 @@
+{
+  "description": "Stripe 쇼핑몰: 서명 검증 없는 웹훅, 하드코딩된 live 키, 주문 IDOR, 클라이언트의 service_role 키",
+  "findings": [
+    {
+      "rule": "SEC-001",
+      "file": "lib/stripe.ts",
+      "line": 3,
+      "note": "Stripe live 비밀 키 하드코딩"
+    },
+    {
+      "rule": "SEC-012",
+      "file": "app/api/webhooks/stripe/route.ts",
+      "line": 5,
+      "note": "stripe-signature 검증 없이 req.json() 으로 이벤트를 믿음 (가짜 결제 완료 가능)"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "app/api/orders/[id]/route.ts",
+      "line": 11,
+      "note": "인증·소유자 확인 없이 admin 클라이언트로 주문(이름·전화·주소) 조회"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "app/account/orders/[id]/page.tsx",
+      "line": 17,
+      "note": "(어려운 변형) Route Handler 가 아닌 Server Component 에서 admin 클라이언트로 남의 주문 조회 (로그인만 확인)"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "app/admin/orders/OrdersTable.tsx",
+      "line": 7,
+      "note": "service_role 키에 NEXT_PUBLIC_ 접두사"
+    },
+    {
+      "rule": "SEC-004",
+      "file": "app/admin/orders/OrdersTable.tsx",
+      "line": 7,
+      "note": "\"use client\" 관리자 테이블에서 service_role 클라이언트 생성"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "description": "같은 기능을 올바르게 구현한 안전한 앱 (RLS·소유자 정책, 인증, DOMPurify, 웹훅 서명 검증, 사용량 제한, 파라미터 SQL)",
+  "findings": []
+}

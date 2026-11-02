@@ -1,0 +1,38 @@
+{
+  "description": "GitHub 슬래시 명령 봇: 커밋된 .env, env 규칙 없는 .gitignore, 하드코딩된 GitHub 토큰, 서명 검증 없는 웹훅",
+  "extraPaths": [
+    ".env"
+  ],
+  "findings": [
+    {
+      "rule": "SEC-002",
+      "file": ".env",
+      "line": 1,
+      "note": ".env 파일이 리포에 커밋됨"
+    },
+    {
+      "rule": "SEC-002",
+      "file": ".gitignore",
+      "line": 1,
+      "note": ".gitignore 에 .env 규칙이 없음"
+    },
+    {
+      "rule": "SEC-001",
+      "file": "lib/github.ts",
+      "line": 6,
+      "note": "GitHub 봇 토큰 하드코딩"
+    },
+    {
+      "rule": "SEC-012",
+      "file": "app/api/webhooks/sentry/route.ts",
+      "line": 5,
+      "note": "Sentry 웹훅 서명 검증 없이 GitHub 이슈 생성"
+    },
+    {
+      "rule": "SEC-012",
+      "file": "app/api/github/webhook/route.ts",
+      "line": 5,
+      "note": "(어려운 변형) 서명 헤더가 있을 때만 검증해서 헤더를 빼면 우회 (/merge 명령 실행 가능)"
+    }
+  ]
+}

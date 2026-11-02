@@ -1,0 +1,16 @@
+{
+  "name": "partner-api",
+  "version": "1.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build",
+    "start": "next start -p 4000"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.15",
+    "pg": "^8.11.3"
+  }
+}

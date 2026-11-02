@@ -1,0 +1,47 @@
+{
+  "description": "AI 채팅 앱: 브라우저에 노출된 OpenAI 키, 하드코딩된 Anthropic 키, 사용량 제한 없는 LLM 라우트, messages 테이블 RLS 누락",
+  "findings": [
+    {
+      "rule": "SEC-005",
+      "file": "supabase/migrations/20240612000000_chat.sql",
+      "line": 13,
+      "note": "messages 테이블에 RLS 없음 (모든 대화 내용 노출)"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "components/QuickSuggest.tsx",
+      "line": 11,
+      "note": "OpenAI 키를 NEXT_PUBLIC_ 으로 브라우저에 노출"
+    },
+    {
+      "rule": "SEC-013",
+      "file": "app/api/chat/route.ts",
+      "line": 18,
+      "note": "로그인 사용자면 무제한으로 gpt-4o 호출 가능"
+    },
+    {
+      "rule": "SEC-001",
+      "file": "app/api/summarize/route.ts",
+      "line": 6,
+      "note": "Anthropic API 키 하드코딩"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "app/api/summarize/route.ts",
+      "line": 9,
+      "note": "요약 API 에 인증 확인 없음"
+    },
+    {
+      "rule": "SEC-013",
+      "file": "app/api/summarize/route.ts",
+      "line": 15,
+      "note": "인증도 사용량 제한도 없는 LLM 호출"
+    },
+    {
+      "rule": "SEC-013",
+      "file": "app/api/title/route.ts",
+      "line": 15,
+      "note": "(어려운 변형) LLM 호출이 lib/llm.ts 헬퍼 안에 있어 라우트 본문에는 보이지 않음, 사용량 제한 없음"
+    }
+  ]
+}

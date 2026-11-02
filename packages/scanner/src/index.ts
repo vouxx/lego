@@ -6,6 +6,12 @@ export { codeContext } from "./context";
 export { fingerprint } from "./fingerprint";
 export { isEnvFile, isEnvTemplate, isJsFile, isSqlFile } from "./files";
 export { maskSecrets } from "./secrets";
+export { auditDependencies } from "./dependencies/osv";
+export {
+  isDependencyFile,
+  readDependencies,
+  type Dependency,
+} from "./dependencies/lockfile";
 export { STATIC_RULES };
 
 /** 규칙을 모두 실행해 후보 목록을 돌려준다. 규칙 하나가 실패해도 나머지는 계속한다. */

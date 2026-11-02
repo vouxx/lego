@@ -7,8 +7,13 @@ import { sec005 } from "./sec-005";
 import { sec006 } from "./sec-006";
 import { sec007 } from "./sec-007";
 import { sec008 } from "./sec-008";
+import { sec009 } from "./sec-009";
+import { sec010 } from "./sec-010";
+import { sec011 } from "./sec-011";
+import { sec012 } from "./sec-012";
+import { sec013 } from "./sec-013";
 
-/** 2주차까지 구현된 정적 규칙. SEC-009~014 는 3주차. */
+/** 리포 파일만 보고 판단하는 규칙. SEC-014 는 네트워크가 필요해 auditDependencies 로 따로 돈다. */
 export const STATIC_RULES: Rule[] = [
   sec001,
   sec002,
@@ -18,4 +23,9 @@ export const STATIC_RULES: Rule[] = [
   sec006,
   sec007,
   sec008,
+  sec009,
+  sec010,
+  sec011,
+  sec012,
+  sec013,
 ];

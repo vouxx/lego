@@ -1,0 +1,59 @@
+{
+  "description": "팀 대시보드 SaaS: admin 클라이언트로 소유자 확인 없는 프로젝트 조회/삭제, 인증 없는 Server Action, 하드코딩된 service_role 키, 취약한 의존성",
+  "findings": [
+    {
+      "rule": "SEC-014",
+      "file": "package-lock.json",
+      "line": 38,
+      "note": "next 14.0.0 (미들웨어 인증 우회 CVE-2025-29927, SSRF CVE-2024-34351 등)"
+    },
+    {
+      "rule": "SEC-014",
+      "file": "package-lock.json",
+      "line": 24,
+      "note": "axios 0.21.0 (SSRF CVE-2020-28168, ReDoS CVE-2021-3749 등)"
+    },
+    {
+      "rule": "SEC-014",
+      "file": "package-lock.json",
+      "line": 29,
+      "note": "jsonwebtoken 8.5.1 (CVE-2022-23539/23540/23541)"
+    },
+    {
+      "rule": "SEC-001",
+      "file": "lib/supabase/admin.ts",
+      "line": 6,
+      "note": "service_role JWT 를 기본값으로 하드코딩"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "app/api/projects/[id]/route.ts",
+      "line": 13,
+      "note": "GET: 로그인만 확인하고 admin 클라이언트로 남의 프로젝트 조회"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "app/api/projects/[id]/route.ts",
+      "line": 26,
+      "note": "DELETE: 로그인만 확인하고 아무 프로젝트나 삭제"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "app/(dashboard)/settings/actions.ts",
+      "line": 21,
+      "note": "renameWorkspace 에 인증 확인 없음"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "app/(dashboard)/settings/actions.ts",
+      "line": 25,
+      "note": "인자로 받은 workspaceId 로 admin 클라이언트 업데이트 (소유/멤버 확인 없음)"
+    },
+    {
+      "rule": "SEC-004",
+      "file": "components/TeamTable.tsx",
+      "line": 4,
+      "note": "(어려운 변형) \"use client\" 컴포넌트가 service_role 키를 담은 admin 모듈을 import (파일 안에 service_role 글자가 없음)"
+    }
+  ]
+}

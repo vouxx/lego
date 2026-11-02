@@ -1,0 +1,6 @@
+# See https://help.github.com/articles/ignoring-files/
+/node_modules
+/.next/
+/out/
+.env*.local
+.env

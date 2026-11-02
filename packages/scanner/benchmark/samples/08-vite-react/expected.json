@@ -1,0 +1,50 @@
+{
+  "description": "Vite + React 마켓: VITE_ 접두사 비밀 키, 브라우저의 AWS 키·Stripe 비밀 키, 살균 없는 상품 설명 HTML, insert with check (true)",
+  "extraPaths": [
+    ".env.production"
+  ],
+  "findings": [
+    {
+      "rule": "SEC-002",
+      "file": ".env.production",
+      "line": 1,
+      "note": ".env.production 이 커밋됨 (.gitignore 는 .env/.env.local 만 막음)"
+    },
+    {
+      "rule": "SEC-006",
+      "file": "supabase/migrations/20240820093000_products.sql",
+      "line": 18,
+      "note": "insert with check (true): 누구나 아무 seller_id·HTML 로 상품 등록"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "src/lib/ai.ts",
+      "line": 2,
+      "note": "OpenAI 키를 VITE_ 로 번들에 노출"
+    },
+    {
+      "rule": "SEC-001",
+      "file": "src/lib/upload.ts",
+      "line": 7,
+      "note": "AWS 액세스 키 하드코딩"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "src/lib/upload.ts",
+      "line": 8,
+      "note": "AWS 비밀 키를 VITE_ 로 번들에 노출"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "src/lib/payments.ts",
+      "line": 4,
+      "note": "(어려운 변형) 이름에 SECRET 이 없지만 Stripe 서버 SDK(환불)에 쓰는 비밀 키를 VITE_ 로 노출"
+    },
+    {
+      "rule": "SEC-010",
+      "file": "src/components/ProductDescription.tsx",
+      "line": 24,
+      "note": "판매자가 넣은 description_html 을 살균 없이 innerHTML"
+    }
+  ]
+}

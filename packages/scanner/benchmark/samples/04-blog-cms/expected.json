@@ -1,0 +1,41 @@
+{
+  "description": "개발 블로그 CMS: 마크다운을 그대로 innerHTML, 문자열로 이어 붙인 SQL, 인증 없는 삭제 Server Action, 취약한 marked",
+  "findings": [
+    {
+      "rule": "SEC-014",
+      "file": "package-lock.json",
+      "line": 33,
+      "note": "marked 4.0.0 (ReDoS, CVE-2022-21680/21681) 직접 의존성"
+    },
+    {
+      "rule": "SEC-008",
+      "file": "app/api/search/route.ts",
+      "line": 8,
+      "note": "검색어 q 를 ILIKE 문자열에 직접 이어 붙임"
+    },
+    {
+      "rule": "SEC-008",
+      "file": "app/admin/actions.ts",
+      "line": 27,
+      "note": "title 을 템플릿 문자열로 UPDATE 에 삽입"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "app/admin/actions.ts",
+      "line": 31,
+      "note": "deletePost 에 인증 확인 없음"
+    },
+    {
+      "rule": "SEC-010",
+      "file": "app/posts/[slug]/page.tsx",
+      "line": 20,
+      "note": "marked 출력(살균 안 됨)을 그대로 innerHTML"
+    },
+    {
+      "rule": "SEC-010",
+      "file": "components/CommentList.tsx",
+      "line": 20,
+      "note": "(어려운 변형) 직접 만든 sanitize() 가 script 태그만 지워 <img onerror> 등으로 우회 가능한 댓글 XSS"
+    }
+  ]
+}

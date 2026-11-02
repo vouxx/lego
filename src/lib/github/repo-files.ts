@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  isDependencyFile,
   isEnvTemplate,
   isJsFile,
   isSqlFile,
@@ -10,12 +11,16 @@ import { installationOctokit } from "./app";
 const SKIP_DIRS =
   /(^|\/)(node_modules|\.next|\.nuxt|\.svelte-kit|\.vercel|\.turbo|dist|build|out|coverage|vendor|\.git)\//;
 const MAX_FILE_BYTES = 200_000;
+// lockfile 은 크기가 커서 따로 한도를 둔다(SEC-014).
+const MAX_LOCKFILE_BYTES = 5_000_000;
 const MAX_FILES = 800;
 const CONCURRENCY = 8;
 
 // 내용을 읽을 파일. .env 는 경로만 보고(SEC-002) 내용은 읽지 않는다.
 function shouldRead(path: string, size: number | undefined) {
-  if (SKIP_DIRS.test(path) || (size ?? 0) > MAX_FILE_BYTES) return false;
+  if (SKIP_DIRS.test(path)) return false;
+  if (isDependencyFile(path)) return (size ?? 0) <= MAX_LOCKFILE_BYTES;
+  if ((size ?? 0) > MAX_FILE_BYTES) return false;
   if (/\.min\.[cm]?js$/.test(path) || path.endsWith(".d.ts")) return false;
   return (
     isJsFile(path) ||
@@ -58,7 +63,13 @@ export async function readRepoAtCommit(
   });
   const blobs = tree.tree.filter((e) => e.type === "blob" && e.path);
   const paths = blobs.map((e) => e.path!);
-  const targets = blobs.filter((e) => shouldRead(e.path!, e.size));
+  // 파일 수 한도에 걸려도 의존성 파일은 빠지지 않게 앞에 둔다.
+  const targets = blobs
+    .filter((e) => shouldRead(e.path!, e.size))
+    .sort(
+      (a, b) =>
+        Number(isDependencyFile(b.path!)) - Number(isDependencyFile(a.path!)),
+    );
   const selected = targets.slice(0, MAX_FILES);
 
   const files: ScanInput["files"] = [];

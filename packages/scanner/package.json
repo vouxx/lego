@@ -8,13 +8,15 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "bench": "tsx benchmark/run.ts"
   },
   "dependencies": {
     "@babel/parser": "^8.0.10"
   },
   "devDependencies": {
     "@babel/types": "^8.0.10",
-    "@types/node": "^20.19.43"
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.15"
   }
 }

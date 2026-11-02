@@ -72,6 +72,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // 일부러 취약하게 만든 벤치마크 샘플
+    "packages/scanner/benchmark/samples/**",
+    "test-results/**",
+    "playwright-report/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

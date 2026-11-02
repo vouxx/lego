@@ -182,6 +182,16 @@ describe("SEC-005 RLS 미활성화", () => {
     ]);
   });
 
+  it("켰다가 다시 끈 테이블은 끈 문장을 가리킨다", () => {
+    const found = run(sec005, [
+      {
+        path: "supabase/migrations/0001.sql",
+        content: `create table posts (id uuid);\nalter table posts enable row level security;\nalter table public.posts disable row level security;`,
+      },
+    ]);
+    expect(found.map((c) => c.lineStart)).toEqual([3]);
+  });
+
   it("다른 마이그레이션에서 켠 경우와 함수 본문 안 문장은 통과한다", () => {
     const found = run(sec005, [
       {

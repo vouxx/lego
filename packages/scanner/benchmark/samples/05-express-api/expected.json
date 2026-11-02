@@ -1,0 +1,47 @@
+{
+  "description": "파트너 API (pages/api): 요청 Origin 반사 + credentials CORS, 인증 없는 회원 API, 취약한 lodash",
+  "findings": [
+    {
+      "rule": "SEC-011",
+      "file": "lib/cors.ts",
+      "line": 5,
+      "note": "요청 Origin 을 그대로 허용하면서 Allow-Credentials: true"
+    },
+    {
+      "rule": "SEC-011",
+      "file": "middleware.ts",
+      "line": 6,
+      "note": "middleware 에서 Origin 반사 + credentials"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "pages/api/users/[id].ts",
+      "line": 6,
+      "note": "회원 정보 조회/수정 API 에 인증 없음"
+    },
+    {
+      "rule": "SEC-009",
+      "file": "pages/api/users/[id].ts",
+      "line": 10,
+      "note": "쿼리의 id 로 아무 회원의 이메일·전화·주소 조회/수정"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "pages/api/admin/export.ts",
+      "line": 5,
+      "note": "관리자 회원 CSV 내보내기에 인증 없음"
+    },
+    {
+      "rule": "SEC-007",
+      "file": "pages/api/orders.ts",
+      "line": 5,
+      "note": "(어려운 변형) session 쿠키가 있는지만 보고 토큰 검증 없이 body 의 userId 로 주문 생성"
+    },
+    {
+      "rule": "SEC-014",
+      "file": "package-lock.json",
+      "line": 31,
+      "note": "lodash 4.17.15 (프로토타입 오염 CVE-2020-8203, 명령 주입 CVE-2021-23337) 직접 의존성, _.merge 에 req.body 사용"
+    }
+  ]
+}

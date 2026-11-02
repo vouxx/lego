@@ -15,6 +15,10 @@ const ENABLE_RLS = new RegExp(
   String.raw`^alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?${TABLE_NAME}[\s\S]*\benable\s+row\s+level\s+security`,
   "i",
 );
+const DISABLE_RLS = new RegExp(
+  String.raw`^alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?${TABLE_NAME}[\s\S]*\bdisable\s+row\s+level\s+security`,
+  "i",
+);
 const DROP_TABLE = new RegExp(
   String.raw`^drop\s+table\s+(?:if\s+exists\s+)?${TABLE_NAME}`,
   "i",
@@ -32,6 +36,11 @@ export const sec005: Rule = {
       { path: string; line: number; text: string }
     >();
     const enabled = new Set<string>();
+    // 켰다가 다시 끈 테이블은 끈 문장을 가리킨다.
+    const disabled = new Map<
+      string,
+      { path: string; line: number; text: string }
+    >();
 
     const sqlFiles = files
       .filter((f) => isSqlFile(f.path))
@@ -49,7 +58,20 @@ export const sec005: Rule = {
           continue;
         }
         const enable = stmt.text.match(ENABLE_RLS);
-        if (enable) enabled.add(normalizeTableName(enable[1]!));
+        if (enable) {
+          enabled.add(normalizeTableName(enable[1]!));
+          disabled.delete(normalizeTableName(enable[1]!));
+        }
+        const disable = stmt.text.match(DISABLE_RLS);
+        if (disable) {
+          const table = normalizeTableName(disable[1]!);
+          enabled.delete(table);
+          disabled.set(table, {
+            path: file.path,
+            line: stmt.line,
+            text: stmt.text,
+          });
+        }
         const drop = stmt.text.match(DROP_TABLE);
         if (drop) created.delete(normalizeTableName(drop[1]!));
       }
@@ -58,14 +80,18 @@ export const sec005: Rule = {
     const candidates: Candidate[] = [];
     for (const [table, at] of created) {
       if (enabled.has(table)) continue;
+      const off = disabled.get(table);
+      const where = off ?? at;
       candidates.push({
         ruleId: "SEC-005",
         severity: "high",
-        filePath: at.path,
-        lineStart: at.line,
-        lineEnd: at.line,
-        snippet: at.text.split("\n")[0]!.trim(),
-        reason: `${table} 테이블에 enable row level security 가 없음`,
+        filePath: where.path,
+        lineStart: where.line,
+        lineEnd: where.line,
+        snippet: where.text.split("\n")[0]!.trim(),
+        reason: off
+          ? `${table} 테이블의 RLS 를 disable row level security 로 다시 끔`
+          : `${table} 테이블에 enable row level security 가 없음`,
       });
     }
     return candidates;

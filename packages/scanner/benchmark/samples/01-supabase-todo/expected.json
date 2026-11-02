@@ -1,0 +1,35 @@
+{
+  "description": "Supabase 할 일 앱: RLS 누락·using(true) 정책·클라이언트 컴포넌트의 service_role 키",
+  "findings": [
+    {
+      "rule": "SEC-006",
+      "file": "supabase/migrations/0001_init.sql",
+      "line": 21,
+      "note": "todos update 정책이 using (true) 라 누구나 남의 할 일을 수정"
+    },
+    {
+      "rule": "SEC-005",
+      "file": "supabase/migrations/0001_init.sql",
+      "line": 24,
+      "note": "tags 테이블에 RLS 없음"
+    },
+    {
+      "rule": "SEC-005",
+      "file": "supabase/migrations/0002_shared_lists.sql",
+      "line": 15,
+      "note": "(어려운 변형) RLS 를 켰다가 같은 마이그레이션에서 disable 로 다시 끔"
+    },
+    {
+      "rule": "SEC-003",
+      "file": "components/AdminPanel.tsx",
+      "line": 9,
+      "note": "service_role 키에 NEXT_PUBLIC_ 접두사"
+    },
+    {
+      "rule": "SEC-004",
+      "file": "components/AdminPanel.tsx",
+      "line": 9,
+      "note": "\"use client\" 컴포넌트에서 service_role 키로 클라이언트 생성"
+    }
+  ]
+}
