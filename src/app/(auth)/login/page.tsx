@@ -1,3 +1,4 @@
+import { safeNextPath } from "@/shared/lib/safe-redirect";
 import { Suspense } from "react";
 import { GitHubSignInForm } from "@/features/auth/components/GitHubSignInForm";
 import { SignInError } from "@/features/auth/components/SignInError";
@@ -36,7 +37,9 @@ async function LoginForm({
   return (
     <>
       <SignInError code={typeof error === "string" ? error : undefined} />
-      <GitHubSignInForm next={typeof next === "string" ? next : undefined} />
+      <GitHubSignInForm
+        next={typeof next === "string" ? safeNextPath(next) : undefined}
+      />
     </>
   );
 }

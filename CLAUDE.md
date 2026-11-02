@@ -12,6 +12,8 @@ Next.js 16 (App Router), React 19, TypeScript(strict), Supabase(PostgreSQL, Auth
 pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
+- E2E: pnpm e2e (로그인 흐름은 먼저 pnpm e2e:login 으로 세션 저장, 실제 스캔은 E2E_RUN_SCAN=1)
+- 탐지율 측정: pnpm --filter @lego/scanner bench [--osv] → packages/scanner/benchmark/RESULTS.md
 - 원격 DB 마이그레이션 적용: pnpm db:migrate
 - DB 타입 생성: pnpm db:types
 
@@ -55,7 +57,10 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 워커는 Edge Function 이 아니라 Next.js(Node) 에서 돈다(`features/scans/services/worker.ts`). 공유 Supabase 프로젝트에 비밀값을 올리지 않기 위해서다. 배포 후에는 pg_cron 이 `POST /api/scan-worker`(Bearer SCAN_WORKER_SECRET) 를 부른다.
 - 정적 탐지는 `@lego/scanner`, LLM 호출은 `@/lib/llm` 게이트웨이만 쓴다. 1차 판별 Haiku, 설명·수정 프롬프트 Sonnet. 코드는 `maskSecrets` 로 가린 뒤에만 저장하거나 LLM 에 보낸다.
 - ANTHROPIC_API_KEY 가 없으면 정적 탐지 결과만 저장한다(summary.llm = "skipped").
-- 규칙을 추가하면 `packages/scanner/src/rules/rules.test.ts` 에 취약/안전 예시를 같이 넣는다. 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
+- SEC-014 는 `auditDependencies`(OSV 조회)로 따로 돈다. 실패해도 스캔은 계속하고 summary.dependencyNote 에 남긴다.
+- 값·파일만으로 확정되는 규칙(SEC-001~004)은 LLM 이 오탐이라 해도 테스트 경로가 아니면 숨기지 않는다(`verdict-guard.ts`). 코드 주석으로 AI 판별을 속이는 공격 때문이다.
+- 스캔 비교는 `lego.scan_diff` (fingerprint 기준). 직전 스캔에서 무시한 항목은 새 스캔에서도 무시 상태로 이어진다.
+- 규칙을 추가하면 `packages/scanner/src/rules/*.test.ts` 에 취약/안전 예시를 같이 넣고, `benchmark/samples` 에도 사례를 넣어 탐지율을 다시 잰다. 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
 
 ## 인증 / 권한
 
@@ -85,7 +90,13 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 ## 테스트
 
 - services 와 scanner 규칙은 Vitest 단위 테스트를 함께 작성한다. 규칙마다 취약한 예시 / 안전한 예시 픽스처를 둔다.
-- 로그인 → 프로젝트 생성 → 스캔 → 결과 확인 흐름은 Playwright 로 검증한다.
+- 로그인 → 프로젝트 생성 → 스캔 → 결과 확인 흐름은 Playwright 로 검증한다(tests/e2e).
+- `packages/scanner/benchmark/samples` 는 일부러 취약하게 만든 코드다. 타입체크·린트·포맷에서 제외되어 있고, 비밀값은 `{{ANTHROPIC_KEY}}` 같은 자리표시자로만 쓴다.
+
+## 모니터링
+
+- Sentry 는 NEXT_PUBLIC_SENTRY_DSN 이 있을 때만 켜진다. 서버에서 처리한 오류는 `@/lib/monitoring` 의 reportError 로 남긴다.
+- 사용자 코드·쿠키·헤더·요청 본문은 보내지 않는다(`shared/lib/sentry.ts`). extra 에는 id 만 넣는다.
 
 ## 주의할 점 (보안 점검 결과에서 자동 추가)
 
