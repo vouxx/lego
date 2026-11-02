@@ -37,6 +37,7 @@ npx supabase db reset         # 로컬 DB 를 마이그레이션부터 다시 �
 pnpm db:migrate               # 운영 DB 에 새 마이그레이션 적용 (주의)
 ```
 
+- `supabase/.env` 나 `config.toml` 을 바꾸면 `npx supabase stop && npx supabase start` 로 컨테이너를 다시 만들어야 반영된다(데이터는 유지). 그냥 `start` 만 하면 예전 값이 남는다.
 - 로컬 Studio 는 http://127.0.0.1:54323 이다.
 - 로컬 스캔은 `after()` 로 바로 처리된다. pg_cron 작업도 있지만, Vault 에 URL 이 없어서 아무것도 호출하지 않는다.
 - 공유 DB 에 접속하던 예전 `.env.local` 값은 `.env.shared.local` 에 백업되어 있다(git 제외).
