@@ -387,7 +387,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      ack_scan_job: { Args: { p_msg_id: number }; Returns: boolean };
+      add_token_usage: {
+        Args: { p_tokens: number; p_user_id: string };
+        Returns: boolean;
+      };
+      archive_scan_job: { Args: { p_msg_id: number }; Returns: boolean };
+      consume_scan_quota: { Args: { p_user_id: string }; Returns: boolean };
+      enqueue_scan: { Args: { p_scan_id: string }; Returns: number };
+      read_scan_jobs: {
+        Args: { p_qty: number; p_visibility_seconds: number };
+        Returns: {
+          msg_id: number;
+          read_ct: number;
+          scan_id: string;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

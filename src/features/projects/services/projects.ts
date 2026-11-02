@@ -3,6 +3,7 @@ import type { CurrentUser } from "@/lib/auth";
 import { installationOctokit } from "@/lib/github/app";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
+  getMyProject,
   insertProject,
   listMyInstallations,
   listMyProjects,
@@ -29,6 +30,21 @@ export async function getMyProjects(): Promise<Result<ProjectSummary[]>> {
       };
     }),
   );
+}
+
+export async function getProject(
+  projectId: string,
+): Promise<Result<ProjectSummary>> {
+  const { data, error } = await getMyProject(projectId);
+  if (error) return err("db_error", "프로젝트를 불러오지 못했습니다.");
+  if (!data) return err("not_found", "프로젝트를 찾을 수 없습니다.");
+  const stack = detectedStackSchema.safeParse(data.detected_stack);
+  return ok({
+    id: data.id,
+    repoFullName: data.repo_full_name,
+    defaultBranch: data.default_branch,
+    stack: stack.success ? stack.data : null,
+  });
 }
 
 export async function getMyInstallations() {

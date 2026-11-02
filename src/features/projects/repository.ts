@@ -81,3 +81,12 @@ export async function deleteProjectsByRepos(
     .eq("installation_id", installationId)
     .in("repo_full_name", repoFullNames);
 }
+
+export async function getMyProject(projectId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("projects")
+    .select("id, repo_full_name, default_branch, detected_stack, created_at")
+    .eq("id", projectId)
+    .maybeSingle();
+}

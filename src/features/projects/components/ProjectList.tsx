@@ -31,7 +31,14 @@ export function ProjectList({ projects }: Props) {
         <li key={project.id}>
           <Card>
             <CardHeader>
-              <CardTitle>{project.repoFullName}</CardTitle>
+              <CardTitle>
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="hover:underline"
+                >
+                  {project.repoFullName}
+                </Link>
+              </CardTitle>
               <CardDescription>
                 기본 브랜치 {project.defaultBranch}
               </CardDescription>

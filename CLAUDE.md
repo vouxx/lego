@@ -49,6 +49,14 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - src/lib 은 인프라(supabase 클라이언트, GitHub App, env, 현재 사용자)만 둔다. features/app 을 import 하지 않는다.
 - 현재 사용자는 `@/lib/auth` 의 getCurrentUser / requireUser 로만 읽는다.
 
+## 스캔 파이프라인
+
+- startScanAction → 한도 차감(`lego.consume_scan_quota`) → scans insert → pgmq `lego_scan_jobs` 적재 → `after()` 로 같은 서버에서 워커 실행.
+- 워커는 Edge Function 이 아니라 Next.js(Node) 에서 돈다(`features/scans/services/worker.ts`). 공유 Supabase 프로젝트에 비밀값을 올리지 않기 위해서다. 배포 후에는 pg_cron 이 `POST /api/scan-worker`(Bearer SCAN_WORKER_SECRET) 를 부른다.
+- 정적 탐지는 `@lego/scanner`, LLM 호출은 `@/lib/llm` 게이트웨이만 쓴다. 1차 판별 Haiku, 설명·수정 프롬프트 Sonnet. 코드는 `maskSecrets` 로 가린 뒤에만 저장하거나 LLM 에 보낸다.
+- ANTHROPIC_API_KEY 가 없으면 정적 탐지 결과만 저장한다(summary.llm = "skipped").
+- 규칙을 추가하면 `packages/scanner/src/rules/rules.test.ts` 에 취약/안전 예시를 같이 넣는다. 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
+
 ## 인증 / 권한
 
 - 로그인은 Supabase GitHub OAuth, 리포 읽기는 GitHub App 설치 토큰. 설정은 docs/setup-github.md.
