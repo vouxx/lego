@@ -1,7 +1,7 @@
 # 배포 (Vercel)
 
 - 프로젝트: Vercel `vouxxs-projects/lego`, 함수 리전 `icn1`(Supabase 와 같은 서울)
-- 운영 주소: https://lego-six-coral.vercel.app
+- 운영 주소: https://vouxx-lego.vercel.app
 - 배포: `vercel deploy --prod --scope vouxxs-projects` (GitHub 연결 후에는 main push 로 자동)
 - 환경 변수는 Vercel Production 에 있다. `SCAN_WORKER_SECRET` 은 로컬과 다른 운영 전용 값이다.
 
@@ -13,34 +13,23 @@
 Authentication → URL Configuration → Redirect URLs 에 추가:
 
 ```
-https://lego-six-coral.vercel.app/auth/callback
+https://vouxx-lego.vercel.app/auth/callback
 ```
 
 ### 2. 운영용 GitHub App
 
-개발용 App(`lego-dev-vouxx`)은 설치 후 돌아올 주소가 localhost 라서, 운영용 App 을 하나 더 만든다.
-만드는 방법은 [setup-github.md](setup-github.md) 와 같고, 주소만 다르다.
+운영용 App 은 [`lego-security`](https://github.com/apps/lego-security) 이다(공개, Contents·Metadata 읽기 전용).
+GitHub App Manifest 흐름으로 만들었고, 자격 증명은 `.env.production.local`(git 제외)과 Vercel Production 에 있다.
+개발용 `lego-dev-vouxx` 는 로컬(localhost) 전용으로 그대로 둔다.
 
 | 항목 | 값 |
 |---|---|
-| Homepage URL | `https://lego-six-coral.vercel.app` |
-| Callback URL | `https://lego-six-coral.vercel.app/api/github/install/callback` |
-| Request user authorization (OAuth) during installation | 체크 |
-| Webhook URL | `https://lego-six-coral.vercel.app/api/github/webhook` |
-| Webhook secret | `openssl rand -hex 32` |
-| 권한 | Contents: Read-only, Metadata: Read-only |
+| Homepage URL | `https://vouxx-lego.vercel.app` |
+| Callback URL | `https://vouxx-lego.vercel.app/api/github/install/callback` |
+| Webhook URL | `https://vouxx-lego.vercel.app/api/github/webhook` |
 
-만든 값은 저장소 루트의 `.env.production.local`(git 에 안 올라감)에 아래 이름으로 적는다.
-그다음 Vercel 에 올리고 다시 배포한다.
-
-```
-GITHUB_APP_ID=
-GITHUB_APP_SLUG=
-GITHUB_APP_CLIENT_ID=
-GITHUB_APP_CLIENT_SECRET=
-GITHUB_APP_PRIVATE_KEY=
-GITHUB_WEBHOOK_SECRET=
-```
+운영 도메인을 바꾸면 위 세 값을 함께 바꾼다. Webhook URL 은 App JWT 로 `PATCH /app/hook/config` 를 호출해 바꿀 수 있다.
+Homepage·Callback URL 은 https://github.com/settings/apps/lego-security 에서 직접 바꾼다.
 
 ### 3. main push 자동 배포
 
@@ -57,6 +46,6 @@ Vercel GitHub App 에 이 리포 접근 권한이 있어야 한다.
 - Vault 에 운영 URL 과 워커 비밀값을 넣는다(저장소에는 두지 않음).
 
 ```sql
-select vault.create_secret('https://lego-six-coral.vercel.app/api/scan-worker', 'lego_scan_worker_url');
+select vault.create_secret('https://vouxx-lego.vercel.app/api/scan-worker', 'lego_scan_worker_url');
 select vault.create_secret('<운영 SCAN_WORKER_SECRET>', 'lego_scan_worker_secret');
 ```
