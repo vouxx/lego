@@ -13,7 +13,7 @@
     "db:types": "supabase gen types typescript --linked --schema lego > src/lib/supabase/database.types.ts",
     "db:migrate": "scripts/db-migrate.sh",
     "e2e": "playwright test",
-    "e2e:login": "tsx tests/e2e/save-auth.ts"
+    "e2e:login": "tsx tests/e2e/save-auth.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

@@ -46,11 +46,17 @@ test("프로젝트를 점검하고 결과에서 수정 프롬프트를 확인한
   await expect(firstCard).toBeVisible();
   await expect(firstCard.getByRole("button", { name: /복사/ })).toBeVisible();
 
-  // 무시 → 되돌리기 (상태만 바꾸고 원래대로 둔다)
-  const card = page
-    .locator("li")
-    .filter({ has: page.getByRole("button", { name: "무시" }) })
-    .first();
+  // 무시 → 되돌리기 (상태만 바꾸고 원래대로 둔다).
+  // 무시하면 버튼이 바뀌므로 버튼으로 찾지 말고 순서로 카드를 고정한다.
+  const cards = page.locator("li").filter({ hasText: "SEC-" });
+  const count = await cards.count();
+  let index = -1;
+  for (let i = 0; i < count && index < 0; i++) {
+    if (await cards.nth(i).getByRole("button", { name: "무시" }).isVisible())
+      index = i;
+  }
+  expect(index).toBeGreaterThanOrEqual(0);
+  const card = cards.nth(index);
   await card.getByRole("button", { name: "무시" }).click();
   await expect(card.getByText("무시함")).toBeVisible();
   await card.getByRole("button", { name: "되돌리기" }).click();
