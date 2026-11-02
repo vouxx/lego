@@ -4,12 +4,15 @@
 
 - 전체 설계: [docs/design.md](docs/design.md)
 - 개발 규칙: [CLAUDE.md](CLAUDE.md)
+- 로컬 개발: [docs/local-dev.md](docs/local-dev.md) · 배포: [docs/deploy.md](docs/deploy.md)
+- 운영: https://vouxx-lego.vercel.app
 
 ## 시작하기
 
 ```bash
 pnpm install            # pnpm 이 없으면 npx pnpm@12.16.1 install
 cp .env.example .env.local
+npx supabase start       # 로컬 Supabase (Docker 필요, docs/local-dev.md)
 pnpm dev
 ```
 

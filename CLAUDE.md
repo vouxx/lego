@@ -14,14 +14,15 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
 - E2E: pnpm e2e (로그인 흐름은 먼저 pnpm e2e:login 으로 세션 저장, 실제 스캔은 E2E_RUN_SCAN=1)
 - 탐지율 측정: pnpm --filter @lego/scanner bench [--osv] → packages/scanner/benchmark/RESULTS.md
-- 원격 DB 마이그레이션 적용: pnpm db:migrate
+- 로컬 DB: npx supabase start (Docker 필요, docs/local-dev.md) / 초기화: npx supabase db reset
+- 운영 DB 마이그레이션 적용: pnpm db:migrate
 - DB 타입 생성: pnpm db:types
 
 ## Supabase 프로젝트 공유 (중요)
 
-- 원격 DB 는 다른 앱(zeek, wbs, resume)과 같이 쓰는 프로젝트 `kqspyogrfebnlitqchvd` 이다. 레고의 모든 객체는 `lego` 스키마에만 만든다.
+- 로컬 개발은 로컬 Supabase(Docker)를 쓴다. 공유 프로젝트 `kqspyogrfebnlitqchvd` 는 **운영 전용**이며 다른 앱(zeek, wbs, resume)과 같이 쓴다. 레고의 모든 객체는 `lego` 스키마에만 만든다.
 - `supabase db push`, `supabase migration repair`, `supabase config push`, `supabase db reset --linked` 는 절대 쓰지 않는다. 다른 앱의 마이그레이션 이력과 설정을 망가뜨린다.
-- 마이그레이션은 `pnpm db:migrate`(scripts/db-migrate.sh)로 적용한다. 이력은 `lego.schema_migrations` 에 남는다.
+- 새 마이그레이션은 먼저 로컬(`npx supabase db reset`)에서 확인하고, 운영에는 `pnpm db:migrate`(scripts/db-migrate.sh)로 적용한다. 이력은 `lego.schema_migrations` 에 남는다.
 - `auth.users` 는 다른 앱과 공유한다. auth 스키마에 트리거를 걸지 않고, profiles 는 로그인 콜백에서 upsert 한다.
 - Supabase 클라이언트는 `db: { schema: DB_SCHEMA }` 로 만든다(src/lib/supabase/env.ts).
 
