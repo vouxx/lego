@@ -9,6 +9,34 @@ export type Json =
 export type Database = {
   lego: {
     Tables: {
+      concepts: {
+        Row: {
+          body_md: string;
+          related_rule_ids: string[];
+          slug: string;
+          sort_order: number;
+          summary: string;
+          title: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body_md: string;
+          related_rule_ids?: string[];
+          slug: string;
+          sort_order?: number;
+          summary: string;
+          title: string;
+        };
+        Update: {
+          body_md?: string;
+          related_rule_ids?: string[];
+          slug?: string;
+          sort_order?: number;
+          summary?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
       context_file_rules: {
         Row: {
           context_file_id: string;
@@ -176,6 +204,64 @@ export type Database = {
           },
         ];
       };
+      explanations: {
+        Row: {
+          code: string;
+          code_hash: string;
+          content: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          language: string | null;
+          level: string;
+          project_id: string | null;
+          source: string;
+          source_ref: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          code: string;
+          code_hash: string;
+          content: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          language?: string | null;
+          level: string;
+          project_id?: string | null;
+          source: string;
+          source_ref?: string | null;
+          user_id: string;
+        };
+        Update: {
+          code?: string;
+          code_hash?: string;
+          content?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          language?: string | null;
+          level?: string;
+          project_id?: string | null;
+          source?: string;
+          source_ref?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "explanations_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "explanations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       findings: {
         Row: {
           ai_verdict: string | null;
@@ -292,6 +378,7 @@ export type Database = {
           context_file_id: string | null;
           cost_usd: number;
           created_at: string;
+          explanation_id: string | null;
           id: string;
           input_tokens: number;
           latency_ms: number | null;
@@ -308,6 +395,7 @@ export type Database = {
           context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
+          explanation_id?: string | null;
           id?: string;
           input_tokens?: number;
           latency_ms?: number | null;
@@ -323,6 +411,7 @@ export type Database = {
           context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
+          explanation_id?: string | null;
           id?: string;
           input_tokens?: number;
           latency_ms?: number | null;
@@ -339,6 +428,13 @@ export type Database = {
             columns: ["context_file_id"];
             isOneToOne: false;
             referencedRelation: "context_files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "llm_calls_explanation_id_fkey";
+            columns: ["explanation_id"];
+            isOneToOne: false;
+            referencedRelation: "explanations";
             referencedColumns: ["id"];
           },
           {
@@ -471,6 +567,86 @@ export type Database = {
           {
             foreignKeyName: "prompt_templates_owner_id_fkey";
             columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quiz_attempts: {
+        Row: {
+          answers: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          quiz_id: string;
+          score: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answers: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          quiz_id: string;
+          score: number;
+          user_id: string;
+        };
+        Update: {
+          answers?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          quiz_id?: string;
+          score?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_quiz_id_fkey";
+            columns: ["quiz_id"];
+            isOneToOne: false;
+            referencedRelation: "quizzes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      quizzes: {
+        Row: {
+          explanation_id: string;
+          id: string;
+          questions: NonNullable<Json>;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          explanation_id: string;
+          id?: string;
+          questions: NonNullable<Json>;
+          user_id: string;
+        };
+        Update: {
+          explanation_id?: string;
+          id?: string;
+          questions?: NonNullable<Json>;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_explanation_id_fkey";
+            columns: ["explanation_id"];
+            isOneToOne: true;
+            referencedRelation: "explanations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quizzes_user_id_fkey";
+            columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -821,6 +997,43 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "usage_quotas_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_concepts: {
+        Row: {
+          concept_slug: string;
+          last_seen_at: string;
+          mastery: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          concept_slug: string;
+          last_seen_at?: string;
+          mastery?: number;
+          user_id: string;
+        };
+        Update: {
+          concept_slug?: string;
+          last_seen_at?: string;
+          mastery?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_concepts_concept_slug_fkey";
+            columns: ["concept_slug"];
+            isOneToOne: false;
+            referencedRelation: "concepts";
+            referencedColumns: ["slug"];
+          },
+          {
+            foreignKeyName: "user_concepts_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

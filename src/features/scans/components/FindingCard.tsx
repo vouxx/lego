@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type { FindingView } from "../schemas";
@@ -49,7 +50,18 @@ export function FindingCard({ finding, isNew = false }: Props) {
           <p className="text-sm">{finding.explanation}</p>
         ) : null}
         {finding.fixPrompt ? <FixPromptBox prompt={finding.fixPrompt} /> : null}
-        <FindingStatusControl findingId={finding.id} status={finding.status} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <FindingStatusControl
+            findingId={finding.id}
+            status={finding.status}
+          />
+          <Link
+            href={`/learn/finding/${finding.id}`}
+            className="text-muted-foreground text-sm hover:underline"
+          >
+            이게 뭐예요? →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
