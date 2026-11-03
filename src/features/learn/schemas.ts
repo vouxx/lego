@@ -84,6 +84,8 @@ export const submitQuizInput = z.object({
   answers: z.array(z.number().int().min(0).max(9)),
 });
 
+export const deleteExplanationInput = z.object({ explanationId: z.uuid() });
+
 export const retryDiagramInput = z.object({ explanationId: z.uuid() });
 
 // 화면 표시용 -----------------------------------------------------------------

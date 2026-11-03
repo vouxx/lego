@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { DeleteSessionButton } from "@/features/sessions/components/DeleteSessionButton";
 import { SessionDetail } from "@/features/sessions/components/SessionDetail";
 import { SessionStatusPanel } from "@/features/sessions/components/SessionStatusPanel";
-import { VisibilityControl } from "@/features/sessions/components/VisibilityControl";
+import { SessionOwnerActions } from "@/features/sessions/components/SessionOwnerActions";
 import { getMySessionDetail } from "@/features/sessions/services/views";
 
 type Props = PageProps<"/sessions/[sessionId]">;
@@ -36,17 +35,7 @@ async function Session({ params }: Pick<Props, "params">) {
       <SessionDetail
         detail={result.data}
         canSave
-        actions={
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <VisibilityControl
-              sessionId={card.id}
-              visibility={card.visibility}
-              slug={card.slug}
-              disabled={card.status !== "done"}
-            />
-            <DeleteSessionButton sessionId={card.id} />
-          </div>
-        }
+        actions={<SessionOwnerActions card={card} />}
       />
     </>
   );

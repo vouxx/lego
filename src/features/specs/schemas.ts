@@ -114,6 +114,8 @@ export const updatePrdInput = z.object({
   prd: z.string().max(50_000),
 });
 
+export const deleteSpecInput = z.object({ specId: z.uuid() });
+
 export const saveTemplateInput = z.object({ taskId: z.uuid() });
 
 // 화면 표시용 -----------------------------------------------------------------

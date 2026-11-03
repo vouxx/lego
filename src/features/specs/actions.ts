@@ -1,10 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { err, type Result } from "@/shared/lib/result";
 import {
   answerQuestionsInput,
   createSpecInput,
+  deleteSpecInput,
   regenerateTaskPromptInput,
   saveTemplateInput,
   updatePrdInput,
@@ -13,6 +15,7 @@ import {
 import {
   answerQuestions,
   createSpec,
+  deleteSpec,
   regenerateTaskPrompt,
   saveTaskAsTemplate,
   updatePrd,
@@ -84,4 +87,14 @@ export async function saveTaskTemplateAction(
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED;
   return saveTaskAsTemplate(user, parsed.data.taskId);
+}
+
+export async function deleteSpecAction(input: unknown): Promise<Result<null>> {
+  const parsed = deleteSpecInput.safeParse(input);
+  if (!parsed.success) return firstIssue(parsed.error);
+  const user = await getCurrentUser();
+  if (!user) return UNAUTHORIZED;
+  const result = await deleteSpec(parsed.data.specId);
+  if (result.ok) revalidatePath("/specs");
+  return result;
 }

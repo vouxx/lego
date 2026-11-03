@@ -189,3 +189,11 @@ export async function addTokenUsage(userId: string, tokens: number) {
     p_tokens: tokens,
   });
 }
+
+/** 퀴즈·풀이 기록은 cascade 로 지워진다. 숙련도(user_concepts)는 학습 기록이라 남긴다. */
+export async function deleteExplanationRow(explanationId: string) {
+  return createAdminClient()
+    .from("explanations")
+    .delete()
+    .eq("id", explanationId);
+}

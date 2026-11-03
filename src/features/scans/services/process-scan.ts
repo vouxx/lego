@@ -170,6 +170,12 @@ export async function processScan(scanId: string) {
         llmNote =
           "이번 달 LLM 토큰 한도를 넘어 일부 항목은 수정 프롬프트를 만들지 못했습니다.";
       } else if (texts.size < confirmed.length) {
+        if (explained.failures.length > 0) {
+          reportError(new Error("수정 프롬프트 생성 실패"), {
+            area: "scan.explain",
+            extra: { scanId, codes: explained.failures.join(",") },
+          });
+        }
         llm = "partial";
         llmNote = `${confirmed.length - texts.size}개 항목은 수정 프롬프트를 만들지 못했습니다.`;
       }

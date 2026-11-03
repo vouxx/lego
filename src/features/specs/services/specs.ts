@@ -5,6 +5,7 @@ import { stackText } from "@/shared/context/render";
 import { err, ok, type Result } from "@/shared/lib/result";
 import { STACK_TAGS, type StackTag } from "@/shared/stack/schema";
 import {
+  deleteSpecRow,
   findMyProject,
   getMySpec,
   getMyTask,
@@ -283,4 +284,11 @@ export async function saveTaskAsTemplate(
     source: "task_prompt",
   });
   return error ? err("db_error", "템플릿으로 저장하지 못했습니다.") : ok(null);
+}
+
+export async function deleteSpec(specId: string): Promise<Result<null>> {
+  const { data: spec } = await getMySpec(specId);
+  if (!spec) return NOT_FOUND;
+  const { error } = await deleteSpecRow(spec.id);
+  return error ? err("db_error", "스펙을 지우지 못했습니다.") : ok(null);
 }

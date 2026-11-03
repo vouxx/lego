@@ -8,6 +8,8 @@ export const createProjectInput = z.object({
 });
 export type CreateProjectInput = z.infer<typeof createProjectInput>;
 
+export const deleteProjectInput = z.object({ projectId: z.uuid() });
+
 export const addPublicRepoInput = z.object({
   url: z.string().trim().min(1, "리포 주소를 입력해 주세요.").max(300),
 });

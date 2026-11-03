@@ -200,3 +200,8 @@ export async function markTasksDone(
   }
   return { error: null };
 }
+
+/** 작업(spec_tasks)은 cascade 로 같이 지워진다. */
+export async function deleteSpecRow(specId: string) {
+  return createAdminClient().from("specs").delete().eq("id", specId);
+}

@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default function ConceptPage({ params }: Props) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col px-4 py-10 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-col px-4 py-8 *:max-w-3xl sm:px-6">
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

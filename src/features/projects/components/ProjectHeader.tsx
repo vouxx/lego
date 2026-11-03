@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { PageHeader } from "@/shared/ui/page-header";
 import type { DetectedStack } from "@/shared/stack/schema";
 import { StackTags } from "./StackTags";
+import { DeleteButton } from "@/shared/ui/delete-button";
+import { deleteProjectAction } from "../actions";
 
 type Props = {
   projectId: string;
@@ -48,6 +50,14 @@ export function ProjectHeader({
         ]}
         title={<span className="font-mono">{repoFullName}</span>}
         description={stack ? <StackTags tags={stack.tags} /> : null}
+        actions={
+          <DeleteButton
+            action={deleteProjectAction.bind(null, { projectId })}
+            redirectTo="/projects"
+            label="프로젝트 지우기"
+            confirmText={`${repoFullName} 프로젝트를 지웁니다. 점검 기록과 규칙 파일도 같이 지워지고, GitHub 리포는 그대로입니다.`}
+          />
+        }
       />
       <ul className="bg-border grid gap-px overflow-hidden rounded-lg border sm:grid-cols-3">
         {tools.map((tool) => (

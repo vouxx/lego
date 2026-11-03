@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { MarkdownPreview } from "@/shared/ui/markdown-preview";
+import { PageHeader } from "@/shared/ui/page-header";
 
 type Props = {
   concept: {
@@ -13,16 +13,14 @@ type Props = {
 export function ConceptArticle({ concept }: Props) {
   return (
     <article className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Link
-          href="/concepts"
-          className="text-muted-foreground text-sm hover:underline"
-        >
-          ← 개념 사전
-        </Link>
-        <h1 className="text-3xl font-semibold">{concept.title}</h1>
-        <p className="text-muted-foreground">{concept.summary}</p>
-      </div>
+      <PageHeader
+        trail={[
+          { href: "/concepts", label: "개념 사전" },
+          { label: concept.title },
+        ]}
+        title={concept.title}
+        description={concept.summary}
+      />
       <MarkdownPreview content={concept.body} />
       {concept.rules.length > 0 ? (
         <section className="flex flex-col gap-2 border-t pt-4">

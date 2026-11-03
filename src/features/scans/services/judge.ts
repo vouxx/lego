@@ -107,7 +107,11 @@ export async function triage(
   return { verdicts, stopped };
 }
 
-/** Sonnet 으로 설명과 수정 프롬프트를 만든다. */
+/**
+ * Sonnet 으로 확정 항목의 설명과 수정 프롬프트를 만든다. 4개씩 묶어 보내고,
+ * 묶음이 실패하거나 일부만 돌려받으면 빠진 항목을 하나씩 한 번 더 요청한다(일시적인 시간 초과·형식 오류 대비).
+ * 거절(refusal)은 다시 보내도 같으므로 재시도하지 않는다.
+ */
 export async function explain(
   items: JudgeItem[],
   stack: string,
@@ -115,11 +119,12 @@ export async function explain(
   onProgress: (done: number, total: number) => Promise<void>,
 ) {
   const results = new Map<number, { explanation: string; fixPrompt: string }>();
-  const batches = chunk(items, 4);
   let stopped = false;
   let refused = 0;
+  const failures: string[] = [];
 
-  for (const [index, batch] of batches.entries()) {
+  /** 한 번 요청하고, 거절이면 true 를 돌려준다. */
+  const request = async (batch: JudgeItem[]) => {
     const outcome = await generateStructured({
       model: LLM_MODELS.explain,
       system: EXPLAIN_SYSTEM,
@@ -139,11 +144,25 @@ export async function explain(
             fixPrompt: r.fix_prompt,
           });
       }
-    } else if (outcome.error.code === "refused") {
+      return false;
+    }
+    if (outcome.error.code === "refused") return true;
+    failures.push(outcome.error.code);
+    return false;
+  };
+
+  const batches = chunk(items, 4);
+  for (const [index, batch] of batches.entries()) {
+    if (await request(batch)) {
       refused += batch.length;
+    } else {
+      for (const item of batch) {
+        if (stopped || results.has(item.id)) continue;
+        if (await request([item])) refused += 1;
+      }
     }
     await onProgress(index + 1, batches.length);
     if (stopped) break;
   }
-  return { results, stopped, refused };
+  return { results, stopped, refused, failures };
 }

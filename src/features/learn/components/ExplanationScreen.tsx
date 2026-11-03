@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { LEVEL_LABELS, type ExplanationView } from "../schemas";
 import { MermaidDiagram } from "./MermaidDiagram";
 import { QuizPanel } from "./QuizPanel";
+import { DeleteButton } from "@/shared/ui/delete-button";
+import { deleteExplanationAction } from "../actions";
 
 type Props = { view: ExplanationView };
 
@@ -14,6 +16,16 @@ export function ExplanationScreen({ view }: Props) {
       <PageHeader
         trail={[{ href: "/learn", label: "학습" }, { label: "설명" }]}
         title={content.summary}
+        actions={
+          <DeleteButton
+            action={deleteExplanationAction.bind(null, {
+              explanationId: view.id,
+            })}
+            redirectTo="/learn"
+            label="설명 지우기"
+            confirmText="이 설명과 퀴즈 기록을 지웁니다. 배운 개념의 숙련도는 남습니다."
+          />
+        }
         description={
           <span className="font-mono text-xs break-all">
             {LEVEL_LABELS[view.level]} 수준 ·{" "}

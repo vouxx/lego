@@ -8,6 +8,8 @@ import { QuestionForm } from "./QuestionForm";
 import { RetryGeneration } from "./RetryGeneration";
 import { SpecTabs } from "./SpecTabs";
 import { TaskBoard } from "./TaskBoard";
+import { DeleteButton } from "@/shared/ui/delete-button";
+import { deleteSpecAction } from "../actions";
 
 type Props = { spec: SpecView };
 
@@ -17,6 +19,14 @@ export function SpecScreen({ spec }: Props) {
       <PageHeader
         trail={[{ href: "/specs", label: "스펙" }, { label: spec.title }]}
         title={spec.title}
+        actions={
+          <DeleteButton
+            action={deleteSpecAction.bind(null, { specId: spec.id })}
+            redirectTo="/specs"
+            label="스펙 지우기"
+            confirmText={`'${spec.title}' 스펙과 작업 ${spec.tasks.length}개를 지웁니다.`}
+          />
+        }
         description={
           <div className="flex flex-col gap-1">
             <span>{spec.idea}</span>

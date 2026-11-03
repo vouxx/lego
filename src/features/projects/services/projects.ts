@@ -8,6 +8,7 @@ import {
 } from "@/lib/github/repo-files";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
+  deleteProjectRow,
   getMyProject,
   insertProject,
   listMyInstallations,
@@ -255,4 +256,12 @@ export async function addPublicRepo(
   });
   if (error) return err("db_error", "프로젝트를 저장하지 못했습니다.");
   return ok({ projectId: data.id });
+}
+
+/** 내 프로젝트인지 RLS 로 확인한 뒤 지운다. */
+export async function deleteProject(projectId: string): Promise<Result<null>> {
+  const { data } = await getMyProject(projectId);
+  if (!data) return err("not_found", "프로젝트를 찾을 수 없습니다.");
+  const { error } = await deleteProjectRow(projectId);
+  return error ? err("db_error", "프로젝트를 지우지 못했습니다.") : ok(null);
 }

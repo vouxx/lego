@@ -1,9 +1,18 @@
-import { MarketingHeader } from "@/features/marketing/components/MarketingHeader";
+import { Suspense } from "react";
+import { HeaderAccount } from "@/features/auth/components/HeaderAccount";
+import { StartLink } from "@/features/auth/components/StartLink";
+import { SiteHeader } from "@/shared/layout/SiteHeader";
 
 export default function MarketingLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col break-keep">
-      <MarketingHeader />
+      <SiteHeader
+        account={
+          <Suspense fallback={<StartLink />}>
+            <HeaderAccount />
+          </Suspense>
+        }
+      />
       {children}
       <footer className="text-muted-foreground border-t">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-6 font-mono text-xs sm:px-6">

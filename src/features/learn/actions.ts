@@ -1,8 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { err, type Result } from "@/shared/lib/result";
 import {
+  deleteExplanationInput,
   explainFileInput,
   explainFindingInput,
   explainPasteInput,
@@ -16,6 +18,7 @@ import {
   explainPaste,
   retryDiagram,
 } from "./services/explain";
+import { deleteExplanation } from "./services/manage";
 import { submitQuiz } from "./services/quiz";
 
 const UNAUTHORIZED = err("unauthorized", "로그인이 필요합니다.");
@@ -71,4 +74,16 @@ export async function retryDiagramAction(
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED;
   return retryDiagram(user, parsed.data.explanationId);
+}
+
+export async function deleteExplanationAction(
+  input: unknown,
+): Promise<Result<null>> {
+  const parsed = deleteExplanationInput.safeParse(input);
+  if (!parsed.success) return firstIssue(parsed.error);
+  const user = await getCurrentUser();
+  if (!user) return UNAUTHORIZED;
+  const result = await deleteExplanation(parsed.data.explanationId);
+  if (result.ok) revalidatePath("/learn");
+  return result;
 }
