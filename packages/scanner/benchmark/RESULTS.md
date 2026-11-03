@@ -1,10 +1,10 @@
 # 탐지율 측정 결과
 
-샘플 10개, 심어 둔 문제 52개. 정적 탐지 단계만 잰 값이다(AI 판별 전).
+샘플 12개, 심어 둔 문제 64개. 정적 탐지 단계만 잰 값이다(AI 판별 전).
 SEC-014 는 OSV 조회를 포함했다.
 
-- **탐지율(recall)**: 87% (45/52)
-- **정밀도(precision)**: 87% — 오탐 7개
+- **탐지율(recall)**: 86% (55/64)
+- **정밀도(precision)**: 89% — 오탐 7개
 
 ## 규칙별
 
@@ -24,6 +24,14 @@ SEC-014 는 OSV 조회를 포함했다.
 | SEC-012 | 2    | 1    | 0    | 67%    |
 | SEC-013 | 2    | 1    | 0    | 67%    |
 | SEC-014 | 5    | 0    | 0    | 100%   |
+| SEC-015 | 1    | 0    | 0    | 100%   |
+| SEC-016 | 2    | 0    | 0    | 100%   |
+| SEC-017 | 1    | 0    | 0    | 100%   |
+| SEC-018 | 1    | 0    | 0    | 100%   |
+| SEC-019 | 1    | 1    | 0    | 50%    |
+| SEC-020 | 1    | 1    | 0    | 50%    |
+| SEC-021 | 1    | 0    | 0    | 100%   |
+| SEC-022 | 2    | 0    | 0    | 100%   |
 
 ## 샘플별
 
@@ -39,6 +47,8 @@ SEC-014 는 OSV 조회를 포함했다.
 | 08-vite-react     | Vite + React 마켓: VITE_ 접두사 비밀 키, 브라우저의 AWS 키·Stripe 비밀 키, 살균 없는 상품 설명 HTML, insert with check (true)                                                               | 6    | 1    | 0    |
 | 09-safe-app       | 같은 기능을 올바르게 구현한 안전한 앱 (RLS·소유자 정책, 인증, DOMPurify, 웹훅 서명 검증, 사용량 제한, 파라미터 SQL)                                                                         | 0    | 0    | 0    |
 | 10-tricky-safe    | 위험해 보이지만 안전한 경우: 테스트 픽스처의 가짜 키, 하드코딩된 anon 키, 이스케이프한 JSON-LD, 변수로 거친 DOMPurify, server-only admin, 헬퍼 안의 getClaims, 나중 마이그레이션에서 켠 RLS | 0    | 0    | 6    |
+| 11-file-portal    | 파일 공유 포털: 서버의 getSession, 미들웨어에만 기댄 대시보드·API, 열린 리다이렉트, SSRF, 경로 조작, 셸 명령 주입, 폼 통째 저장, 공개 버킷과 소유자 확인 없는 업로드 정책                   | 10   | 2    | 0    |
+| 12-safe-portal    | 같은 파일 포털을 안전하게: getUser 로 검증, 페이지·API 안에서 다시 확인, safeNextPath, 허용 도메인, basename, execFile 인자 분리, Zod 로 고른 필드, 비공개 버킷과 소유자 폴더 정책          | 0    | 0    | 0    |
 
 ## 놓친 항목
 
@@ -49,6 +59,8 @@ SEC-014 는 OSV 조회를 포함했다.
 - 06-github-bot SEC-012 app/api/github/webhook/route.ts:5 — (어려운 변형) 서명 헤더가 있을 때만 검증해서 헤더를 빼면 우회 (/merge 명령 실행 가능)
 - 07-saas-dashboard SEC-004 components/TeamTable.tsx:4 — (어려운 변형) "use client" 컴포넌트가 service_role 키를 담은 admin 모듈을 import (파일 안에 service_role 글자가 없음)
 - 08-vite-react SEC-003 src/lib/payments.ts:4 — (어려운 변형) 이름에 SECRET 이 없지만 Stripe 서버 SDK(환불)에 쓰는 비밀 키를 VITE_ 로 노출
+- 11-file-portal SEC-019 app/api/docs/route.ts:5 — (어려운 변형) 경로 조합이 lib/docs.ts 헬퍼 안에 있음
+- 11-file-portal SEC-020 app/api/thumbnail/route.ts:11 — (어려운 변형) promisify(exec) 로 감싼 함수에 요청 값
 
 ## 오탐
 

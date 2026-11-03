@@ -23,7 +23,7 @@
    SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET=
    ```
 
-4. `npx supabase start` 를 실행한다. 마이그레이션이 적용되고, 규칙 14개가 시드된다.
+4. `npx supabase start` 를 실행한다. 마이그레이션이 적용되고, 규칙 22개가 시드된다.
 5. `npx supabase status -o env` 의 `API_URL`, `PUBLISHABLE_KEY`, `SECRET_KEY` 를 `.env.local` 에 넣는다.
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
 6. `pnpm dev` 를 실행하고 로그인한다. 프로젝트 화면에서 개발용 App 을 연결한다.

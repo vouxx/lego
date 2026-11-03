@@ -12,7 +12,7 @@ export function RuleCatalog() {
       <SectionHeading
         id="rules-title"
         eyebrow="03 · 점검 항목"
-        title="14가지를 점검합니다"
+        title="22가지를 점검합니다"
         text="AI 코딩 도구로 만든 Next.js·Supabase 앱에서 실제로 자주 나오는 실수만 골랐습니다."
       />
       <ul className="divide-y rounded-lg border">

@@ -1,10 +1,6 @@
-import { findEndpoints } from "../detectors/endpoints";
+import { AUTH_MARKER, findEndpoints } from "../detectors/endpoints";
 import { lineRange } from "../detectors/js-ast";
 import type { Candidate, Rule } from "../types";
-
-// 함수 안에서 인증·서명 확인을 하는 흔한 호출. 없으면 후보로 올리고 LLM 이 주변 코드로 판단한다.
-const AUTH_MARKER =
-  /\b(auth|getUser|getSession|getClaims|getServerSession|currentUser|requireUser|getCurrentUser|requireAuth|withAuth|verify\w*|constructEvent|validateRequest|checkAuth|isAuthenticated|session)\b/;
 
 /** SEC-007 인증 확인 없는 Route Handler / Server Action */
 export const sec007: Rule = {

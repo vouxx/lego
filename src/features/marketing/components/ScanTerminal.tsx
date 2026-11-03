@@ -7,7 +7,7 @@ export function ScanTerminal() {
   return (
     <TerminalWindow title="lego scan · my-shop (예시)">
       <p className="text-terminal-muted">$ lego scan my-shop</p>
-      <p className="text-terminal-muted">파일 128개 · 규칙 14개 · AI 판별</p>
+      <p className="text-terminal-muted">파일 128개 · 규칙 22개 · AI 판별</p>
       <ul className="mt-3 flex flex-col gap-2">
         {HERO_FINDINGS.map((f) => (
           <li key={f.id} className="flex flex-col gap-0.5">

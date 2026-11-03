@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("랜딩 페이지가 도구 5개와 점검 항목 14개를 보여 준다", async ({
+test("랜딩 페이지가 도구 5개와 점검 항목 22개를 보여 준다", async ({
   page,
 }) => {
   await page.goto("/");
@@ -19,7 +19,7 @@ test("랜딩 페이지가 도구 5개와 점검 항목 14개를 보여 준다", 
     ).toBeVisible();
   }
   const catalog = page.locator("#rules");
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 1; i <= 22; i++) {
     await expect(
       catalog.getByText(`SEC-${String(i).padStart(3, "0")}`, { exact: true }),
     ).toBeVisible();

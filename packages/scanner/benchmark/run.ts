@@ -25,7 +25,7 @@ type Sample = {
 const ROOT = new URL("./samples/", import.meta.url).pathname;
 const RESULTS = new URL("./RESULTS.md", import.meta.url).pathname;
 const RULES = Array.from(
-  { length: 14 },
+  { length: 22 },
   (_, i) => `SEC-${String(i + 1).padStart(3, "0")}`,
 );
 

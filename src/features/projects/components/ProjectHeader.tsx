@@ -25,7 +25,7 @@ export function ProjectHeader({
     {
       command: "scan",
       title: "보안 점검",
-      text: "실수 14가지를 찾고 수정 프롬프트를 드립니다.",
+      text: "실수 22가지를 찾고 수정 프롬프트를 드립니다.",
       action: scanAction,
     },
     {

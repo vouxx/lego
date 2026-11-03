@@ -3,8 +3,12 @@ import type { SourceFile } from "../types";
 import { parseJs, topLevelDirectives } from "./js-ast";
 import { isJsFile } from "../files";
 
-const APP_ROUTE = /(^|\/)app\/(?:.+\/)?route\.[cm]?[jt]sx?$/;
-const PAGES_API = /(^|\/)pages\/api\/.+\.[cm]?[jt]sx?$/;
+// 함수 안에서 인증·서명 확인을 하는 흔한 호출. 없으면 후보로 올리고 LLM 이 주변 코드로 판단한다.
+export const AUTH_MARKER =
+  /\b(auth|getUser|getSession|getClaims|getServerSession|currentUser|requireUser|getCurrentUser|requireAuth|withAuth|verify\w*|constructEvent|validateRequest|checkAuth|isAuthenticated|session)\b/;
+
+export const APP_ROUTE = /(^|\/)app\/(?:.+\/)?route\.[cm]?[jt]sx?$/;
+export const PAGES_API = /(^|\/)pages\/api\/.+\.[cm]?[jt]sx?$/;
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export type EndpointKind = "Route Handler" | "Server Action";

@@ -1,0 +1,17 @@
+{
+  "description": "파일 공유 포털: 서버의 getSession, 미들웨어에만 기댄 대시보드·API, 열린 리다이렉트, SSRF, 경로 조작, 셸 명령 주입, 폼 통째 저장, 공개 버킷과 소유자 확인 없는 업로드 정책",
+  "findings": [
+    { "rule": "SEC-015", "file": "lib/session.ts", "line": 9, "note": "server-only 헬퍼가 getSession 의 쿠키 값을 검증 없이 믿음" },
+    { "rule": "SEC-016", "file": "app/dashboard/page.tsx", "line": 6, "note": "미들웨어만 믿고 admin 클라이언트로 모든 파일 조회" },
+    { "rule": "SEC-016", "file": "app/api/files/route.ts", "line": 4, "note": "미들웨어만 믿는 파일 목록 API" },
+    { "rule": "SEC-017", "file": "app/auth/callback/route.ts", "line": 12, "note": "next=@evil.com 이면 https://app.com@evil.com 으로 이동" },
+    { "rule": "SEC-018", "file": "app/api/import/route.ts", "line": 9, "note": "http://169.254.169.254 같은 내부 주소로 요청 가능" },
+    { "rule": "SEC-019", "file": "app/api/download/route.ts", "line": 11, "note": "file=../../.env 로 서버 파일 읽기" },
+    { "rule": "SEC-019", "file": "app/api/docs/route.ts", "line": 5, "note": "(어려운 변형) 경로 조합이 lib/docs.ts 헬퍼 안에 있음" },
+    { "rule": "SEC-020", "file": "app/api/archive/route.ts", "line": 9, "note": "folder 에 '; rm -rf ~' 를 넣으면 실행됨" },
+    { "rule": "SEC-020", "file": "app/api/thumbnail/route.ts", "line": 11, "note": "(어려운 변형) promisify(exec) 로 감싼 함수에 요청 값" },
+    { "rule": "SEC-021", "file": "app/settings/actions.ts", "line": 11, "note": "폼에 plan, is_admin 을 넣으면 같이 바뀜" },
+    { "rule": "SEC-022", "file": "supabase/migrations/0001_init.sql", "line": 20, "note": "공개 버킷이라 주소만 알면 남의 문서를 받음" },
+    { "rule": "SEC-022", "file": "supabase/migrations/0001_init.sql", "line": 23, "note": "로그인한 누구나 남의 폴더에 업로드" }
+  ]
+}

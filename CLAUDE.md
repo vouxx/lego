@@ -62,7 +62,8 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - SEC-014 는 `auditDependencies`(OSV 조회)로 따로 돈다. 실패해도 스캔은 계속하고 summary.dependencyNote 에 남긴다.
 - 값·파일만으로 확정되는 규칙(SEC-001~004)은 LLM 이 오탐이라 해도 테스트 경로가 아니면 숨기지 않는다(`verdict-guard.ts`). 코드 주석으로 AI 판별을 속이는 공격 때문이다.
 - 스캔 비교는 `lego.scan_diff` (fingerprint 기준). 직전 스캔에서 무시한 항목은 새 스캔에서도 무시 상태로 이어진다.
-- 규칙을 추가하면 `packages/scanner/src/rules/*.test.ts` 에 취약/안전 예시를 같이 넣고, `benchmark/samples` 에도 사례를 넣어 탐지율을 다시 잰다. 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
+- SEC-017~021 은 `detectors/taint.ts`(요청 값에서 만든 변수 추적, 주소 앞부분을 입력이 정하는지)를 같이 쓴다. 정확한 데이터 흐름 분석이 아니라 후보 고르기이고, 다른 파일의 헬퍼로 넘어간 값은 놓친다.
+- 규칙을 추가하면 `packages/scanner/src/rules/*.test.ts` 에 취약/안전 예시를 같이 넣고, `benchmark/samples` 에도 사례를 넣어 탐지율을 다시 잰다. `lego.rules` 시드와 개념 사전 연결도 새 마이그레이션으로 넣는다(예: 20261103000008). 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
 
 ## 컨텍스트 생성기 (2단계)
 
@@ -91,7 +92,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 설명은 Sonnet 한 번(구조화 출력: 요약·단계·Mermaid·개념·퀴즈 3문항). 코드는 `maskSecrets` 후 sha256 으로 캐시한다(같은 사용자는 기존 것, 다른 사용자는 내용 복사).
 - 퀴즈 정답·해설은 화면에 보내지 않고 채점할 때만 돌려준다. 숙련도는 처음엔 점수, 이후 이전 60% + 이번 40%.
 - Mermaid 는 클라이언트에서 strict 모드로 그린다. 실패하면 Haiku 로 한 번 다시 만들고, 또 실패하면 숨긴다.
-- 개념 사전(`concepts`)은 공개 데이터라 secret 키로 읽고 `"use cache"` 로 캐시한다. anon 에 lego 스키마를 열지 않는다. 보안 규칙 14개는 모두 개념 하나 이상에 연결돼 있어야 한다.
+- 개념 사전(`concepts`)은 공개 데이터라 secret 키로 읽고 `"use cache"` 로 캐시한다. anon 에 lego 스키마를 열지 않는다. 보안 규칙(22개)은 모두 개념 하나 이상에 연결돼 있어야 한다.
 - 설계와 다른 점: 설명은 스트리밍 Route Handler 대신 Server Action 하나로 만든다(구조화 출력, 약 15초).
 
 ## 세션 회고·공유 (5단계)

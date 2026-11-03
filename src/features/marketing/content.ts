@@ -62,7 +62,7 @@ export const TOOLS = [
     stage: "점검",
     command: "scan",
     title: "보안 점검기",
-    text: "AI 로 만든 앱에서 자주 생기는 실수 14가지를 찾고, AI 코딩 도구에 붙여넣을 수정 프롬프트를 드립니다.",
+    text: "AI 로 만든 앱에서 자주 생기는 실수 22가지를 찾고, AI 코딩 도구에 붙여넣을 수정 프롬프트를 드립니다.",
     output: ["치명적 1 · 높음 2 · 보통 1", "수정 프롬프트 4개"],
     href: "/projects",
   },
@@ -171,6 +171,46 @@ export const RULES: { id: string; severity: Severity; text: string }[] = [
     id: "SEC-014",
     severity: "low",
     text: "알려진 취약점이 있는 패키지 버전 (등급에 따라 높음까지)",
+  },
+  {
+    id: "SEC-015",
+    severity: "high",
+    text: "서버에서 위조할 수 있는 getSession() 값을 그대로 믿는 로그인 확인",
+  },
+  {
+    id: "SEC-016",
+    severity: "medium",
+    text: "미들웨어에만 맡기고 페이지·API 안에서는 확인하지 않는 로그인",
+  },
+  {
+    id: "SEC-017",
+    severity: "medium",
+    text: "?next= 값으로 아무 사이트로나 보내는 로그인 후 이동",
+  },
+  {
+    id: "SEC-018",
+    severity: "high",
+    text: "사용자가 준 주소로 서버가 대신 요청하는 기능 (SSRF)",
+  },
+  {
+    id: "SEC-019",
+    severity: "high",
+    text: "../ 로 다른 폴더 파일까지 열리는 파일 경로",
+  },
+  {
+    id: "SEC-020",
+    severity: "critical",
+    text: "입력값이 들어간 셸 명령·eval",
+  },
+  {
+    id: "SEC-021",
+    severity: "high",
+    text: "받은 폼을 통째로 저장해 role·plan 까지 바뀌는 API",
+  },
+  {
+    id: "SEC-022",
+    severity: "high",
+    text: "누구나 받는 공개 Storage 버킷과 소유자 확인 없는 업로드 정책",
   },
 ];
 

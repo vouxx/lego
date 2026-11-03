@@ -35,3 +35,9 @@ export function lineAt(content: string, offset: number) {
   }
   return line;
 }
+
+/** 번들·압축된 JS. 사람이 쓴 코드가 아니라 규칙이 엉뚱한 곳을 가리키므로 건너뛴다. */
+export function isMinified(content: string) {
+  const lines = content.split("\n");
+  return content.length > 5_000 && content.length / lines.length > 300;
+}
