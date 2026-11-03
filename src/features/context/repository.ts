@@ -256,3 +256,17 @@ export async function markContextFilesOutdated(ids: string[]) {
     .update({ outdated: true })
     .in("id", ids);
 }
+
+/** 프로젝트에 연결된 가장 최근 완성 스펙의 개요(3단계). 규칙 파일 '프로젝트 개요'에 쓴다. */
+export async function findLatestSpecOverview(projectId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("specs")
+    .select("overview")
+    .eq("project_id", projectId)
+    .eq("status", "ready")
+    .not("overview", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}

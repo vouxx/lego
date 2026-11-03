@@ -1,8 +1,7 @@
 # 레고 (Lego) — 프로젝트 규칙
 
 레고는 바이브 코딩 동반자 플랫폼입니다. 전체 설계는 `docs/design.md`를 따릅니다.
-현재 단계: **2단계 컨텍스트 생성기** (리포 분석 → CLAUDE.md / .cursorrules / AGENTS.md 생성·편집·버전·PR).
-1단계 보안 점검기(리포 연결 → 보안 실수 탐지 → 수정 프롬프트)는 완료.
+현재 단계: **4단계 학습 도우미**. 1단계 보안 점검기, 2단계 컨텍스트 생성기, 3단계 스펙 변환기는 완료.
 
 ## 기술 스택
 
@@ -75,6 +74,16 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - PR 은 App 설치에 contents·pull_requests 쓰기 권한이 있을 때만. 주소로 등록한 공개 리포는 내려받기만.
 - push webhook 에서 package.json·lockfile 이 바뀌거나 새 최상위 항목이 생기면 `outdated = true`. 화면은 분석 커밋과 최신 커밋도 비교한다.
 - 스택 감지는 `src/shared/stack` 에 있고 projects 와 context 가 같이 쓴다.
+
+## 스펙 변환기 (3단계)
+
+- 코드는 `features/specs`. 화면은 `/specs`, `/specs/new`, `/specs/[specId]`. 프로젝트 연결은 선택(`specs.project_id` nullable, projects 는 그대로).
+- 흐름: 아이디어 → 확인 질문(Haiku) → `POST /api/specs/[specId]/generate` 가 PRD → 설계 → 작업 목록 → 작업별 프롬프트(Sonnet, 5개씩 병렬)를 NDJSON 으로 흘려보낸다.
+  생성은 응답 스트림과 분리해 `after()` 로 끝까지 돌고, 단계마다 결과를 저장한다. 10분 넘게 멈추면 다시 만들 수 있다.
+- 작업 그래프는 `services/task-graph.ts` 가 검사(중복·없는 선행 작업·순환)하고 키를 T-1… 로 다시 매긴다. 잘못되면 오류를 알려 주고 한 번 다시 요청한다.
+- push webhook 의 커밋 메시지 `[T-3]` 으로 연결된 스펙의 작업을 완료 처리한다. 2단계 생성기는 프로젝트의 최근 완성 스펙 개요를 '프로젝트 개요'로 넣는다.
+- `prompt_templates`: 작업 프롬프트를 '템플릿으로 저장'하면 다음 스펙의 프롬프트 예시로 쓰인다(스택 태그가 겹치는 것 2개).
+- 규칙 파일 조합(`shared/context`)은 context 와 specs 가 같이 쓴다.
 
 ## 인증 / 권한
 

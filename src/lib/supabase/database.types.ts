@@ -299,6 +299,7 @@ export type Database = {
           output_tokens: number;
           purpose: string;
           scan_id: string | null;
+          spec_id: string | null;
           user_id: string;
         };
         ComputedFields: never;
@@ -314,6 +315,7 @@ export type Database = {
           output_tokens?: number;
           purpose: string;
           scan_id?: string | null;
+          spec_id?: string | null;
           user_id: string;
         };
         Update: {
@@ -328,6 +330,7 @@ export type Database = {
           output_tokens?: number;
           purpose?: string;
           scan_id?: string | null;
+          spec_id?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -343,6 +346,13 @@ export type Database = {
             columns: ["scan_id"];
             isOneToOne: false;
             referencedRelation: "scans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "llm_calls_spec_id_fkey";
+            columns: ["spec_id"];
+            isOneToOne: false;
+            referencedRelation: "specs";
             referencedColumns: ["id"];
           },
           {
@@ -419,6 +429,48 @@ export type Database = {
           {
             foreignKeyName: "projects_user_id_fkey";
             columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      prompt_templates: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          owner_id: string | null;
+          source: string;
+          tags: string[];
+          title: string;
+          use_count: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string | null;
+          source?: string;
+          tags?: string[];
+          title: string;
+          use_count?: number;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string | null;
+          source?: string;
+          tags?: string[];
+          title?: string;
+          use_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "prompt_templates_owner_id_fkey";
+            columns: ["owner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -590,6 +642,155 @@ export type Database = {
           version?: string;
         };
         Relationships: [];
+      };
+      spec_tasks: {
+        Row: {
+          acceptance_criteria: NonNullable<Json>;
+          depends_on: string[];
+          description: string;
+          done_commit: string | null;
+          id: string;
+          key: string;
+          prompt: string;
+          seq: number;
+          spec_id: string;
+          status: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acceptance_criteria?: NonNullable<Json>;
+          depends_on?: string[];
+          description?: string;
+          done_commit?: string | null;
+          id?: string;
+          key: string;
+          prompt?: string;
+          seq: number;
+          spec_id: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          acceptance_criteria?: NonNullable<Json>;
+          depends_on?: string[];
+          description?: string;
+          done_commit?: string | null;
+          id?: string;
+          key?: string;
+          prompt?: string;
+          seq?: number;
+          spec_id?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "spec_tasks_spec_id_fkey";
+            columns: ["spec_id"];
+            isOneToOne: false;
+            referencedRelation: "specs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "spec_tasks_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      specs: {
+        Row: {
+          answers: NonNullable<Json>;
+          context_md: string | null;
+          created_at: string;
+          data_model: Json | null;
+          error: string | null;
+          generation_started_at: string | null;
+          id: string;
+          idea: string;
+          overview: string | null;
+          prd_md: string | null;
+          progress: NonNullable<Json>;
+          project_id: string | null;
+          questions: NonNullable<Json>;
+          screens: Json | null;
+          stack_tags: string[];
+          status: string;
+          title: string | null;
+          updated_at: string;
+          user_id: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          answers?: NonNullable<Json>;
+          context_md?: string | null;
+          created_at?: string;
+          data_model?: Json | null;
+          error?: string | null;
+          generation_started_at?: string | null;
+          id?: string;
+          idea: string;
+          overview?: string | null;
+          prd_md?: string | null;
+          progress?: NonNullable<Json>;
+          project_id?: string | null;
+          questions?: NonNullable<Json>;
+          screens?: Json | null;
+          stack_tags?: string[];
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          user_id: string;
+          version?: number;
+        };
+        Update: {
+          answers?: NonNullable<Json>;
+          context_md?: string | null;
+          created_at?: string;
+          data_model?: Json | null;
+          error?: string | null;
+          generation_started_at?: string | null;
+          id?: string;
+          idea?: string;
+          overview?: string | null;
+          prd_md?: string | null;
+          progress?: NonNullable<Json>;
+          project_id?: string | null;
+          questions?: NonNullable<Json>;
+          screens?: Json | null;
+          stack_tags?: string[];
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "specs_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "specs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       usage_quotas: {
         Row: {

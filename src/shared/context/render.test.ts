@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ContextAnalysis } from "../schemas";
+import type { ContextAnalysis } from "./schema";
 import { majorVersion, renderContext } from "./render";
 
 const analysis: ContextAnalysis = {

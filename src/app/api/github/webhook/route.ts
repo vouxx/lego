@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { handlePushEvent } from "@/features/context/services/push";
+import { handleSpecPush } from "@/features/specs/services/push";
 import {
   handleWebhookEvent,
   verifyWebhookSignature,
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
   const event = request.headers.get("x-github-event");
   const result =
     event === "push"
-      ? await handlePushEvent(body)
+      ? await handlePush(body)
       : await handleWebhookEvent(event, body);
   if (!result.ok) {
     // 500 이면 GitHub 이 재전송한다. 형식 오류는 재전송해도 같으므로 400.
@@ -32,4 +33,18 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(result.data);
+}
+
+/** push 는 규칙 파일 '업데이트 필요' 표시와 스펙 작업 완료 처리 두 곳에 쓴다. */
+async function handlePush(body: unknown) {
+  const [context, spec] = await Promise.all([
+    handlePushEvent(body),
+    handleSpecPush(body),
+  ]);
+  if (!context.ok) return context;
+  if (!spec.ok) return spec;
+  return {
+    ok: true as const,
+    data: { handled: context.data.handled || spec.data.handled },
+  };
 }

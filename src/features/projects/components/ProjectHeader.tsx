@@ -31,6 +31,12 @@ export function ProjectHeader({
         >
           AI 규칙 파일
         </Link>
+        <Link
+          href={`/specs/new?projectId=${projectId}`}
+          className={buttonVariants({ variant: "outline" })}
+        >
+          스펙 만들기
+        </Link>
         {actions}
       </div>
     </div>

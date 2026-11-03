@@ -8,14 +8,28 @@ export default function DashboardLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex h-14 items-center justify-between border-b px-4 sm:px-6">
-        <Link href="/projects" className="font-semibold">
-          레고
-        </Link>
+        <nav className="flex items-center gap-4 text-sm">
+          <Link href="/projects" className="font-semibold">
+            레고
+          </Link>
+          <Link
+            href="/projects"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            프로젝트
+          </Link>
+          <Link
+            href="/specs"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            스펙
+          </Link>
+        </nav>
         <Suspense>
           <UserMenu />
         </Suspense>
       </header>
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6">
         {children}
       </div>
     </div>

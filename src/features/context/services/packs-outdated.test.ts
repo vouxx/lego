@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pushAffectsContext, pushEventSchema } from "./outdated";
-import { selectPacks } from "./packs";
+import { selectPacks } from "@/shared/context/packs";
 
 describe("selectPacks", () => {
   const packs = [

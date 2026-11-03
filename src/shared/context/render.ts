@@ -1,5 +1,5 @@
 import { STACK_LABELS, type StackTag } from "@/shared/stack/schema";
-import type { ContextAnalysis, ContextTarget, RuleLine } from "../schemas";
+import type { ContextAnalysis, ContextTarget, RuleLine } from "./schema";
 
 const TITLES: Record<ContextTarget, string> = {
   claude_md: "# 프로젝트 규칙",
@@ -40,7 +40,7 @@ export function stackText(stack: ContextAnalysis["stack"]) {
 
 /**
  * 분석 결과와 켜진 규칙으로 규칙 파일을 만든다. 같은 입력이면 항상 같은 결과가 나온다.
- * 섹션 순서: 기술 스택 → 명령어 → 폴더 구조 → 규칙(입력 순서) → 주의할 점.
+ * 섹션 순서: 개요 → 기술 스택 → 명령어 → 폴더 구조 → 규칙(입력 순서) → 주의할 점.
  */
 export function renderContext({
   target,
@@ -52,6 +52,10 @@ export function renderContext({
   rules: RuleLine[];
 }) {
   const blocks: string[] = [TITLES[target]];
+
+  if (analysis.overview?.trim()) {
+    blocks.push(`## 프로젝트 개요\n\n${analysis.overview.trim()}`);
+  }
 
   const stack = stackText(analysis.stack);
   if (stack) blocks.push(`## 기술 스택\n\n${stack}`);

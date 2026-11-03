@@ -12,6 +12,7 @@ import { detectStack, topLevelEntries } from "@/shared/stack/detect";
 import {
   addTokenUsage,
   ensureContextRules,
+  findLatestSpecOverview,
   findMyContextFile,
   findMyProject,
   getVersionContents,
@@ -31,8 +32,8 @@ import {
   pickFolders,
   pickRepresentativeFiles,
 } from "./analyze";
-import { selectPacks } from "./packs";
-import { stackText } from "./render";
+import { selectPacks } from "@/shared/context/packs";
+import { stackText } from "@/shared/context/render";
 import { loadRulePacks, renderForFile } from "./rules";
 import { summarizeFolders } from "./summarize";
 
@@ -92,7 +93,7 @@ async function loadCautions(projectId: string) {
 
 /**
  * 감지 → 규칙 팩 조합 → 구조 요약 → 초안 버전 저장.
- * 같은 커밋을 이미 분석했으면 LLM 을 다시 부르지 않고, 주의할 점(발견 항목)만 새로 반영한다.
+ * 같은 커밋을 이미 분석했으면 LLM 을 다시 부르지 않고, 주의할 점(발견 항목)과 스펙 개요만 새로 반영한다.
  */
 export async function generateContext(
   user: CurrentUser,
@@ -132,9 +133,14 @@ export async function generateContext(
     return err("github_error", "GitHub 에서 리포를 읽지 못했습니다.");
   }
 
+  const [cautions, { data: spec }] = await Promise.all([
+    loadCautions(projectId),
+    findLatestSpecOverview(projectId),
+  ]);
   const analysis: ContextAnalysis = {
     ...base,
-    cautions: await loadCautions(projectId),
+    overview: spec?.overview ?? undefined,
+    cautions,
   };
   const saved = await upsertContextFile({
     projectId,

@@ -8,8 +8,8 @@ import {
   type ContextTarget,
   type RuleLine,
 } from "../schemas";
-import { selectPacks, type RulePack } from "./packs";
-import { renderContext } from "./render";
+import { selectPacks, type RulePack } from "@/shared/context/packs";
+import { renderContext } from "@/shared/context/render";
 
 export const CUSTOM_GROUP = "직접 추가한 규칙";
 

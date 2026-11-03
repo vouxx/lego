@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/shared/lib/cn";
-import { MarkdownPreview } from "./MarkdownPreview";
+import { MarkdownPreview } from "@/shared/ui/markdown-preview";
 import { VersionDiff } from "./VersionDiff";
 
 type Props = {
