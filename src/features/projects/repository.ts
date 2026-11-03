@@ -1,5 +1,5 @@
 import "server-only";
-import type { Json } from "@/lib/supabase/database.types";
+import type { Insert } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -57,7 +57,7 @@ export async function insertProject(row: {
   installationId: number | null;
   repoFullName: string;
   defaultBranch: string;
-  detectedStack: Json;
+  detectedStack: Insert<"projects">["detected_stack"];
 }) {
   return createAdminClient()
     .from("projects")

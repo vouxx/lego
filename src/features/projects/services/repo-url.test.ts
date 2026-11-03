@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseRepoInput, topLevelEntries } from "./repo-url";
+import { parseRepoInput } from "./repo-url";
 
 describe("parseRepoInput", () => {
   it.each([
@@ -19,20 +19,4 @@ describe("parseRepoInput", () => {
       expect(parseRepoInput(input)).toBeNull();
     },
   );
-});
-
-describe("topLevelEntries", () => {
-  it("최상위와 src 바로 아래 항목을 뽑는다", () => {
-    expect(
-      topLevelEntries([
-        "package.json",
-        "src/app/page.tsx",
-        "src/lib/a.ts",
-        "supabase/x.sql",
-      ]),
-    ).toEqual({
-      rootEntries: ["package.json", "src", "supabase"],
-      srcEntries: ["app", "lib"],
-    });
-  });
 });

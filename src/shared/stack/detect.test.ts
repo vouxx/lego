@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectStack } from "./detect-stack";
+import { detectStack, topLevelEntries } from "./detect";
 
 describe("detectStack", () => {
   it("src/app 이 있는 Next.js + Supabase + Tailwind 리포를 판별한다", () => {
@@ -70,5 +70,21 @@ describe("detectStack", () => {
         packageJson: { dependencies: "oops" },
       }).tags,
     ).toEqual([]);
+  });
+});
+
+describe("topLevelEntries", () => {
+  it("최상위와 src 바로 아래 항목을 뽑는다", () => {
+    expect(
+      topLevelEntries([
+        "package.json",
+        "src/app/page.tsx",
+        "src/lib/a.ts",
+        "supabase/x.sql",
+      ]),
+    ).toEqual({
+      rootEntries: ["package.json", "src", "supabase"],
+      srcEntries: ["app", "lib"],
+    });
   });
 });

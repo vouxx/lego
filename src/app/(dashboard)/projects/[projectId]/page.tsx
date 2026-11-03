@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { StackTags } from "@/features/projects/components/StackTags";
+import { ProjectHeader } from "@/features/projects/components/ProjectHeader";
 import { getProject } from "@/features/projects/services/projects";
-import { ScanHistory } from "@/features/scans/components/ScanHistory";
+import { ScanHistorySection } from "@/features/scans/components/ScanHistorySection";
 import { StartScanButton } from "@/features/scans/components/StartScanButton";
 import { getProjectScans } from "@/features/scans/services/scans";
 
-export default function ProjectPage({
-  params,
-}: PageProps<"/projects/[projectId]">) {
+type Props = PageProps<"/projects/[projectId]">;
+
+export default function ProjectPage({ params }: Props) {
   return (
     <main className="flex flex-col gap-6">
       <Link
@@ -27,9 +27,7 @@ export default function ProjectPage({
   );
 }
 
-async function Project({
-  params,
-}: Pick<PageProps<"/projects/[projectId]">, "params">) {
+async function Project({ params }: Pick<Props, "params">) {
   const { projectId } = await params;
   const [project, scans] = await Promise.all([
     getProject(projectId),
@@ -39,27 +37,13 @@ async function Project({
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold break-all">
-            {project.data.repoFullName}
-          </h1>
-          {project.data.stack ? (
-            <StackTags tags={project.data.stack.tags} />
-          ) : null}
-        </div>
-        <StartScanButton projectId={projectId} />
-      </div>
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">점검 기록</h2>
-        {scans.ok ? (
-          <ScanHistory projectId={projectId} scans={scans.data} />
-        ) : (
-          <p role="alert" className="text-destructive text-sm">
-            {scans.error.message}
-          </p>
-        )}
-      </section>
+      <ProjectHeader
+        projectId={projectId}
+        repoFullName={project.data.repoFullName}
+        stack={project.data.stack}
+        actions={<StartScanButton projectId={projectId} />}
+      />
+      <ScanHistorySection projectId={projectId} scans={scans} />
     </>
   );
 }

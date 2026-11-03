@@ -41,3 +41,16 @@ pnpm db:migrate               # 운영 DB 에 새 마이그레이션 적용 (주
 - 로컬 Studio 는 http://127.0.0.1:54323 이다.
 - 로컬 스캔은 `after()` 로 바로 처리된다. pg_cron 작업도 있지만, Vault 에 URL 이 없어서 아무것도 호출하지 않는다.
 - 공유 DB 에 접속하던 예전 `.env.local` 값은 `.env.shared.local` 에 백업되어 있다(git 제외).
+
+## 로그인이 필요한 E2E (GitHub 없이)
+
+로컬 Supabase 에만 테스트 사용자(`e2e@lego.test`)와 공개 리포 프로젝트(`vouxx/ZEEK`)를 만들고 세션을 저장한다.
+비밀번호는 매번 새로 만들어 바로 로그인하고 어디에도 저장하지 않는다. 원격 DB 를 가리키면 실행을 멈춘다.
+
+```bash
+pnpm e2e:local-seed
+pnpm e2e --project=local-signed-in
+```
+
+- 컨텍스트 생성 흐름(`tests/e2e/context-flow.spec.ts`)은 폴더 요약에 Haiku 를 한 번 부른다(약 $0.001).
+- 시드할 때마다 테스트 사용자의 프로젝트를 지우고 새로 만든다.

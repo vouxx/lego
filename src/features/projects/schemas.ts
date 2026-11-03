@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { DetectedStack } from "@/shared/stack/schema";
 
 export const createProjectInput = z.object({
   repoFullName: z
@@ -10,26 +11,6 @@ export type CreateProjectInput = z.infer<typeof createProjectInput>;
 export const addPublicRepoInput = z.object({
   url: z.string().trim().min(1, "리포 주소를 입력해 주세요.").max(300),
 });
-
-export const STACK_TAGS = [
-  "nextjs-app-router",
-  "nextjs-pages-router",
-  "react",
-  "vite",
-  "typescript",
-  "supabase",
-  "tailwind",
-  "vitest",
-  "playwright",
-] as const;
-export type StackTag = (typeof STACK_TAGS)[number];
-
-export const detectedStackSchema = z.object({
-  tags: z.array(z.enum(STACK_TAGS)),
-  packageManager: z.enum(["pnpm", "yarn", "npm", "bun"]).nullable(),
-  versions: z.record(z.string(), z.string()),
-});
-export type DetectedStack = z.infer<typeof detectedStackSchema>;
 
 export type InstallableRepo = {
   fullName: string;

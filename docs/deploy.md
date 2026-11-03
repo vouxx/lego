@@ -31,6 +31,16 @@ GitHub App Manifest 흐름으로 만들었고, 자격 증명은 `.env.production
 운영 도메인을 바꾸면 위 세 값을 함께 바꾼다. Webhook URL 은 App JWT 로 `PATCH /app/hook/config` 를 호출해 바꿀 수 있다.
 Homepage·Callback URL 은 https://github.com/settings/apps/lego-security 에서 직접 바꾼다.
 
+### 2-1. 규칙 파일 PR 권한 (2단계)
+
+컨텍스트 생성기가 PR 을 열려면 두 App(`lego-security`, `lego-dev-vouxx`) 모두에 권한과 이벤트를 추가한다.
+App 설정 → Permissions & events:
+
+- Repository permissions → **Contents: Read and write**, **Pull requests: Read and write**
+- Subscribe to events → **Push** (규칙 파일 '업데이트 필요' 표시)
+
+권한을 늘리면 이미 설치한 사용자는 GitHub 에서 새 권한을 승인해야 한다. 승인 전에는 화면에 'PR 만들기 권한 허용하기' 버튼만 보인다.
+
 ### 3. main push 자동 배포
 
 Vercel 대시보드 → lego → Settings → Git 에서 `vouxx/lego` 를 연결한다.

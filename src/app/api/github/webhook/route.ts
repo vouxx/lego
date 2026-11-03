@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { handlePushEvent } from "@/features/context/services/push";
 import {
   handleWebhookEvent,
   verifyWebhookSignature,
@@ -19,10 +20,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
-  const result = await handleWebhookEvent(
-    request.headers.get("x-github-event"),
-    body,
-  );
+  const event = request.headers.get("x-github-event");
+  const result =
+    event === "push"
+      ? await handlePushEvent(body)
+      : await handleWebhookEvent(event, body);
   if (!result.ok) {
     // 500 이면 GitHub 이 재전송한다. 형식 오류는 재전송해도 같으므로 400.
     const status = result.error.code === "invalid_payload" ? 400 : 500;

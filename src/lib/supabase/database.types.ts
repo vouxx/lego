@@ -7,13 +7,175 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
   lego: {
     Tables: {
+      context_file_rules: {
+        Row: {
+          context_file_id: string;
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          item_id: string | null;
+          override_content: string | null;
+          section: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          context_file_id: string;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          item_id?: string | null;
+          override_content?: string | null;
+          section?: string | null;
+          user_id: string;
+        };
+        Update: {
+          context_file_id?: string;
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          item_id?: string | null;
+          override_content?: string | null;
+          section?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "context_file_rules_context_file_id_fkey";
+            columns: ["context_file_id"];
+            isOneToOne: false;
+            referencedRelation: "context_files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "context_file_rules_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "rule_pack_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "context_file_rules_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      context_file_versions: {
+        Row: {
+          based_on_commit: string | null;
+          content: string;
+          context_file_id: string;
+          created_at: string;
+          id: string;
+          pr_url: string | null;
+          source: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          based_on_commit?: string | null;
+          content: string;
+          context_file_id: string;
+          created_at?: string;
+          id?: string;
+          pr_url?: string | null;
+          source: string;
+          user_id: string;
+        };
+        Update: {
+          based_on_commit?: string | null;
+          content?: string;
+          context_file_id?: string;
+          created_at?: string;
+          id?: string;
+          pr_url?: string | null;
+          source?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "context_file_versions_context_file_id_fkey";
+            columns: ["context_file_id"];
+            isOneToOne: false;
+            referencedRelation: "context_files";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "context_file_versions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      context_files: {
+        Row: {
+          analysis: Json | null;
+          analyzed_commit: string | null;
+          created_at: string;
+          current_version_id: string | null;
+          id: string;
+          outdated: boolean;
+          project_id: string;
+          target: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          analysis?: Json | null;
+          analyzed_commit?: string | null;
+          created_at?: string;
+          current_version_id?: string | null;
+          id?: string;
+          outdated?: boolean;
+          project_id: string;
+          target: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          analysis?: Json | null;
+          analyzed_commit?: string | null;
+          created_at?: string;
+          current_version_id?: string | null;
+          id?: string;
+          outdated?: boolean;
+          project_id?: string;
+          target?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "context_files_current_version_fk";
+            columns: ["current_version_id"];
+            isOneToOne: false;
+            referencedRelation: "context_file_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "context_files_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "context_files_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       findings: {
         Row: {
           ai_verdict: string | null;
@@ -32,6 +194,7 @@ export type Database = {
           status: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           ai_verdict?: string | null;
           created_at?: string;
@@ -98,6 +261,7 @@ export type Database = {
           installation_id: number;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           account_login: string;
           created_at?: string;
@@ -125,6 +289,7 @@ export type Database = {
       llm_calls: {
         Row: {
           cached: boolean;
+          context_file_id: string | null;
           cost_usd: number;
           created_at: string;
           id: string;
@@ -136,8 +301,10 @@ export type Database = {
           scan_id: string | null;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           cached?: boolean;
+          context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
           id?: string;
@@ -151,6 +318,7 @@ export type Database = {
         };
         Update: {
           cached?: boolean;
+          context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
           id?: string;
@@ -163,6 +331,13 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "llm_calls_context_file_id_fkey";
+            columns: ["context_file_id"];
+            isOneToOne: false;
+            referencedRelation: "context_files";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "llm_calls_scan_id_fkey";
             columns: ["scan_id"];
@@ -187,6 +362,7 @@ export type Database = {
           id: string;
           plan: string;
         };
+        ComputedFields: never;
         Insert: {
           avatar_url?: string | null;
           created_at?: string;
@@ -207,16 +383,17 @@ export type Database = {
         Row: {
           created_at: string;
           default_branch: string;
-          detected_stack: Json;
+          detected_stack: NonNullable<Json>;
           id: string;
           installation_id: number | null;
           repo_full_name: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           default_branch: string;
-          detected_stack?: Json;
+          detected_stack?: NonNullable<Json>;
           id?: string;
           installation_id?: number | null;
           repo_full_name: string;
@@ -225,7 +402,7 @@ export type Database = {
         Update: {
           created_at?: string;
           default_branch?: string;
-          detected_stack?: Json;
+          detected_stack?: NonNullable<Json>;
           id?: string;
           installation_id?: number | null;
           repo_full_name?: string;
@@ -248,6 +425,70 @@ export type Database = {
           },
         ];
       };
+      rule_pack_items: {
+        Row: {
+          content: string;
+          default_enabled: boolean;
+          id: string;
+          pack_id: string;
+          section: string;
+          sort_order: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          content: string;
+          default_enabled?: boolean;
+          id?: string;
+          pack_id: string;
+          section: string;
+          sort_order?: number;
+        };
+        Update: {
+          content?: string;
+          default_enabled?: boolean;
+          id?: string;
+          pack_id?: string;
+          section?: string;
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rule_pack_items_pack_id_fkey";
+            columns: ["pack_id"];
+            isOneToOne: false;
+            referencedRelation: "rule_packs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rule_packs: {
+        Row: {
+          detect: NonNullable<Json>;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          detect?: NonNullable<Json>;
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          version?: number;
+        };
+        Update: {
+          detect?: NonNullable<Json>;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          version?: number;
+        };
+        Relationships: [];
+      };
       rules: {
         Row: {
           category: string;
@@ -257,6 +498,7 @@ export type Database = {
           severity: string;
           title: string;
         };
+        ComputedFields: never;
         Insert: {
           category: string;
           detector: string;
@@ -289,6 +531,7 @@ export type Database = {
           summary: Json | null;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           commit_sha?: string | null;
           created_at?: string;
@@ -337,6 +580,7 @@ export type Database = {
           applied_at: string;
           version: string;
         };
+        ComputedFields: never;
         Insert: {
           applied_at?: string;
           version: string;
@@ -356,6 +600,7 @@ export type Database = {
           tokens_used: number;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           period: string;
           scans_limit?: number;
@@ -395,6 +640,10 @@ export type Database = {
       archive_scan_job: { Args: { p_msg_id: number }; Returns: boolean };
       consume_scan_quota: { Args: { p_user_id: string }; Returns: boolean };
       enqueue_scan: { Args: { p_scan_id: string }; Returns: number };
+      kick_scan_worker: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       previous_scan_id: { Args: { p_scan_id: string }; Returns: string };
       read_scan_jobs: {
         Args: { p_qty: number; p_visibility_seconds: number };
@@ -428,10 +677,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "lego">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends

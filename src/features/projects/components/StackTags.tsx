@@ -1,16 +1,4 @@
-import type { StackTag } from "../schemas";
-
-const LABELS: Record<StackTag, string> = {
-  "nextjs-app-router": "Next.js App Router",
-  "nextjs-pages-router": "Next.js Pages Router",
-  react: "React",
-  vite: "Vite",
-  typescript: "TypeScript",
-  supabase: "Supabase",
-  tailwind: "Tailwind CSS",
-  vitest: "Vitest",
-  playwright: "Playwright",
-};
+import { STACK_LABELS, type StackTag } from "@/shared/stack/schema";
 
 type Props = { tags: StackTag[] };
 
@@ -25,7 +13,7 @@ export function StackTags({ tags }: Props) {
           key={tag}
           className="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs"
         >
-          {LABELS[tag]}
+          {STACK_LABELS[tag]}
         </li>
       ))}
     </ul>

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { DetectedStack, StackTag } from "../schemas";
+import type { DetectedStack, StackTag } from "./schema";
 
-export type RepoSnapshot = {
+export type StackSnapshot = {
   /** 리포 최상위 파일·폴더 이름 */
   rootEntries: string[];
   /** src/ 아래 이름(없으면 빈 배열) */
@@ -37,7 +37,7 @@ export function detectStack({
   rootEntries,
   srcEntries,
   packageJson,
-}: RepoSnapshot): DetectedStack {
+}: StackSnapshot): DetectedStack {
   const parsed = packageJsonSchema.safeParse(packageJson);
   const deps = parsed.success
     ? { ...parsed.data.devDependencies, ...parsed.data.dependencies }
@@ -63,6 +63,7 @@ export function detectStack({
   }
   if (has("tailwindcss")) tags.add("tailwind");
   if (has("vitest")) tags.add("vitest");
+  if (has("jest")) tags.add("jest");
   if (has("@playwright/test")) tags.add("playwright");
 
   const versions = Object.fromEntries(
@@ -73,4 +74,16 @@ export function detectStack({
     LOCKFILES.find(([file]) => rootEntries.includes(file))?.[1] ?? null;
 
   return { tags: [...tags], packageManager, versions };
+}
+
+/** 경로 목록에서 최상위 이름과 src/ 바로 아래 이름을 뽑는다. */
+export function topLevelEntries(paths: string[]) {
+  const root = new Set<string>();
+  const src = new Set<string>();
+  for (const path of paths) {
+    const [first, second] = path.split("/");
+    if (first) root.add(first);
+    if (first === "src" && second) src.add(second);
+  }
+  return { rootEntries: [...root], srcEntries: [...src] };
 }

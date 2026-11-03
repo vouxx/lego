@@ -53,3 +53,15 @@ export function githubAppAuthorizeUrl() {
 export function githubWebhookSecret() {
   return serverEnv().GITHUB_WEBHOOK_SECRET;
 }
+
+/**
+ * 설치에 허용된 권한과 설치 설정 주소. 규칙 파일 PR 은 contents·pull_requests 쓰기 권한이 있어야 하고,
+ * App 권한을 늘리면 사용자가 설정 주소에서 새 권한을 승인해야 한다.
+ */
+export async function getInstallationAccess(installationId: number) {
+  const { data } = await githubApp().octokit.request(
+    "GET /app/installations/{installation_id}",
+    { installation_id: installationId },
+  );
+  return { permissions: data.permissions, settingsUrl: data.html_url };
+}

@@ -13,13 +13,10 @@ import {
   listMyInstallations,
   listMyProjects,
 } from "../repository";
-import {
-  detectedStackSchema,
-  type InstallableRepo,
-  type ProjectSummary,
-} from "../schemas";
-import { detectStack } from "./detect-stack";
-import { parseRepoInput, topLevelEntries } from "./repo-url";
+import { detectStack, topLevelEntries } from "@/shared/stack/detect";
+import { detectedStackSchema } from "@/shared/stack/schema";
+import type { InstallableRepo, ProjectSummary } from "../schemas";
+import { parseRepoInput } from "./repo-url";
 
 export async function getMyProjects(): Promise<Result<ProjectSummary[]>> {
   const { data, error } = await listMyProjects();

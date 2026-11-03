@@ -1,7 +1,8 @@
 # 레고 (Lego) — 프로젝트 규칙
 
 레고는 바이브 코딩 동반자 플랫폼입니다. 전체 설계는 `docs/design.md`를 따릅니다.
-현재 단계: **1단계 보안 점검기** (GitHub 리포 연결 → 보안 실수 탐지 → 수정 프롬프트 제공).
+현재 단계: **2단계 컨텍스트 생성기** (리포 분석 → CLAUDE.md / .cursorrules / AGENTS.md 생성·편집·버전·PR).
+1단계 보안 점검기(리포 연결 → 보안 실수 탐지 → 수정 프롬프트)는 완료.
 
 ## 기술 스택
 
@@ -13,6 +14,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
 - E2E: pnpm e2e (로그인 흐름은 먼저 pnpm e2e:login 으로 세션 저장, 실제 스캔은 E2E_RUN_SCAN=1)
+- 로컬 E2E(GitHub 로그인 없이): pnpm e2e:local-seed 후 pnpm e2e --project=local-signed-in (로컬 Supabase 전용 테스트 사용자)
 - 탐지율 측정: pnpm --filter @lego/scanner bench [--osv] → packages/scanner/benchmark/RESULTS.md
 - 로컬 DB: npx supabase start (Docker 필요, docs/local-dev.md) / 초기화: npx supabase db reset
 - 운영 DB 마이그레이션 적용: pnpm db:migrate
@@ -62,6 +64,17 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 값·파일만으로 확정되는 규칙(SEC-001~004)은 LLM 이 오탐이라 해도 테스트 경로가 아니면 숨기지 않는다(`verdict-guard.ts`). 코드 주석으로 AI 판별을 속이는 공격 때문이다.
 - 스캔 비교는 `lego.scan_diff` (fingerprint 기준). 직전 스캔에서 무시한 항목은 새 스캔에서도 무시 상태로 이어진다.
 - 규칙을 추가하면 `packages/scanner/src/rules/*.test.ts` 에 취약/안전 예시를 같이 넣고, `benchmark/samples` 에도 사례를 넣어 탐지율을 다시 잰다. 테스트의 가짜 키는 문자열을 이어 붙여 만든다(GitHub push protection).
+
+## 컨텍스트 생성기 (2단계)
+
+- 코드는 `features/context`. 화면은 `/projects/[projectId]/context?target=claude_md|cursorrules|agents_md`.
+- 생성: 리포 읽기(`readRepoAtCommit`) → 스택 감지(`shared/stack`) → 명령어(package.json scripts) → 폴더 요약(Haiku 1회) → 규칙 팩 조합 → 버전 저장.
+  같은 커밋이면 분석을 캐시(`context_files.analysis`)하고 '주의할 점'(열린 findings)만 새로 반영한다.
+- 문서 조합은 LLM 없이 `services/render.ts` 가 한다(설계의 Sonnet 조합 대신). 규칙을 켜고 끌 때마다 즉시·무료로 다시 만들기 위해서다.
+- 규칙 팩은 DB(`rule_packs`, `rule_pack_items`)에 있다. 새 팩·항목은 마이그레이션으로 추가한다. 사용자 설정은 `context_file_rules`(item_id null = 직접 추가).
+- PR 은 App 설치에 contents·pull_requests 쓰기 권한이 있을 때만. 주소로 등록한 공개 리포는 내려받기만.
+- push webhook 에서 package.json·lockfile 이 바뀌거나 새 최상위 항목이 생기면 `outdated = true`. 화면은 분석 커밋과 최신 커밋도 비교한다.
+- 스택 감지는 `src/shared/stack` 에 있고 projects 와 context 가 같이 쓴다.
 
 ## 인증 / 권한
 
