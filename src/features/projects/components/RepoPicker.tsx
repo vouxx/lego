@@ -37,8 +37,8 @@ export function RepoPicker({ repos }: Props) {
   if (repos.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        GitHub App이 접근할 수 있는 리포가 없습니다. 설치 설정에서 리포를 추가해
-        주세요.
+        레고에 읽기를 허용한 리포가 없습니다. &apos;허용할 리포 바꾸기&apos;에서
+        리포를 추가해 주세요.
       </p>
     );
   }

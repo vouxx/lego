@@ -20,7 +20,7 @@ async function accessibleInstallations(
     if (githubUser.id !== user.githubUserId) {
       return err(
         "github_user_mismatch",
-        "로그인한 GitHub 계정과 설치한 계정이 다릅니다.",
+        "로그인한 GitHub 계정과 읽기를 허용한 계정이 다릅니다.",
       );
     }
     const all = await octokit.paginate(
@@ -40,7 +40,7 @@ async function accessibleInstallations(
   } catch {
     return err(
       "github_verify_failed",
-      "GitHub에서 설치 정보를 확인하지 못했습니다.",
+      "GitHub에서 연결 정보를 확인하지 못했습니다.",
     );
   }
 }
@@ -52,11 +52,11 @@ async function saveInstallation(
   const { data: existing, error: findError } = await findInstallation(
     installation.id,
   );
-  if (findError) return err("db_error", "설치 정보를 확인하지 못했습니다.");
+  if (findError) return err("db_error", "연결 정보를 확인하지 못했습니다.");
   if (existing && existing.user_id !== user.id) {
     return err(
       "installation_taken",
-      "다른 레고 사용자가 이미 연결한 설치입니다.",
+      "다른 레고 사용자가 이미 연결한 계정입니다.",
     );
   }
   const { error } = await upsertInstallation({
@@ -64,7 +64,7 @@ async function saveInstallation(
     installationId: installation.id,
     accountLogin: installation.accountLogin,
   });
-  if (error) return err("db_error", "설치 정보를 저장하지 못했습니다.");
+  if (error) return err("db_error", "연결 정보를 저장하지 못했습니다.");
   return ok(null);
 }
 
@@ -85,7 +85,7 @@ export async function linkInstallation(
   if (!installation) {
     return err(
       "installation_not_accessible",
-      "이 설치에 접근할 권한이 없습니다.",
+      "이 연결에 접근할 권한이 없습니다.",
     );
   }
   const saved = await saveInstallation(user, installation);
@@ -104,7 +104,10 @@ export async function syncInstallations(
   const installations = await accessibleInstallations(user, code);
   if (!installations.ok) return installations;
   if (installations.data.length === 0)
-    return err("no_installations", "설치된 레고 GitHub App을 찾지 못했습니다.");
+    return err(
+      "no_installations",
+      "레고에 읽기를 허용한 리포를 찾지 못했습니다.",
+    );
 
   let linked = 0;
   for (const installation of installations.data) {
@@ -115,7 +118,7 @@ export async function syncInstallations(
   if (linked === 0)
     return err(
       "installation_taken",
-      "다른 레고 사용자가 이미 연결한 설치입니다.",
+      "다른 레고 사용자가 이미 연결한 계정입니다.",
     );
   return ok({ linked });
 }

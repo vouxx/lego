@@ -51,7 +51,7 @@ export async function startScan(
       "github_error",
       project.installation_id === null
         ? "GitHub에서 리포를 읽지 못했습니다. 리포가 아직 공개 상태인지 확인해 주세요."
-        : "GitHub에서 최신 커밋을 읽지 못했습니다. App 설치 상태를 확인해 주세요.",
+        : "GitHub에서 최신 커밋을 읽지 못했습니다. 리포 읽기 허용이 유지되어 있는지 확인해 주세요.",
     );
   }
 

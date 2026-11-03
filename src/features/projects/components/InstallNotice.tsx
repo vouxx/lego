@@ -1,22 +1,21 @@
 const NOTICES: Record<string, string> = {
-  installed: "GitHub App이 연결되었습니다. 등록할 리포를 고르세요.",
-  synced: "설치된 GitHub App을 불러왔습니다. 등록할 리포를 고르세요.",
+  installed: "리포 읽기가 허용되었습니다. 등록할 리포를 고르세요.",
+  synced: "허용해 둔 리포를 불러왔습니다. 등록할 리포를 고르세요.",
   install_requested:
-    "조직 관리자에게 설치 승인을 요청했습니다. 승인되면 다시 시도해 주세요.",
+    "조직 관리자에게 승인을 요청했습니다. 승인되면 다시 시도해 주세요.",
 };
 
 const ERRORS: Record<string, string> = {
   install_missing_params:
-    "설치 정보를 받지 못했습니다. GitHub App 설정에서 '설치 중 사용자 인증 요청'이 켜져 있는지 확인해 주세요.",
-  github_user_mismatch:
-    "로그인한 GitHub 계정과 GitHub App을 설치한 계정이 다릅니다.",
+    "GitHub에서 연결 정보를 받지 못했습니다. 다시 시도해 주세요.",
+  github_user_mismatch: "로그인한 GitHub 계정과 읽기를 허용한 계정이 다릅니다.",
   github_verify_failed:
-    "GitHub에서 설치 정보를 확인하지 못했습니다. 다시 시도해 주세요.",
-  installation_not_accessible: "이 설치에 접근할 권한이 없습니다.",
-  installation_taken: "다른 레고 사용자가 이미 연결한 설치입니다.",
+    "GitHub에서 연결 정보를 확인하지 못했습니다. 다시 시도해 주세요.",
+  installation_not_accessible: "이 연결에 접근할 권한이 없습니다.",
+  installation_taken: "다른 레고 사용자가 이미 연결한 계정입니다.",
   no_installations:
-    "설치된 레고 GitHub App을 찾지 못했습니다. 먼저 'GitHub App 설치하기'를 눌러 주세요.",
-  db_error: "설치 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    "레고에 읽기를 허용한 리포를 찾지 못했습니다. 먼저 '리포 읽기 허용하기'를 눌러 주세요.",
+  db_error: "연결 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
 };
 
 type Props = { notice?: string; error?: string };

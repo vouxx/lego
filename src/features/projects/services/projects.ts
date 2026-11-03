@@ -165,10 +165,7 @@ export async function createProject(
 
   const repo = repos.data.find((r) => r.fullName === repoFullName);
   if (!repo)
-    return err(
-      "repo_not_accessible",
-      "연결된 GitHub App으로 접근할 수 없는 리포입니다.",
-    );
+    return err("repo_not_accessible", "읽기를 허용하지 않은 리포입니다.");
   if (repo.alreadyAdded) return err("already_added", "이미 등록한 리포입니다.");
 
   let snapshot;
@@ -213,7 +210,7 @@ export async function addPublicRepo(
   if (owner.toLowerCase() !== user.githubLogin.toLowerCase())
     return err(
       "not_owner",
-      `URL로는 내 계정(${user.githubLogin})의 공개 리포만 추가할 수 있습니다. 조직이나 다른 사람의 리포는 아래에서 GitHub App을 설치해 주세요.`,
+      `URL로는 내 계정(${user.githubLogin})의 공개 리포만 추가할 수 있습니다. 조직이나 다른 사람의 리포는 아래에서 읽기를 허용해 주세요.`,
     );
 
   const projects = await getMyProjects();
@@ -232,7 +229,7 @@ export async function addPublicRepo(
     if (error instanceof PublicRepoNotFoundError)
       return err(
         "not_public",
-        "공개 리포를 찾지 못했습니다. 비공개 리포라면 아래에서 GitHub App을 설치해 주세요.",
+        "공개 리포를 찾지 못했습니다. 비공개 리포라면 아래에서 읽기를 허용해 주세요.",
       );
     return err("github_error", "GitHub에서 리포를 읽지 못했습니다.");
   }
