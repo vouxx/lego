@@ -42,14 +42,16 @@ export async function startScan(
   let commitSha: string;
   try {
     commitSha = await latestCommitSha(
-      project.installation_id,
+      { installationId: project.installation_id },
       project.repo_full_name,
       project.default_branch,
     );
   } catch {
     return err(
       "github_error",
-      "GitHub에서 최신 커밋을 읽지 못했습니다. App 설치 상태를 확인해 주세요.",
+      project.installation_id === null
+        ? "GitHub에서 리포를 읽지 못했습니다. 리포가 아직 공개 상태인지 확인해 주세요."
+        : "GitHub에서 최신 커밋을 읽지 못했습니다. App 설치 상태를 확인해 주세요.",
     );
   }
 

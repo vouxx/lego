@@ -1,60 +1,50 @@
 import { Suspense } from "react";
-import { InstallAppCard } from "@/features/projects/components/InstallAppCard";
-import { InstallNotice } from "@/features/projects/components/InstallNotice";
-import { RepoPicker } from "@/features/projects/components/RepoPicker";
+import { PrivateRepoSection } from "@/features/projects/components/PrivateRepoSection";
+import { PublicRepoSection } from "@/features/projects/components/PublicRepoSection";
 import {
   getMyInstallations,
   listInstallableRepos,
 } from "@/features/projects/services/projects";
-import { githubAppInstallUrl } from "@/lib/github/app";
+import { githubAppAuthorizeUrl, githubAppInstallUrl } from "@/lib/github/app";
 
 export default function NewProjectPage({
   searchParams,
 }: PageProps<"/projects/new">) {
   return (
-    <main className="flex flex-col gap-6">
+    <main className="flex flex-col gap-10">
       <h1 className="text-2xl font-semibold">리포 연결</h1>
-      <Suspense
-        fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
-      >
-        <NewProject searchParams={searchParams} />
-      </Suspense>
+      <PublicRepoSection />
+      <section className="flex flex-col gap-3">
+        <h2 className="font-medium">비공개 리포 · 조직 리포</h2>
+        <Suspense
+          fallback={
+            <p className="text-muted-foreground text-sm">불러오는 중…</p>
+          }
+        >
+          <PrivateRepos searchParams={searchParams} />
+        </Suspense>
+      </section>
     </main>
   );
 }
 
-async function NewProject({
+async function PrivateRepos({
   searchParams,
 }: Pick<PageProps<"/projects/new">, "searchParams">) {
   const { notice, error } = await searchParams;
   const installations = await getMyInstallations();
-  if (!installations.ok) {
-    return (
-      <p role="alert" className="text-destructive text-sm">
-        {installations.error.message}
-      </p>
-    );
-  }
-
-  const hasInstallations = installations.data.length > 0;
+  const hasInstallations = installations.ok && installations.data.length > 0;
   const repos = hasInstallations ? await listInstallableRepos() : null;
 
   return (
-    <>
-      <InstallNotice
-        notice={typeof notice === "string" ? notice : undefined}
-        error={typeof error === "string" ? error : undefined}
-      />
-      {repos && !repos.ok ? (
-        <p role="alert" className="text-destructive text-sm">
-          {repos.error.message}
-        </p>
-      ) : null}
-      {repos?.ok ? <RepoPicker repos={repos.data} /> : null}
-      <InstallAppCard
-        installUrl={githubAppInstallUrl()}
-        hasInstallations={hasInstallations}
-      />
-    </>
+    <PrivateRepoSection
+      notice={typeof notice === "string" ? notice : undefined}
+      error={typeof error === "string" ? error : undefined}
+      loadError={installations.ok ? null : installations.error.message}
+      repos={repos}
+      hasInstallations={hasInstallations}
+      installUrl={githubAppInstallUrl()}
+      authorizeUrl={githubAppAuthorizeUrl()}
+    />
   );
 }

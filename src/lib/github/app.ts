@@ -41,6 +41,15 @@ export function githubAppInstallUrl() {
   return `https://github.com/apps/${serverEnv().GITHUB_APP_SLUG}/installations/new`;
 }
 
+/**
+ * 이미 설치한 App 을 다시 연결할 때 쓰는 사용자 인증 주소.
+ * GitHub 는 새로 설치할 때만 콜백으로 돌려보내므로, 기존 설치는 이 인증으로 찾아 연결한다.
+ * redirect_uri 를 생략하면 App 에 등록된 첫 Callback URL(설치 콜백)로 돌아온다.
+ */
+export function githubAppAuthorizeUrl() {
+  return `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(serverEnv().GITHUB_APP_CLIENT_ID)}`;
+}
+
 export function githubWebhookSecret() {
   return serverEnv().GITHUB_WEBHOOK_SECRET;
 }

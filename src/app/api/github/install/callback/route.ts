@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { linkInstallation } from "@/features/projects/services/installations";
+import {
+  linkInstallation,
+  syncInstallations,
+} from "@/features/projects/services/installations";
 import { getCurrentUser } from "@/lib/auth";
 
+// 새로 설치: ?code=…&installation_id=…&setup_action=install
+// 설치 불러오기(사용자 인증만): ?code=…
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const back = (query: string) =>
@@ -20,13 +25,20 @@ export async function GET(request: NextRequest) {
   }
 
   const code = searchParams.get("code");
-  const installationId = Number(searchParams.get("installation_id"));
-  if (!code || !Number.isSafeInteger(installationId) || installationId <= 0) {
-    return back("error=install_missing_params");
+  if (!code) return back("error=install_missing_params");
+
+  const rawInstallationId = searchParams.get("installation_id");
+  if (rawInstallationId === null) {
+    const result = await syncInstallations(user, code);
+    if (!result.ok) return back(`error=${result.error.code}`);
+    return back("notice=synced");
   }
 
+  const installationId = Number(rawInstallationId);
+  if (!Number.isSafeInteger(installationId) || installationId <= 0) {
+    return back("error=install_missing_params");
+  }
   const result = await linkInstallation(user, code, installationId);
   if (!result.ok) return back(`error=${result.error.code}`);
-
   return back("notice=installed");
 }

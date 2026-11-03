@@ -66,7 +66,7 @@ export async function processScan(scanId: string) {
 
   // 1. 리포 읽기 + 정적 탐지
   const snapshot = await readRepoAtCommit(
-    project.installation_id,
+    { installationId: project.installation_id },
     project.repo_full_name,
     scan.commit_sha,
   );

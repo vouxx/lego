@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { err, type Result } from "@/shared/lib/result";
-import { createProjectInput } from "./schemas";
-import { createProject } from "./services/projects";
+import { addPublicRepoInput, createProjectInput } from "./schemas";
+import { addPublicRepo, createProject } from "./services/projects";
 
 export async function createProjectAction(
   input: unknown,
@@ -17,6 +17,21 @@ export async function createProjectAction(
   if (!user) return err("unauthorized", "로그인이 필요합니다.");
 
   const result = await createProject(user, parsed.data.repoFullName);
+  if (result.ok) revalidatePath("/projects");
+  return result;
+}
+
+export async function addPublicRepoAction(
+  input: unknown,
+): Promise<Result<{ projectId: string }>> {
+  const parsed = addPublicRepoInput.safeParse(input);
+  if (!parsed.success)
+    return err("invalid_input", "리포 주소를 입력해 주세요.");
+
+  const user = await getCurrentUser();
+  if (!user) return err("unauthorized", "로그인이 필요합니다.");
+
+  const result = await addPublicRepo(user, parsed.data.url);
   if (result.ok) revalidatePath("/projects");
   return result;
 }

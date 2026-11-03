@@ -53,7 +53,8 @@ export async function listMyProjects() {
 
 export async function insertProject(row: {
   userId: string;
-  installationId: number;
+  /** null 이면 설치 없이 등록한 공개 리포 */
+  installationId: number | null;
   repoFullName: string;
   defaultBranch: string;
   detectedStack: Json;

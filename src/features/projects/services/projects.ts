@@ -1,6 +1,11 @@
 import "server-only";
 import type { CurrentUser } from "@/lib/auth";
 import { installationOctokit } from "@/lib/github/app";
+import {
+  PublicRepoNotFoundError,
+  publicRepoRefs,
+  readRepoAtCommit,
+} from "@/lib/github/repo-files";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
   getMyProject,
@@ -14,6 +19,7 @@ import {
   type ProjectSummary,
 } from "../schemas";
 import { detectStack } from "./detect-stack";
+import { parseRepoInput, topLevelEntries } from "./repo-url";
 
 export async function getMyProjects(): Promise<Result<ProjectSummary[]>> {
   const { data, error } = await listMyProjects();
@@ -185,5 +191,81 @@ export async function createProject(
   });
   if (error) return err("db_error", "프로젝트를 저장하지 못했습니다.");
 
+  return ok({ projectId: data.id });
+}
+
+/**
+ * 공개 리포를 GitHub App 설치 없이 URL 로 등록한다.
+ * 다른 사람 리포의 취약점을 찾아 주는 도구가 되지 않도록, 로그인한 GitHub 계정이 소유한 리포만 받는다.
+ */
+export async function addPublicRepo(
+  user: CurrentUser,
+  input: string,
+): Promise<Result<{ projectId: string }>> {
+  const fullName = parseRepoInput(input);
+  if (!fullName)
+    return err(
+      "invalid_repo_url",
+      "GitHub 리포 주소를 알아보지 못했습니다. 예: https://github.com/owner/repo",
+    );
+
+  const owner = fullName.split("/")[0]!;
+  if (owner.toLowerCase() !== user.githubLogin.toLowerCase())
+    return err(
+      "not_owner",
+      `URL로는 내 계정(${user.githubLogin})의 공개 리포만 추가할 수 있습니다. 조직이나 다른 사람의 리포는 아래에서 GitHub App을 설치해 주세요.`,
+    );
+
+  const projects = await getMyProjects();
+  if (!projects.ok) return projects;
+  if (
+    projects.data.some(
+      (p) => p.repoFullName.toLowerCase() === fullName.toLowerCase(),
+    )
+  )
+    return err("already_added", "이미 등록한 리포입니다.");
+
+  let refs;
+  try {
+    refs = await publicRepoRefs(fullName);
+  } catch (error) {
+    if (error instanceof PublicRepoNotFoundError)
+      return err(
+        "not_public",
+        "공개 리포를 찾지 못했습니다. 비공개 리포라면 아래에서 GitHub App을 설치해 주세요.",
+      );
+    return err("github_error", "GitHub에서 리포를 읽지 못했습니다.");
+  }
+
+  let detectedStack;
+  try {
+    const snapshot = await readRepoAtCommit(
+      { installationId: null },
+      fullName,
+      refs.head!.sha,
+    );
+    const packageJson = snapshot.files.find((f) => f.path === "package.json");
+    let parsedPackageJson: unknown = null;
+    try {
+      parsedPackageJson = packageJson ? JSON.parse(packageJson.content) : null;
+    } catch {
+      parsedPackageJson = null;
+    }
+    detectedStack = detectStack({
+      ...topLevelEntries(snapshot.paths),
+      packageJson: parsedPackageJson,
+    });
+  } catch {
+    return err("github_error", "리포 내용을 읽지 못했습니다.");
+  }
+
+  const { data, error } = await insertProject({
+    userId: user.id,
+    installationId: null,
+    repoFullName: fullName,
+    defaultBranch: refs.head!.branch,
+    detectedStack,
+  });
+  if (error) return err("db_error", "프로젝트를 저장하지 못했습니다.");
   return ok({ projectId: data.id });
 }

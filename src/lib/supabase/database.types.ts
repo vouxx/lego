@@ -209,7 +209,7 @@ export type Database = {
           default_branch: string;
           detected_stack: Json;
           id: string;
-          installation_id: number;
+          installation_id: number | null;
           repo_full_name: string;
           user_id: string;
         };
@@ -218,7 +218,7 @@ export type Database = {
           default_branch: string;
           detected_stack?: Json;
           id?: string;
-          installation_id: number;
+          installation_id?: number | null;
           repo_full_name: string;
           user_id: string;
         };
@@ -227,7 +227,7 @@ export type Database = {
           default_branch?: string;
           detected_stack?: Json;
           id?: string;
-          installation_id?: number;
+          installation_id?: number | null;
           repo_full_name?: string;
           user_id?: string;
         };
