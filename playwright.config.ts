@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
-export const AUTH_STATE = "tests/e2e/.auth/user.json";
 export const LOCAL_AUTH_STATE = "tests/e2e/.auth/local.json";
 export const PROD_AUTH_STATE = "tests/e2e/.auth/prod.json";
 
@@ -34,14 +33,6 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "signed-in",
-      testMatch: /scan-flow\.spec\.ts/,
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: existsSync(AUTH_STATE) ? AUTH_STATE : undefined,
-      },
-    },
-    {
       name: "local-signed-in",
       testMatch: /(context|spec|learn|session|delete)-flow\.spec\.ts/,
       use: {
@@ -54,7 +45,7 @@ export default defineConfig({
     {
       // 운영 점검: E2E_BASE_URL 을 운영 주소로 두고 실행한다(tests/e2e/prod-flow.spec.ts 참고).
       name: "prod-signed-in",
-      testMatch: /prod-flow\.spec\.ts/,
+      testMatch: /(prod|scan)-flow\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: existsSync(PROD_AUTH_STATE) ? PROD_AUTH_STATE : undefined,
