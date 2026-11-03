@@ -77,3 +77,14 @@ git push origin main
 | 20261103000007_lego_sessions | 세션·인사이트·좋아요·신고, `pg_trgm`, 비공개 Storage 버킷 `lego-sessions` |
 
 공유 프로젝트에 추가되는 것은 `lego` 스키마 객체, `extensions` 스키마의 `pg_trgm`(이미 있으면 그대로), Storage 버킷 `lego-sessions` 하나다.
+
+## 운영 점검 (로그인 흐름)
+
+GitHub 로그인은 자동화하지 않으므로 세션을 한 번 저장한 뒤 돌린다. 테스트가 만든 설명·세션·스펙·임시 프로젝트는 끝에 지운다.
+
+```bash
+E2E_BASE_URL=https://vouxx-lego.vercel.app E2E_AUTH_FILE=tests/e2e/.auth/prod.json pnpm e2e:login
+E2E_BASE_URL=https://vouxx-lego.vercel.app pnpm e2e --project=prod-signed-in
+```
+
+- 규칙 파일(vouxx/ZEEK), 학습(붙여넣기·점검 결과), 회고(마스킹), 스펙, 공개 리포 등록·삭제를 한 번씩 돈다. 약 3분, AI 비용 약 $0.3.

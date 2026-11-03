@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export const AUTH_STATE = "tests/e2e/.auth/user.json";
 export const LOCAL_AUTH_STATE = "tests/e2e/.auth/local.json";
+export const PROD_AUTH_STATE = "tests/e2e/.auth/prod.json";
 
 /**
  * E2E. 로그인이 필요한 흐름은 `pnpm e2e:login` 으로 세션을 저장해 둔 경우에만 돈다
@@ -48,6 +49,15 @@ export default defineConfig({
         storageState: existsSync(LOCAL_AUTH_STATE)
           ? LOCAL_AUTH_STATE
           : undefined,
+      },
+    },
+    {
+      // 운영 점검: E2E_BASE_URL 을 운영 주소로 두고 실행한다(tests/e2e/prod-flow.spec.ts 참고).
+      name: "prod-signed-in",
+      testMatch: /prod-flow\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: existsSync(PROD_AUTH_STATE) ? PROD_AUTH_STATE : undefined,
       },
     },
   ],
