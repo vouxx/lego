@@ -1,7 +1,7 @@
 # 레고 (Lego) — 프로젝트 규칙
 
 레고는 바이브 코딩 동반자 플랫폼입니다. 전체 설계는 `docs/design.md`를 따릅니다.
-현재 단계: **5단계 세션 회고·공유**. 1~4단계(보안 점검기, 컨텍스트 생성기, 스펙 변환기, 학습 도우미)는 완료.
+설계 문서의 5단계(보안 점검기, 컨텍스트 생성기, 스펙 변환기, 학습 도우미, 세션 회고·공유)를 모두 구현했다. 남은 일은 운영 검증과 측정(docs/deploy.md).
 
 ## 기술 스택
 
@@ -93,6 +93,17 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - Mermaid 는 클라이언트에서 strict 모드로 그린다. 실패하면 Haiku 로 한 번 다시 만들고, 또 실패하면 숨긴다.
 - 개념 사전(`concepts`)은 공개 데이터라 secret 키로 읽고 `"use cache"` 로 캐시한다. anon 에 lego 스키마를 열지 않는다. 보안 규칙 14개는 모두 개념 하나 이상에 연결돼 있어야 한다.
 - 설계와 다른 점: 설명은 스트리밍 Route Handler 대신 Server Action 하나로 만든다(구조화 출력, 약 15초).
+
+## 세션 회고·공유 (5단계)
+
+- 코드는 `features/sessions`. 화면은 `/sessions`, `/sessions/new`, `/sessions/[sessionId]`, 공개 `/gallery`, `/s/[slug]`(+ `opengraph-image`).
+- **원본 로그는 서버로 보내지 않는다.** 브라우저에서 형식별 파서(`services/parse`: Claude Code JSONL, Cursor 마크다운, 텍스트)로 공통 메시지로 바꾸고,
+  `services/mask.ts`(SEC-001 패턴, 개인 키, URL 비밀번호, KEY=value, 이메일, 홈 경로)로 가린 뒤 미리보기 확인 → 서명 URL 로 비공개 버킷 `lego-sessions` 에 JSON 만 올린다.
+  서버는 finalize 에서 같은 함수로 2차 검사하고, 바뀐 게 있으면 덮어쓴다. 마스킹 테스트 세트(`mask.test.ts`)는 누출 0건이어야 한다.
+- `services/parse`, `mask.ts`, `stats.ts`, `condense.ts` 는 브라우저에서도 돌므로 `server-only`·Node API 를 쓰지 않는다. `@lego/scanner/secrets` 만 import 한다.
+- 분석은 finalize 뒤 `after()` 로 Sonnet 한 번(긴 세션은 `condenseTranscript` 로 6만 자 이내). 큐 대신 실패·10분 정체 시 '다시 분석'.
+- 공개·링크 공유 세션과 갤러리는 서버가 visibility 를 확인한 뒤 secret 키로 읽는다(anon 에 lego 스키마를 열지 않음). 신고 3건이면 자동으로 숨긴다.
+- `sessions → profiles` 조인은 `profiles!sessions_user_id_fkey` 로 쓴다(session_likes 때문에 관계가 둘).
 
 ## 인증 / 권한
 

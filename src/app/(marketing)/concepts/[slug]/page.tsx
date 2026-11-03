@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ConceptArticle } from "@/features/learn/components/ConceptArticle";
 import {
   getConceptList,
@@ -13,6 +14,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  "use cache";
   const concept = await getConceptPage((await params).slug);
   return concept
     ? {
@@ -22,13 +24,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : {};
 }
 
-export default async function ConceptPage({ params }: Props) {
-  "use cache";
-  const concept = await getConceptPage((await params).slug);
-  if (!concept) notFound();
+export default function ConceptPage({ params }: Props) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col px-4 py-10 sm:px-6">
-      <ConceptArticle concept={concept} />
+      <Suspense
+        fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
+      >
+        <Concept params={params} />
+      </Suspense>
     </main>
   );
+}
+
+async function Concept({ params }: Pick<Props, "params">) {
+  const concept = await getConceptPage((await params).slug);
+  if (!concept) notFound();
+  return <ConceptArticle concept={concept} />;
 }

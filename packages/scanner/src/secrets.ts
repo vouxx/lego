@@ -23,14 +23,21 @@ export const SECRET_PATTERNS: { name: string; pattern: RegExp }[] = [
 const JWT_PATTERN =
   /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
 
+/** 브라우저(세션 로그 마스킹)와 Node 양쪽에서 돈다. */
+function decodeBase64Url(value: string) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+  return new TextDecoder().decode(
+    Uint8Array.from(binary, (c) => c.charCodeAt(0)),
+  );
+}
+
 /** JWT 중 Supabase service_role 토큰만 비밀값으로 본다(anon 키는 공개용). */
 export function isServiceRoleJwt(token: string): boolean {
   const payload = token.split(".")[1];
   if (!payload) return false;
   try {
-    const json = JSON.parse(
-      Buffer.from(payload, "base64url").toString("utf8"),
-    ) as {
+    const json = JSON.parse(decodeBase64Url(payload)) as {
       role?: unknown;
     };
     return json.role === "service_role";

@@ -30,6 +30,18 @@ export default function DashboardLayout({ children }: LayoutProps<"/">) {
           >
             학습
           </Link>
+          <Link
+            href="/sessions"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            회고
+          </Link>
+          <Link
+            href="/gallery"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            갤러리
+          </Link>
         </nav>
         <Suspense>
           <UserMenu />

@@ -42,7 +42,7 @@ export default defineConfig({
     },
     {
       name: "local-signed-in",
-      testMatch: /(context|spec|learn)-flow\.spec\.ts/,
+      testMatch: /(context|spec|learn|session)-flow\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: existsSync(LOCAL_AUTH_STATE)

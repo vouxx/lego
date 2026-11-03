@@ -386,6 +386,7 @@ export type Database = {
           output_tokens: number;
           purpose: string;
           scan_id: string | null;
+          session_id: string | null;
           spec_id: string | null;
           user_id: string;
         };
@@ -403,6 +404,7 @@ export type Database = {
           output_tokens?: number;
           purpose: string;
           scan_id?: string | null;
+          session_id?: string | null;
           spec_id?: string | null;
           user_id: string;
         };
@@ -419,6 +421,7 @@ export type Database = {
           output_tokens?: number;
           purpose?: string;
           scan_id?: string | null;
+          session_id?: string | null;
           spec_id?: string | null;
           user_id?: string;
         };
@@ -442,6 +445,13 @@ export type Database = {
             columns: ["scan_id"];
             isOneToOne: false;
             referencedRelation: "scans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "llm_calls_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
             referencedColumns: ["id"];
           },
           {
@@ -818,6 +828,214 @@ export type Database = {
           version?: string;
         };
         Relationships: [];
+      };
+      session_insights: {
+        Row: {
+          content: string;
+          id: string;
+          kind: string;
+          prompt_text: string | null;
+          session_id: string;
+          sort_order: number;
+          turn_index: number | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          content: string;
+          id?: string;
+          kind: string;
+          prompt_text?: string | null;
+          session_id: string;
+          sort_order?: number;
+          turn_index?: number | null;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          id?: string;
+          kind?: string;
+          prompt_text?: string | null;
+          session_id?: string;
+          sort_order?: number;
+          turn_index?: number | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_insights_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_insights_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      session_likes: {
+        Row: {
+          created_at: string;
+          session_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          session_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          session_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_likes_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_likes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      session_reports: {
+        Row: {
+          created_at: string;
+          id: string;
+          reason: string;
+          reporter_id: string;
+          session_id: string;
+          status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          reason: string;
+          reporter_id: string;
+          session_id: string;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          reporter_id?: string;
+          session_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_reports_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      sessions: {
+        Row: {
+          analysis_started_at: string | null;
+          created_at: string;
+          error: string | null;
+          goal: string | null;
+          hidden: boolean;
+          id: string;
+          like_count: number;
+          outcome: string | null;
+          project_id: string | null;
+          slug: string | null;
+          stats: NonNullable<Json>;
+          status: string;
+          storage_path: string;
+          tags: string[];
+          title: string;
+          tool: string;
+          updated_at: string;
+          user_id: string;
+          visibility: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          analysis_started_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          goal?: string | null;
+          hidden?: boolean;
+          id?: string;
+          like_count?: number;
+          outcome?: string | null;
+          project_id?: string | null;
+          slug?: string | null;
+          stats?: NonNullable<Json>;
+          status?: string;
+          storage_path: string;
+          tags?: string[];
+          title?: string;
+          tool: string;
+          updated_at?: string;
+          user_id: string;
+          visibility?: string;
+        };
+        Update: {
+          analysis_started_at?: string | null;
+          created_at?: string;
+          error?: string | null;
+          goal?: string | null;
+          hidden?: boolean;
+          id?: string;
+          like_count?: number;
+          outcome?: string | null;
+          project_id?: string | null;
+          slug?: string | null;
+          stats?: NonNullable<Json>;
+          status?: string;
+          storage_path?: string;
+          tags?: string[];
+          title?: string;
+          tool?: string;
+          updated_at?: string;
+          user_id?: string;
+          visibility?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sessions_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       spec_tasks: {
         Row: {
