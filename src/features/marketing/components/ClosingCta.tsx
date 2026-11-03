@@ -1,16 +1,39 @@
 import Link from "next/link";
 import { buttonVariants } from "@/shared/ui/button";
+import { TerminalWindow } from "./TerminalWindow";
 
 export function ClosingCta() {
   return (
-    <section className="bg-muted flex flex-col items-start gap-4 rounded-xl p-8">
-      <h2 className="text-2xl font-semibold">지금 리포 하나만 점검해 보세요</h2>
-      <p className="text-muted-foreground text-sm">
-        한 달에 스캔 30번까지 무료입니다. 카드 등록은 필요 없습니다.
-      </p>
-      <Link href="/projects" className={buttonVariants({ size: "lg" })}>
-        GitHub 로 시작하기
-      </Link>
+    <section aria-labelledby="cta-title">
+      <TerminalWindow title="다음 단계">
+        <div className="flex flex-col items-start gap-4 py-4 sm:px-4">
+          <p className="text-terminal-muted">$ lego scan &lt;내 리포&gt;</p>
+          <h2
+            id="cta-title"
+            className="font-sans text-2xl font-semibold tracking-tight break-keep"
+          >
+            배포 버튼 누르기 전에, 1분만.
+          </h2>
+          <p className="text-terminal-muted font-sans text-sm break-keep">
+            GitHub 로 로그인하고 리포를 고르면 바로 점검합니다. 무료이고, 코드는
+            읽기만 합니다.
+          </p>
+          <div className="flex flex-wrap gap-3 font-sans">
+            <Link
+              href="/projects"
+              className={buttonVariants({ size: "lg", variant: "secondary" })}
+            >
+              내 리포 무료 점검
+            </Link>
+            <Link
+              href="/concepts"
+              className="text-terminal-muted hover:text-terminal-foreground self-center text-sm underline-offset-4 hover:underline"
+            >
+              개념 사전부터 보기
+            </Link>
+          </div>
+        </div>
+      </TerminalWindow>
     </section>
   );
 }

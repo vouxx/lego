@@ -1,16 +1,16 @@
 import { ClosingCta } from "@/features/marketing/components/ClosingCta";
 import { Hero } from "@/features/marketing/components/Hero";
-import { HowItWorks } from "@/features/marketing/components/HowItWorks";
 import { Promises } from "@/features/marketing/components/Promises";
+import { ProofStrip } from "@/features/marketing/components/ProofStrip";
 import { RuleCatalog } from "@/features/marketing/components/RuleCatalog";
-import { SampleFinding } from "@/features/marketing/components/SampleFinding";
+import { ToolGrid } from "@/features/marketing/components/ToolGrid";
 
 export default function LandingPage() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-16 px-4 pb-16 sm:px-6">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-20 px-4 pb-20 sm:px-6">
       <Hero />
-      <SampleFinding />
-      <HowItWorks />
+      <ToolGrid />
+      <ProofStrip />
       <RuleCatalog />
       <Promises />
       <ClosingCta />

@@ -6,8 +6,17 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-terminal: var(--terminal);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-muted: var(--terminal-muted);
+  --color-terminal-border: var(--terminal-border);
+  --color-sev-critical: var(--sev-critical);
+  --color-sev-high: var(--sev-high);
+  --color-sev-medium: var(--sev-medium);
+  --color-sev-low: var(--sev-low);
+  --color-ok: var(--ok);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -64,15 +73,25 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.89 0 0);
+  --input: oklch(0.87 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.375rem;
+  /* 작업대 컨셉: 터미널 패널과 심각도 색. 색은 의미가 있을 때만 쓴다. */
+  --terminal: oklch(0.2 0.01 260);
+  --terminal-foreground: oklch(0.93 0.005 260);
+  --terminal-muted: oklch(0.68 0.01 260);
+  --terminal-border: oklch(0.32 0.01 260);
+  --sev-critical: oklch(0.58 0.22 25);
+  --sev-high: oklch(0.66 0.17 50);
+  --sev-medium: oklch(0.75 0.15 85);
+  --sev-low: oklch(0.6 0.1 240);
+  --ok: oklch(0.62 0.15 150);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -84,6 +103,15 @@
 }
 
 .dark {
+  --terminal: oklch(0.12 0.01 260);
+  --terminal-foreground: oklch(0.93 0.005 260);
+  --terminal-muted: oklch(0.66 0.01 260);
+  --terminal-border: oklch(0.28 0.01 260);
+  --sev-critical: oklch(0.7 0.19 25);
+  --sev-high: oklch(0.75 0.15 55);
+  --sev-medium: oklch(0.82 0.14 90);
+  --sev-low: oklch(0.72 0.1 240);
+  --ok: oklch(0.74 0.15 150);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

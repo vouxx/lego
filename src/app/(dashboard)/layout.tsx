@@ -1,48 +1,17 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { SignOutButton } from "@/features/auth/components/SignOutButton";
 import { UserBadge } from "@/features/auth/components/UserBadge";
 import { requireUser } from "@/lib/auth";
+import { DashboardNav } from "@/shared/layout/DashboardNav";
+import { DashboardNavLinks } from "@/shared/layout/DashboardNavLinks";
 
 export default function DashboardLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex h-14 items-center justify-between border-b px-4 sm:px-6">
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/projects" className="font-semibold">
-            레고
-          </Link>
-          <Link
-            href="/projects"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            프로젝트
-          </Link>
-          <Link
-            href="/specs"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            스펙
-          </Link>
-          <Link
-            href="/learn"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            학습
-          </Link>
-          <Link
-            href="/sessions"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            회고
-          </Link>
-          <Link
-            href="/gallery"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            갤러리
-          </Link>
-        </nav>
+      <header className="bg-background/90 sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b px-4 backdrop-blur sm:px-6">
+        <Suspense fallback={<DashboardNavLinks activePath={null} />}>
+          <DashboardNav />
+        </Suspense>
         <Suspense>
           <UserMenu />
         </Suspense>

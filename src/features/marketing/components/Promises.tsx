@@ -1,14 +1,25 @@
 import { PROMISES } from "../content";
+import { SectionHeading } from "./SectionHeading";
 
 export function Promises() {
   return (
-    <section aria-labelledby="promise-title" className="flex flex-col gap-4">
-      <h2 id="promise-title" className="text-2xl font-semibold">
-        코드는 이렇게 다룹니다
-      </h2>
-      <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
+    <section aria-labelledby="promises-title" className="flex flex-col gap-6">
+      <SectionHeading
+        id="promises-title"
+        eyebrow="04 · 코드 다루는 방식"
+        title="내 코드는 이렇게 다룹니다"
+      />
+      <ul className="grid gap-3 sm:grid-cols-2">
         {PROMISES.map((text) => (
-          <li key={text}>{text}</li>
+          <li
+            key={text}
+            className="flex gap-3 rounded-lg border p-4 text-sm break-keep"
+          >
+            <span className="text-ok font-mono" aria-hidden="true">
+              ✓
+            </span>
+            {text}
+          </li>
         ))}
       </ul>
     </section>

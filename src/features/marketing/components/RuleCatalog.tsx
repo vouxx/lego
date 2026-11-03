@@ -1,4 +1,6 @@
-import { RULE_GROUPS } from "../content";
+import { RULES } from "../content";
+import { SectionHeading } from "./SectionHeading";
+import { SeverityMark } from "./SeverityMark";
 
 export function RuleCatalog() {
   return (
@@ -7,35 +9,30 @@ export function RuleCatalog() {
       aria-labelledby="rules-title"
       className="flex scroll-mt-20 flex-col gap-6"
     >
-      <div className="flex flex-col gap-2">
-        <h2 id="rules-title" className="text-2xl font-semibold">
-          14가지를 점검합니다
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          AI 코딩 도구로 만든 Next.js·Supabase 앱에서 실제로 자주 나오는 실수만
-          골랐습니다.
-        </p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {RULE_GROUPS.map((group) => (
-          <div
-            key={group.title}
-            className="flex flex-col gap-3 rounded-lg border p-5"
+      <SectionHeading
+        id="rules-title"
+        eyebrow="03 · 점검 항목"
+        title="14가지를 점검합니다"
+        text="AI 코딩 도구로 만든 Next.js·Supabase 앱에서 실제로 자주 나오는 실수만 골랐습니다."
+      />
+      <ul className="divide-y rounded-lg border">
+        {RULES.map((rule) => (
+          <li
+            key={rule.id}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm"
           >
-            <h3 className="font-medium">{group.title}</h3>
-            <ul className="flex flex-col gap-2">
-              {group.rules.map((rule) => (
-                <li key={rule.id} className="flex gap-3 text-sm">
-                  <code className="text-muted-foreground shrink-0 text-xs leading-5">
-                    {rule.id}
-                  </code>
-                  <span>{rule.text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+            <code className="text-muted-foreground w-16 font-mono text-xs">
+              {rule.id}
+            </code>
+            <span className="text-muted-foreground font-mono text-xs">
+              <SeverityMark severity={rule.severity} />
+            </span>
+            <span className="min-w-0 basis-full break-keep sm:flex-1 sm:basis-auto">
+              {rule.text}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
