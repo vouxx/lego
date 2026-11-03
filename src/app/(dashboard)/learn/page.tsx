@@ -4,20 +4,24 @@ import { ExplainForm } from "@/features/learn/components/ExplainForm";
 import { MasteryList } from "@/features/learn/components/MasteryList";
 import { RecentExplanations } from "@/features/learn/components/RecentExplanations";
 import { getLearningHome } from "@/features/learn/services/views";
+import { PageHeader } from "@/shared/ui/page-header";
+import { buttonVariants } from "@/shared/ui/button";
 
 export default function LearnPage() {
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">학습</h1>
-        <p className="text-muted-foreground text-sm">
-          AI 가 만든 코드를 내 수준에 맞춰 설명받고, 퀴즈로 이해했는지
-          확인합니다.{" "}
-          <Link href="/concepts" className="underline">
+      <PageHeader
+        title="학습"
+        description="AI 가 만든 코드를 내 수준에 맞춰 설명받고, 퀴즈로 이해했는지 확인합니다."
+        actions={
+          <Link
+            href="/concepts"
+            className={buttonVariants({ variant: "outline" })}
+          >
             개념 사전
           </Link>
-        </p>
-      </div>
+        }
+      />
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

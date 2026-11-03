@@ -1,3 +1,4 @@
+import { PageHeader } from "@/shared/ui/page-header";
 import type { ContextView } from "../services/view";
 import { ContextWorkspace } from "./ContextWorkspace";
 import { EmptyContext } from "./EmptyContext";
@@ -10,14 +11,15 @@ export function ContextScreen({ view }: Props) {
   const { project, target, file } = view;
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold break-all">
-          {project.repoFullName}
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          AI 코딩 도구가 작업 전에 읽는 규칙 파일을 만들고 다듬습니다.
-        </p>
-      </div>
+      <PageHeader
+        trail={[
+          { href: "/projects", label: "프로젝트" },
+          { href: `/projects/${project.id}`, label: project.repoFullName },
+          { label: "규칙 파일" },
+        ]}
+        title="AI 규칙 파일"
+        description="AI 코딩 도구가 작업 전에 읽는 규칙 파일을 만들고 다듬습니다."
+      />
       <TargetTabs projectId={project.id} current={target} />
       {file ? (
         <>

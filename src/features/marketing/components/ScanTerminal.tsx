@@ -1,6 +1,6 @@
 import { HERO_FINDINGS, SAMPLE_PROMPT } from "../content";
-import { SeverityMark } from "./SeverityMark";
-import { TerminalWindow } from "./TerminalWindow";
+import { SeverityMark } from "@/shared/ui/severity";
+import { TerminalWindow } from "@/shared/ui/terminal-window";
 
 /** 히어로 오른쪽: 실제 점검 결과와 같은 형식의 예시. */
 export function ScanTerminal() {

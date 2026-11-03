@@ -1,6 +1,6 @@
 import { RULES } from "../content";
 import { SectionHeading } from "./SectionHeading";
-import { SeverityMark } from "./SeverityMark";
+import { SeverityMark } from "@/shared/ui/severity";
 
 export function RuleCatalog() {
   return (

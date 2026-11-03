@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProjectHeader } from "@/features/projects/components/ProjectHeader";
@@ -12,12 +11,6 @@ type Props = PageProps<"/projects/[projectId]">;
 export default function ProjectPage({ params }: Props) {
   return (
     <main className="flex flex-col gap-6">
-      <Link
-        href="/projects"
-        className="text-muted-foreground text-sm hover:underline"
-      >
-        ← 프로젝트
-      </Link>
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >
@@ -41,7 +34,7 @@ async function Project({ params }: Pick<Props, "params">) {
         projectId={projectId}
         repoFullName={project.data.repoFullName}
         stack={project.data.stack}
-        actions={<StartScanButton projectId={projectId} />}
+        scanAction={<StartScanButton projectId={projectId} />}
       />
       <ScanHistorySection projectId={projectId} scans={scans} />
     </>

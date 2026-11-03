@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatDateTime } from "@/shared/lib/format";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { TOOL_LABELS, type SessionCard } from "../schemas";
+import { SessionRows } from "./SessionRows";
 
 type Props = {
   sessions: (SessionCard & { author?: string | null })[];
@@ -20,8 +21,13 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function SessionCardList({ sessions, linkTo, empty }: Props) {
   if (sessions.length === 0) {
-    return <p className="text-muted-foreground text-sm">{empty}</p>;
+    return (
+      <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+        {empty}
+      </p>
+    );
   }
+  if (linkTo === "mine") return <SessionRows sessions={sessions} />;
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
       {sessions.map((s) => (

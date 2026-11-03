@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { formatDateTime } from "@/shared/lib/format";
 import type { Result } from "@/shared/lib/result";
+import { PageHeader } from "@/shared/ui/page-header";
 import type { FindingView, ScanDiffView, ScanView } from "../schemas";
 import { FindingList } from "./FindingList";
 import { FixedFindingList } from "./FixedFindingList";
@@ -17,19 +17,20 @@ type Props = {
 export function ScanReport({ scan, findings, diff }: Props) {
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <Link
-          href={`/projects/${scan.projectId}`}
-          className="text-muted-foreground text-sm hover:underline"
-        >
-          ← 프로젝트
-        </Link>
-        <h1 className="text-2xl font-semibold">보안 점검 결과</h1>
-        <p className="text-muted-foreground text-sm">
-          {formatDateTime(scan.createdAt)}
-          {scan.commitSha ? ` · 커밋 ${scan.commitSha.slice(0, 7)}` : ""}
-        </p>
-      </div>
+      <PageHeader
+        trail={[
+          { href: "/projects", label: "프로젝트" },
+          { href: `/projects/${scan.projectId}`, label: "점검 기록" },
+          { label: "결과" },
+        ]}
+        title="보안 점검 결과"
+        description={
+          <span className="font-mono text-xs">
+            {formatDateTime(scan.createdAt)}
+            {scan.commitSha ? ` · 커밋 ${scan.commitSha.slice(0, 7)}` : ""}
+          </span>
+        }
+      />
       <ScanProgress
         scanId={scan.id}
         initial={{

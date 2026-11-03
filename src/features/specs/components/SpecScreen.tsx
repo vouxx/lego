@@ -1,3 +1,4 @@
+import { PageHeader } from "@/shared/ui/page-header";
 import Link from "next/link";
 import type { SpecView } from "../services/specs";
 import { ContextDraftPanel } from "./ContextDraftPanel";
@@ -13,20 +14,28 @@ type Props = { spec: SpecView };
 export function SpecScreen({ spec }: Props) {
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{spec.title}</h1>
-        <p className="text-muted-foreground text-sm">{spec.idea}</p>
-        <p className="text-muted-foreground text-xs">
-          {spec.stack ? `${spec.stack} · ` : ""}
-          {spec.project ? (
-            <Link href={`/projects/${spec.project.id}`} className="underline">
-              {spec.project.name}
-            </Link>
-          ) : (
-            "리포 없음"
-          )}
-        </p>
-      </div>
+      <PageHeader
+        trail={[{ href: "/specs", label: "스펙" }, { label: spec.title }]}
+        title={spec.title}
+        description={
+          <div className="flex flex-col gap-1">
+            <span>{spec.idea}</span>
+            <span className="font-mono text-xs">
+              {spec.stack ? `${spec.stack} · ` : ""}
+              {spec.project ? (
+                <Link
+                  href={`/projects/${spec.project.id}`}
+                  className="hover:text-foreground underline"
+                >
+                  {spec.project.name}
+                </Link>
+              ) : (
+                "리포 없음"
+              )}
+            </span>
+          </div>
+        }
+      />
       <SpecBody spec={spec} />
     </>
   );

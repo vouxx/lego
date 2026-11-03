@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DeleteSessionButton } from "@/features/sessions/components/DeleteSessionButton";
@@ -12,12 +11,6 @@ type Props = PageProps<"/sessions/[sessionId]">;
 export default function SessionPage({ params }: Props) {
   return (
     <main className="flex max-w-4xl flex-col gap-6">
-      <Link
-        href="/sessions"
-        className="text-muted-foreground text-sm hover:underline"
-      >
-        ← 세션 회고
-      </Link>
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

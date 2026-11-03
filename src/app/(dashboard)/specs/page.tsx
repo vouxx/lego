@@ -3,16 +3,20 @@ import { Suspense } from "react";
 import { SpecList } from "@/features/specs/components/SpecList";
 import { getMySpecs } from "@/features/specs/services/specs";
 import { buttonVariants } from "@/shared/ui/button";
+import { PageHeader } from "@/shared/ui/page-header";
 
 export default function SpecsPage() {
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">스펙</h1>
-        <Link href="/specs/new" className={buttonVariants()}>
-          새 아이디어
-        </Link>
-      </div>
+      <PageHeader
+        title="스펙"
+        description="한 줄 아이디어를 PRD, 설계, 순서가 있는 작업으로 나눕니다."
+        actions={
+          <Link href="/specs/new" className={buttonVariants()}>
+            새 아이디어
+          </Link>
+        }
+      />
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

@@ -25,14 +25,16 @@ export function SessionDetail({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground font-mono text-xs">
           {TOOL_LABELS[card.tool]}
           {byline ? ` · @${byline}` : ""}
           {card.tags.length
             ? ` · ${card.tags.map((t) => `#${t}`).join(" ")}`
             : ""}
         </p>
-        <h1 className="text-2xl font-semibold">{card.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          {card.title}
+        </h1>
         {card.goal ? (
           <p className="text-sm">
             <strong>목표</strong> {card.goal}

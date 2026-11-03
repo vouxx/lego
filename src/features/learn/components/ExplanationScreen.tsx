@@ -1,3 +1,4 @@
+import { PageHeader } from "@/shared/ui/page-header";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { LEVEL_LABELS, type ExplanationView } from "../schemas";
@@ -10,12 +11,16 @@ export function ExplanationScreen({ view }: Props) {
   const { content } = view;
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="text-muted-foreground text-xs">
-          {LEVEL_LABELS[view.level]} 수준 · {view.sourceRef ?? "붙여넣은 코드"}
-        </p>
-        <h1 className="text-2xl font-semibold">{content.summary}</h1>
-      </div>
+      <PageHeader
+        trail={[{ href: "/learn", label: "학습" }, { label: "설명" }]}
+        title={content.summary}
+        description={
+          <span className="font-mono text-xs break-all">
+            {LEVEL_LABELS[view.level]} 수준 ·{" "}
+            {view.sourceRef ?? "붙여넣은 코드"}
+          </span>
+        }
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">흐름</h2>

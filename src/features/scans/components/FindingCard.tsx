@@ -23,15 +23,13 @@ export function FindingCard({ finding, isNew = false }: Props) {
   return (
     <Card>
       <CardHeader className="gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
           <SeverityBadge severity={finding.severity} />
-          <code className="text-muted-foreground text-xs">
-            {finding.ruleId}
-          </code>
+          <span className="text-muted-foreground">{finding.ruleId}</span>
           {isNew ? <Badge variant="outline">새로 생김</Badge> : null}
         </div>
         <CardTitle>{finding.ruleTitle}</CardTitle>
-        <code className="text-muted-foreground text-xs break-all">
+        <code className="text-muted-foreground font-mono text-xs break-all">
           {location}
         </code>
       </CardHeader>

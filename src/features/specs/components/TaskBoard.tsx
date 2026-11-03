@@ -1,7 +1,14 @@
+import { StatusDot, type StatusTone } from "@/shared/ui/status-dot";
 import { TASK_STATUSES, type SpecTaskView, type TaskStatus } from "../schemas";
 import { TaskCard } from "./TaskCard";
 
 type Props = { tasks: SpecTaskView[] };
+
+const TONES: Record<TaskStatus, StatusTone> = {
+  todo: "muted",
+  doing: "busy",
+  done: "ok",
+};
 
 const COLUMN_LABELS: Record<TaskStatus, string> = {
   todo: "할 일",
@@ -30,9 +37,15 @@ export function TaskBoard({ tasks }: Props) {
               className="flex flex-col gap-2"
               aria-label={COLUMN_LABELS[status]}
             >
-              <h3 className="text-sm font-semibold">
-                {COLUMN_LABELS[status]}{" "}
-                <span className="text-muted-foreground">{column.length}</span>
+              <h3 className="flex items-center justify-between border-b pb-2 text-sm font-semibold">
+                <StatusDot
+                  tone={TONES[status]}
+                  label={COLUMN_LABELS[status]}
+                  className="text-sm"
+                />
+                <span className="text-muted-foreground font-mono text-xs">
+                  {column.length}
+                </span>
               </h3>
               {column.map((task) => (
                 <TaskCard key={task.id} task={task} />

@@ -58,7 +58,9 @@ export function TaskCard({ task }: Props) {
       <CardContent className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold">
-            <span className="text-muted-foreground mr-1">{task.key}</span>
+            <span className="text-muted-foreground mr-1.5 font-mono text-xs">
+              {task.key}
+            </span>
             {task.title}
           </h3>
           {task.locked && task.status !== "done" ? (

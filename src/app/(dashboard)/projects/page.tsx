@@ -3,19 +3,20 @@ import { Suspense } from "react";
 import { ProjectList } from "@/features/projects/components/ProjectList";
 import { getMyProjects } from "@/features/projects/services/projects";
 import { buttonVariants } from "@/shared/ui/button";
+import { PageHeader } from "@/shared/ui/page-header";
 
 export default function ProjectsPage() {
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">프로젝트</h1>
-        <Link
-          href="/projects/new"
-          className={buttonVariants({ variant: "outline" })}
-        >
-          리포 연결
-        </Link>
-      </div>
+      <PageHeader
+        title="프로젝트"
+        description="연결한 GitHub 리포. 리포마다 보안 점검과 규칙 파일을 씁니다."
+        actions={
+          <Link href="/projects/new" className={buttonVariants()}>
+            리포 연결
+          </Link>
+        }
+      />
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

@@ -6,13 +6,18 @@ import {
   listInstallableRepos,
 } from "@/features/projects/services/projects";
 import { githubAppAuthorizeUrl, githubAppInstallUrl } from "@/lib/github/app";
+import { PageHeader } from "@/shared/ui/page-header";
 
 export default function NewProjectPage({
   searchParams,
 }: PageProps<"/projects/new">) {
   return (
     <main className="flex flex-col gap-10">
-      <h1 className="text-2xl font-semibold">리포 연결</h1>
+      <PageHeader
+        trail={[{ href: "/projects", label: "프로젝트" }, { label: "연결" }]}
+        title="리포 연결"
+        description="코드는 읽기만 하고, 결과에는 문제가 된 몇 줄만 남깁니다."
+      />
       <PublicRepoSection />
       <section className="flex flex-col gap-3">
         <h2 className="font-medium">비공개 리포 · 조직 리포</h2>

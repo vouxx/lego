@@ -3,14 +3,7 @@
  * 숫자는 README·docs 에 기록한 실제 측정값만 쓴다.
  */
 
-export type Severity = "critical" | "high" | "medium" | "low";
-
-export const SEVERITY_LABELS: Record<Severity, string> = {
-  critical: "치명적",
-  high: "높음",
-  medium: "보통",
-  low: "낮음",
-};
+import type { Severity } from "@/shared/ui/severity";
 
 /** 히어로의 점검 결과 예시(샘플 리포 기준 실제 형식). */
 export const HERO_FINDINGS: {

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -10,12 +9,6 @@ type Props = PageProps<"/specs/[specId]">;
 export default function SpecPage({ params }: Props) {
   return (
     <main className="flex flex-col gap-6">
-      <Link
-        href="/specs"
-        className="text-muted-foreground text-sm hover:underline"
-      >
-        ← 스펙
-      </Link>
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}
       >

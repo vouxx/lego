@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { buttonVariants } from "@/shared/ui/button";
+import { PageHeader } from "@/shared/ui/page-header";
 import type { DetectedStack } from "@/shared/stack/schema";
 import { StackTags } from "./StackTags";
 
@@ -8,37 +8,75 @@ type Props = {
   projectId: string;
   repoFullName: string;
   stack: DetectedStack | null;
-  /** 오른쪽에 붙일 다른 기능의 버튼(예: 보안 점검 시작) */
-  actions?: ReactNode;
+  /** 보안 점검 시작 버튼(scans 기능) */
+  scanAction?: ReactNode;
 };
 
+/** 프로젝트 머리말과 이 리포에서 쓰는 도구 세 칸. */
 export function ProjectHeader({
   projectId,
   repoFullName,
   stack,
-  actions,
+  scanAction,
 }: Props) {
+  const tools = [
+    {
+      command: "scan",
+      title: "보안 점검",
+      text: "실수 14가지를 찾고 수정 프롬프트를 드립니다.",
+      action: scanAction,
+    },
+    {
+      command: "context",
+      title: "AI 규칙 파일",
+      text: "CLAUDE.md · .cursorrules · AGENTS.md 를 만듭니다.",
+      href: `/projects/${projectId}/context`,
+    },
+    {
+      command: "spec",
+      title: "스펙",
+      text: "이 리포에서 만들 기능을 작업으로 나눕니다.",
+      href: `/specs/new?projectId=${projectId}`,
+    },
+  ];
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold break-all">{repoFullName}</h1>
-        {stack ? <StackTags tags={stack.tags} /> : null}
-      </div>
-      <div className="flex flex-wrap items-start gap-2">
-        <Link
-          href={`/projects/${projectId}/context`}
-          className={buttonVariants({ variant: "outline" })}
-        >
-          AI 규칙 파일
-        </Link>
-        <Link
-          href={`/specs/new?projectId=${projectId}`}
-          className={buttonVariants({ variant: "outline" })}
-        >
-          스펙 만들기
-        </Link>
-        {actions}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        trail={[
+          { href: "/projects", label: "프로젝트" },
+          { label: repoFullName },
+        ]}
+        title={<span className="font-mono">{repoFullName}</span>}
+        description={stack ? <StackTags tags={stack.tags} /> : null}
+      />
+      <ul className="bg-border grid gap-px overflow-hidden rounded-lg border sm:grid-cols-3">
+        {tools.map((tool) => (
+          <li
+            key={tool.command}
+            className="bg-background flex flex-col gap-2 p-4"
+          >
+            <code className="text-muted-foreground font-mono text-xs">
+              lego {tool.command}
+            </code>
+            <p className="font-semibold">{tool.title}</p>
+            <p className="text-muted-foreground text-sm break-keep">
+              {tool.text}
+            </p>
+            <div className="mt-auto pt-1">
+              {tool.href ? (
+                <Link
+                  href={tool.href}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {tool.title} 열기 →
+                </Link>
+              ) : (
+                tool.action
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

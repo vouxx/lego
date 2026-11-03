@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ContextScreen } from "@/features/context/components/ContextScreen";
@@ -26,12 +25,6 @@ async function Context({ params, searchParams }: Props) {
 
   return (
     <>
-      <Link
-        href={`/projects/${projectId}`}
-        className="text-muted-foreground text-sm hover:underline"
-      >
-        ← 프로젝트
-      </Link>
       <ContextScreen view={view.data} />
     </>
   );

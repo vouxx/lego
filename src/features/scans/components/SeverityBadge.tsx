@@ -1,25 +1,12 @@
-import { Badge } from "@/shared/ui/badge";
+import { SeverityMark } from "@/shared/ui/severity";
 import type { Severity } from "../schemas";
-
-const LABELS: Record<Severity, string> = {
-  critical: "치명적",
-  high: "높음",
-  medium: "보통",
-  low: "낮음",
-};
 
 type Props = { severity: Severity };
 
 export function SeverityBadge({ severity }: Props) {
   return (
-    <Badge
-      variant={
-        severity === "critical" || severity === "high"
-          ? "destructive"
-          : "secondary"
-      }
-    >
-      {LABELS[severity]}
-    </Badge>
+    <span className="bg-muted inline-flex rounded-md px-2 py-0.5 font-mono text-xs">
+      <SeverityMark severity={severity} />
+    </span>
   );
 }

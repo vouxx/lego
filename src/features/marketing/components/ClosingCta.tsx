@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buttonVariants } from "@/shared/ui/button";
-import { TerminalWindow } from "./TerminalWindow";
+import { TerminalWindow } from "@/shared/ui/terminal-window";
 
 export function ClosingCta() {
   return (
