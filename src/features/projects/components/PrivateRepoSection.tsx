@@ -2,6 +2,7 @@ import type { Result } from "@/shared/lib/result";
 import type { InstallableRepo } from "../schemas";
 import { InstallAppCard } from "./InstallAppCard";
 import { InstallNotice } from "./InstallNotice";
+import { RefreshOnFocus } from "./RefreshOnFocus";
 import { RepoPicker } from "./RepoPicker";
 
 type Props = {
@@ -25,6 +26,7 @@ export function PrivateRepoSection({
 }: Props) {
   return (
     <div className="flex flex-col gap-4">
+      <RefreshOnFocus />
       <InstallNotice notice={notice} error={error} />
       {loadError ? (
         <p role="alert" className="text-destructive text-sm">
