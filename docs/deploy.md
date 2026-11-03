@@ -73,7 +73,7 @@ git push origin main
 |---|---|
 | 20261103000004_lego_context | 규칙 팩·규칙 파일·버전 |
 | 20261103000005_lego_specs | 스펙·작업·프롬프트 템플릿 |
-| 20261103000006_lego_learning | 개념 사전(16개)·설명·퀴즈·숙련도 |
+| 20261103000006_lego_learning | 개념 사전(15개)·설명·퀴즈·숙련도 |
 | 20261103000007_lego_sessions | 세션·인사이트·좋아요·신고, `pg_trgm`, 비공개 Storage 버킷 `lego-sessions` |
 
 공유 프로젝트에 추가되는 것은 `lego` 스키마 객체, `extensions` 스키마의 `pg_trgm`(이미 있으면 그대로), Storage 버킷 `lego-sessions` 하나다.
