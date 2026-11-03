@@ -13,7 +13,7 @@ import {
   listMyInstallations,
   listMyProjects,
 } from "../repository";
-import { detectStack, topLevelEntries } from "@/shared/stack/detect";
+import { detectRepoStack, detectStack } from "@/shared/stack/detect";
 import { detectedStackSchema } from "@/shared/stack/schema";
 import type { InstallableRepo, ProjectSummary } from "../schemas";
 import { parseRepoInput } from "./repo-url";
@@ -238,17 +238,10 @@ export async function addPublicRepo(
       fullName,
       refs.head!.sha,
     );
-    const packageJson = snapshot.files.find((f) => f.path === "package.json");
-    let parsedPackageJson: unknown = null;
-    try {
-      parsedPackageJson = packageJson ? JSON.parse(packageJson.content) : null;
-    } catch {
-      parsedPackageJson = null;
-    }
-    detectedStack = detectStack({
-      ...topLevelEntries(snapshot.paths),
-      packageJson: parsedPackageJson,
-    });
+    detectedStack = detectRepoStack(
+      snapshot.paths,
+      snapshot.files.filter((f) => f.path.endsWith("package.json")),
+    );
   } catch {
     return err("github_error", "리포 내용을 읽지 못했습니다.");
   }

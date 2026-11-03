@@ -8,7 +8,7 @@ import {
 import type { LlmUsage } from "@/lib/llm";
 import { reportError } from "@/lib/monitoring";
 import { err, ok, type Result } from "@/shared/lib/result";
-import { detectStack, topLevelEntries } from "@/shared/stack/detect";
+import { detectRepoStack, topLevelEntries } from "@/shared/stack/detect";
 import {
   addTokenUsage,
   ensureContextRules,
@@ -60,7 +60,11 @@ export async function analyzeRepo(
     snapshot.files.find((f) => f.path === "package.json")?.content,
   );
   const entries = topLevelEntries(snapshot.paths);
-  const stack = detectStack({ ...entries, packageJson });
+  // 모노레포(apps/web 등)도 보도록 워크스페이스 package.json 을 모두 본다.
+  const stack = detectRepoStack(
+    snapshot.paths,
+    snapshot.files.filter((f) => f.path.endsWith("package.json")),
+  );
 
   const folders = pickFolders(snapshot.paths).map((f) => ({
     ...f,

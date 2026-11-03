@@ -42,6 +42,22 @@ pnpm dev
 pnpm --filter @lego/scanner bench --osv   # 다시 재기
 ```
 
+## 스택 감지 정확도 (컨텍스트 생성기)
+
+공개 리포 20개(단일 앱 12개, 모노레포 8개)의 스택을 사람이 근거를 보고 매긴 정답과 비교했습니다. 전체 결과는 [docs/stack-bench.md](docs/stack-bench.md) 에 있습니다.
+
+| 방식                     | 리포 완전 일치 | 태그 정밀도 | 태그 재현율 |
+| ------------------------ | -------------- | ----------- | ----------- |
+| 루트 package.json 만     | 13/20          | 100%        | 70%         |
+| 워크스페이스 전체 (현재) | 18/20          | 98%         | 99%         |
+
+- 루트만 보면 cal.com, supabase, dub 처럼 `apps/web` 에 Next.js 가 있는 모노레포를 놓쳐서, 워크스페이스 package.json 을 모두 보도록 바꿨습니다(예시·샘플·문서 폴더는 제외).
+- 남은 두 개: 패키지가 아주 많은 리포(cal.com, 119개)의 깊은 패키지, 템플릿 버전을 의존성으로 적어 둔 CLI(create-t3-app).
+
+```bash
+npx tsx scripts/stack-bench.mts   # 다시 재기
+```
+
 ## 테스트
 
 ```bash

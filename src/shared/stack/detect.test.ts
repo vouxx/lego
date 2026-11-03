@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectStack, topLevelEntries } from "./detect";
+import { detectRepoStack, detectStack, topLevelEntries } from "./detect";
 
 describe("detectStack", () => {
   it("src/app 이 있는 Next.js + Supabase + Tailwind 리포를 판별한다", () => {
@@ -86,5 +86,64 @@ describe("topLevelEntries", () => {
       rootEntries: ["package.json", "src", "supabase"],
       srcEntries: ["app", "lib"],
     });
+  });
+});
+
+describe("detectRepoStack", () => {
+  it("모노레포의 apps/web Next.js 와 packages 의 도구를 합치고, 예시 폴더는 뺀다", () => {
+    const stack = detectRepoStack(
+      [
+        "package.json",
+        "pnpm-lock.yaml",
+        "apps/web/package.json",
+        "apps/web/app/page.tsx",
+        "packages/ui/package.json",
+        "examples/vite-demo/package.json",
+      ],
+      [
+        {
+          path: "package.json",
+          content: JSON.stringify({ devDependencies: { typescript: "^5" } }),
+        },
+        {
+          path: "apps/web/package.json",
+          content: JSON.stringify({
+            dependencies: {
+              next: "16.0.0",
+              react: "19.0.0",
+              "@supabase/ssr": "1",
+            },
+          }),
+        },
+        {
+          path: "packages/ui/package.json",
+          content: JSON.stringify({ devDependencies: { vitest: "4" } }),
+        },
+        {
+          path: "examples/vite-demo/package.json",
+          content: JSON.stringify({ dependencies: { vite: "7" } }),
+        },
+      ],
+    );
+    expect(new Set(stack.tags)).toEqual(
+      new Set([
+        "typescript",
+        "nextjs-app-router",
+        "react",
+        "supabase",
+        "vitest",
+      ]),
+    );
+    expect(stack.packageManager).toBe("pnpm");
+    expect(stack.versions.next).toBe("16.0.0");
+  });
+
+  it("package.json 이 깨져 있어도 넘어간다", () => {
+    expect(
+      detectRepoStack(
+        ["package.json"],
+        [{ path: "package.json", content: "{" }],
+      ).tags,
+    ).toEqual([]);
   });
 });
