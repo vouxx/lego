@@ -6,7 +6,7 @@ export function Promises() {
     <section aria-labelledby="promises-title" className="flex flex-col gap-6">
       <SectionHeading
         id="promises-title"
-        eyebrow="04 · 코드 다루는 방식"
+        eyebrow="05 · 코드 다루는 방식"
         title="내 코드는 이렇게 다룹니다"
       />
       <ul className="grid gap-3 sm:grid-cols-2">

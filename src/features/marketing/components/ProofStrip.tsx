@@ -7,7 +7,7 @@ export function ProofStrip() {
     <section aria-labelledby="proof-title" className="flex flex-col gap-6">
       <SectionHeading
         id="proof-title"
-        eyebrow="02 · 측정"
+        eyebrow="03 · 측정"
         title="직접 재 본 숫자"
         text="샘플 앱과 공개 리포로 잰 값입니다. 측정 방법은 GitHub README 에 있습니다."
       />

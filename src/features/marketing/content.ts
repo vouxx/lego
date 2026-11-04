@@ -46,15 +46,15 @@ export const TOOLS = [
     stage: "기획",
     command: "spec",
     title: "스펙 변환기",
-    text: "한 줄 아이디어를 PRD, 데이터 모델, 화면 목록, 순서가 있는 작업과 작업별 프롬프트로 나눕니다.",
-    output: ["PRD · 테이블 4개 · 화면 7개", "작업 13개 (T-1 → T-13)"],
+    text: "한 줄 아이디어를 PRD, 데이터 모델, 화면 목록, 순서가 있는 작업과 작업별 프롬프트로 나눕니다. PR 제목에 [T-3] 을 넣으면 작업에 이어지고, 머지되면 완료됩니다.",
+    output: ["PRD · 테이블 4개 · 화면 7개", "작업 13개 · T-3 → PR #32 머지됨"],
     href: "/specs/new",
   },
   {
     stage: "준비",
     command: "context",
     title: "규칙 파일 생성기",
-    text: "리포의 스택과 폴더 구조를 읽고 CLAUDE.md · .cursorrules · AGENTS.md 를 만들어 PR 로 넣어 줍니다.",
+    text: "리포의 스택과 폴더 구조를 읽고 CLAUDE.md · .cursorrules · AGENTS.md 를 만들어 PR 로 넣어 줍니다. 의존성이 바뀌면 다시 만들 때라고 알려 줍니다.",
     output: ["Next.js 16 · Supabase · Tailwind 4", "규칙 30개 중 24개 적용"],
     href: "/projects",
   },
@@ -62,25 +62,55 @@ export const TOOLS = [
     stage: "점검",
     command: "scan",
     title: "보안 점검기",
-    text: "AI 로 만든 앱에서 자주 생기는 실수 22가지를 찾고, AI 코딩 도구에 붙여넣을 수정 프롬프트를 드립니다.",
-    output: ["치명적 1 · 높음 2 · 보통 1", "수정 프롬프트 4개"],
+    text: "AI 로 만든 앱에서 자주 생기는 실수 22가지를 찾고, AI 코딩 도구에 붙여넣을 수정 프롬프트를 드립니다. 점검할수록 남은 문제가 줄어드는지 추이로 보여 줍니다.",
+    output: ["치명적 1 · 높음 2 · 보통 1", "지난 점검보다 2개 줄었음"],
     href: "/projects",
   },
   {
     stage: "리뷰",
     command: "guard",
     title: "PR 가드",
-    text: "AI 가 한 번에 고친 PR 을 바뀐 줄만 점검해 GitHub 에 리뷰 코멘트를 답니다. 테스트 삭제, 검사 끄기, RLS 약화, 가짜 패키지도 찾습니다.",
-    output: ["바뀐 파일 4개 · 문제 5개", "상태 체크: 실패(높음 2)"],
-    href: "/projects",
+    text: "PR 마다 바뀐 줄만 점검해 GitHub 에 줄 코멘트와 상태 체크를 남깁니다. 고친 문제는 대화를 접고, 같은 코멘트는 다시 달지 않습니다. 엄격도는 엄격·보통·느슨 중에 고릅니다.",
+    output: ["남은 문제 1개 · 해결 2개 · 무시 1개", "상태 체크: 실패(엄격)"],
+    href: "/guard",
   },
   {
     stage: "운영",
     command: "live",
     title: "운영 점검",
-    text: "배포된 사이트를 밖에서 공격자처럼 확인합니다. 로그인 없이 읽히는 테이블, JS 에 든 비밀 키, 열린 .env 를 하루 한 번 봅니다.",
-    output: ["테이블 12개 · 버킷 2개 · JS 9개", "새로 생김 1개"],
-    href: "/projects",
+    text: "배포된 사이트를 밖에서 공격자처럼 하루 한 번 확인합니다. 로그인 없이 읽히는 테이블을 찾으면 그 테이블을 만든 마이그레이션 파일과 줄까지 알려 줍니다.",
+    output: ["테이블 12개 · 버킷 2개 · JS 9개", "orders → 0003_orders.sql:1"],
+    href: "/live",
+  },
+] as const;
+
+/** 한 작업이 끝나기까지: 도구들이 [T-n] 과 같은 리포로 이어지는 흐름 */
+export const FLOW = [
+  { step: "스펙", text: "아이디어를 작업 T-1~T-13 으로 나눔", tool: "spec" },
+  {
+    step: "구현",
+    text: "작업 프롬프트로 AI 가 코드를 씀",
+    tool: "Claude Code·Cursor",
+  },
+  {
+    step: "PR",
+    text: "제목에 [T-3] 을 넣어 PR 을 엶 → 작업에 이어짐",
+    tool: "spec",
+  },
+  {
+    step: "리뷰",
+    text: "바뀐 줄에 코멘트, 고치면 '해결됨' 답글",
+    tool: "guard",
+  },
+  {
+    step: "머지",
+    text: "머지되면 T-3 완료, 보안 추이에 반영",
+    tool: "spec · scan",
+  },
+  {
+    step: "운영",
+    text: "배포된 사이트를 하루 한 번 밖에서 확인",
+    tool: "live",
   },
 ] as const;
 
@@ -215,8 +245,10 @@ export const RULES: { id: string; severity: Severity; text: string }[] = [
 ];
 
 export const PROMISES = [
-  "코드는 GitHub App 읽기 권한으로만 가져오고, 결과에는 문제가 된 몇 줄만 남깁니다.",
+  "코드는 GitHub App 으로 읽고, 결과에는 문제가 된 몇 줄만 남깁니다. 리포에 쓰는 건 규칙 파일 PR 과 PR 가드의 코멘트·상태 체크뿐입니다.",
   ".env 파일은 이름만 확인하고 내용은 열지 않습니다.",
   "AI 에 보내거나 저장하기 전에 비밀 키를 sk-ant-****abcd 처럼 가립니다.",
   "운영 점검은 소유를 확인한 사이트만, 읽기 요청만 보내고 응답 내용은 저장하지 않습니다.",
+  "PR 가드의 무시(/lego ignore)는 리포에 쓰기 권한이 있는 사람만 할 수 있고, 누가 왜 무시했는지 남깁니다.",
+  "점검 결과의 '이게 뭐예요?'는 개념 사전으로 이어져, 왜 위험한지 쉬운 말로 읽을 수 있습니다.",
 ] as const;

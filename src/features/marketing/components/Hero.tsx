@@ -16,9 +16,8 @@ export function Hero() {
         </h1>
         <p className="text-muted-foreground max-w-xl text-lg text-pretty break-keep">
           Claude Code·Cursor 로 만든 앱의 보안 실수를 찾고, 고칠 프롬프트를
-          드립니다. 아이디어를 작업으로 나누고, 규칙 파일을 만들고, PR 마다 바뀐
-          줄을 리뷰하고, 배포된 사이트를 밖에서 확인하는 도구도 같은 작업대에
-          있습니다.
+          드립니다. 아이디어를 작업으로 나누는 것부터 PR 리뷰, 배포된 사이트
+          점검까지 같은 리포·같은 작업 번호로 이어집니다.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link href="/projects" className={buttonVariants({ size: "lg" })}>
@@ -32,7 +31,7 @@ export function Hero() {
           </Link>
         </div>
         <p className="text-muted-foreground font-mono text-xs">
-          GitHub 로그인 · 읽기 권한만 · 비밀 키는 가린 뒤 처리
+          GitHub 로그인 · 리포에는 PR·코멘트만 · 비밀 키는 가린 뒤 처리
         </p>
       </div>
       <ScanTerminal />

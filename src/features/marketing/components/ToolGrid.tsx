@@ -48,9 +48,15 @@ export function ToolGrid() {
         ))}
         <li className="bg-muted/40 text-muted-foreground flex flex-col justify-center gap-2 p-5 font-mono text-xs">
           <p>모든 도구가 같은 리포·같은 결과를 씁니다.</p>
-          <p>점검 결과 → 규칙 파일의 &lsquo;주의할 점&rsquo;</p>
+          <p>스펙 작업 [T-3] → PR 연결 → 머지되면 완료</p>
           <p>보안 규칙 22개 → PR 가드가 바뀐 줄마다 다시 확인</p>
-          <p>마이그레이션의 RLS → 운영 점검이 실제 DB 와 비교</p>
+          <p>운영에서 열린 테이블 → 만든 마이그레이션 파일:줄</p>
+          <p>
+            점검 결과의 &lsquo;이게 뭐예요?&rsquo; →{" "}
+            <Link href="/concepts" className="underline">
+              개념 사전
+            </Link>
+          </p>
         </li>
       </ol>
     </section>

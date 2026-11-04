@@ -16,7 +16,7 @@ export function ClosingCta() {
           </h2>
           <p className="text-terminal-muted font-sans text-sm break-keep">
             GitHub 로 로그인하고 리포를 고르면 바로 점검합니다. 무료이고, 코드는
-            읽기만 합니다.
+            고치지 않습니다.
           </p>
           <div className="flex flex-wrap gap-3 font-sans">
             <Link
