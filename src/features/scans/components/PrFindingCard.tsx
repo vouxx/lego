@@ -28,6 +28,12 @@ export function PrFindingCard({ finding }: Props) {
             firstLine={finding.line}
           />
         ) : null}
+        {finding.state === "ignored" ? (
+          <p className="text-muted-foreground text-sm">
+            무시함 — {finding.ignoreReason ?? "이유 없음"}
+            {finding.ignoredBy ? ` (@${finding.ignoredBy})` : ""}
+          </p>
+        ) : null}
         {finding.aiVerdict === "uncertain" ? (
           <p className="text-muted-foreground text-sm">
             AI가 코드만으로는 확신하지 못한 항목입니다. 직접 확인해 주세요.

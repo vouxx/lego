@@ -154,3 +154,111 @@ export async function createPullReview(
   );
   return Number(data.id);
 }
+
+/** 방금 단 리뷰의 줄 코멘트 id. 다음 커밋에서 해결 답글·무시 처리에 쓴다. */
+export async function listReviewComments(
+  installationId: number,
+  repoFullName: string,
+  pullNumber: number,
+  reviewId: number,
+) {
+  const octokit = await installationOctokit(installationId);
+  const { data } = await octokit.request(
+    "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments",
+    {
+      ...splitRepo(repoFullName),
+      pull_number: pullNumber,
+      review_id: reviewId,
+      per_page: 100,
+    },
+  );
+  return data.map((c) => ({
+    id: Number(c.id),
+    path: c.path,
+    line: (c as { line?: number | null }).line ?? null,
+  }));
+}
+
+/** 줄 코멘트에 답글을 단다(같은 대화로 묶인다). */
+export async function replyToReviewComment(
+  installationId: number,
+  repoFullName: string,
+  pullNumber: number,
+  commentId: number,
+  body: string,
+) {
+  const octokit = await installationOctokit(installationId);
+  await octokit.request(
+    "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies",
+    {
+      ...splitRepo(repoFullName),
+      pull_number: pullNumber,
+      comment_id: commentId,
+      body,
+    },
+  );
+}
+
+type ThreadsQuery = {
+  repository: {
+    pullRequest: {
+      reviewThreads: {
+        nodes: {
+          id: string;
+          isResolved: boolean;
+          comments: { nodes: { databaseId: number }[] };
+        }[];
+      };
+    } | null;
+  } | null;
+};
+
+/** 주어진 코멘트로 시작한 대화를 '해결됨'으로 접는다. REST 에는 없어 GraphQL 을 쓴다. */
+export async function resolveThreads(
+  installationId: number,
+  repoFullName: string,
+  pullNumber: number,
+  commentIds: number[],
+) {
+  if (commentIds.length === 0) return 0;
+  const octokit = await installationOctokit(installationId);
+  const { owner, repo } = splitRepo(repoFullName);
+  const data = await octokit.graphql<ThreadsQuery>(
+    `query($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes { id isResolved comments(first: 1) { nodes { databaseId } } }
+          }
+        }
+      }
+    }`,
+    { owner, repo, number: pullNumber },
+  );
+  const wanted = new Set(commentIds);
+  const threads =
+    data.repository?.pullRequest?.reviewThreads.nodes.filter(
+      (t) => !t.isResolved && wanted.has(t.comments.nodes[0]?.databaseId ?? -1),
+    ) ?? [];
+  for (const t of threads) {
+    await octokit.graphql(
+      `mutation($id: ID!) { resolveReviewThread(input: { threadId: $id }) { thread { id } } }`,
+      { id: t.id },
+    );
+  }
+  return threads.length;
+}
+
+/** PR 의 커밋 메시지(작업 키 [T-3] 찾기용) */
+export async function listPullCommitMessages(
+  installationId: number,
+  repoFullName: string,
+  pullNumber: number,
+) {
+  const octokit = await installationOctokit(installationId);
+  const { data } = await octokit.request(
+    "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
+    { ...splitRepo(repoFullName), pull_number: pullNumber, per_page: 100 },
+  );
+  return data.map((c) => c.commit.message);
+}

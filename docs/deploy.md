@@ -42,6 +42,7 @@ Homepage·Callback URL 은 https://github.com/settings/apps/lego-security 에서
 - Subscribe to events
   - **Push** — 규칙 파일 '업데이트 필요', 커밋 `[T-n]` 으로 스펙 작업 완료
   - **Pull request** — PR 가드
+  - **Pull request review comment** — PR 가드 `/lego ignore` 답글
 
 권한을 늘리면 이미 설치한 사용자는 GitHub 에서 새 권한을 승인해야 한다.
 승인 전에도 PR 가드는 레고 화면에 결과를 남기고, GitHub 게시가 막힌 이유("권한이 없습니다")를 보여 준다.
@@ -84,6 +85,7 @@ git push origin main
 | 20261104000001_lego_drop_learn_sessions | 학습 도우미·세션 회고 테이블 삭제(개념 사전은 남김) |
 | 20261104000002_lego_pr_guard | PR 가드: `projects.pr_guard_enabled`, PR 리뷰·발견 항목 |
 | 20261104000003_lego_live_checks | 운영 점검 대상·결과, 워커 호출 조건에 일일 점검 추가 |
+| 20261104000004_lego_pr_guard_tracking | PR 가드: fingerprint·코멘트 id·무시 상태·체크 id |
 
 학습 도우미·세션 회고는 없앴다. 비공개 Storage 버킷 `lego-sessions` 는 SQL 로 지울 수 없어 빈 채로 남아 있다(대시보드 Storage 에서 지울 수 있음).
 `extensions.pg_trgm` 은 다른 앱이 쓸 수 있어 그대로 둔다.

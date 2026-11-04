@@ -512,8 +512,12 @@ export type Database = {
           created_at: string;
           explanation: string | null;
           file_path: string;
+          fingerprint: string;
           fix_prompt: string | null;
+          github_comment_id: number | null;
           id: string;
+          ignore_reason: string | null;
+          ignored_by: string | null;
           line: number;
           reason: string;
           review_id: string;
@@ -521,6 +525,7 @@ export type Database = {
           rule_title: string;
           severity: string;
           snippet: string;
+          state: string;
           user_id: string;
         };
         ComputedFields: never;
@@ -529,8 +534,12 @@ export type Database = {
           created_at?: string;
           explanation?: string | null;
           file_path: string;
+          fingerprint?: string;
           fix_prompt?: string | null;
+          github_comment_id?: number | null;
           id?: string;
+          ignore_reason?: string | null;
+          ignored_by?: string | null;
           line: number;
           reason: string;
           review_id: string;
@@ -538,6 +547,7 @@ export type Database = {
           rule_title: string;
           severity: string;
           snippet?: string;
+          state?: string;
           user_id: string;
         };
         Update: {
@@ -545,8 +555,12 @@ export type Database = {
           created_at?: string;
           explanation?: string | null;
           file_path?: string;
+          fingerprint?: string;
           fix_prompt?: string | null;
+          github_comment_id?: number | null;
           id?: string;
+          ignore_reason?: string | null;
+          ignored_by?: string | null;
           line?: number;
           reason?: string;
           review_id?: string;
@@ -554,6 +568,7 @@ export type Database = {
           rule_title?: string;
           severity?: string;
           snippet?: string;
+          state?: string;
           user_id?: string;
         };
         Relationships: [
@@ -575,6 +590,7 @@ export type Database = {
       };
       pr_reviews: {
         Row: {
+          check_run_id: number | null;
           created_at: string;
           error: string | null;
           head_sha: string;
@@ -590,6 +606,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          check_run_id?: number | null;
           created_at?: string;
           error?: string | null;
           head_sha: string;
@@ -604,6 +621,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          check_run_id?: number | null;
           created_at?: string;
           error?: string | null;
           head_sha?: string;

@@ -217,7 +217,7 @@ export async function getPrReviewForWorker(reviewId: string) {
   return createAdminClient()
     .from("pr_reviews")
     .select(
-      "id, user_id, pr_number, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack)",
+      "id, user_id, pr_number, pr_title, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack)",
     )
     .eq("id", reviewId)
     .maybeSingle();
@@ -242,8 +242,115 @@ export async function replacePrReviewFindings(
     .from("pr_review_findings")
     .delete()
     .eq("review_id", reviewId);
-  if (error || rows.length === 0) return { error };
-  return admin.from("pr_review_findings").insert(rows);
+  if (error || rows.length === 0) return { data: [], error };
+  return admin
+    .from("pr_review_findings")
+    .insert(rows)
+    .select("id, fingerprint, file_path, line");
+}
+
+const PR_FINDING_COLUMNS =
+  "id, fingerprint, rule_id, rule_title, severity, file_path, line, reason, ai_verdict, explanation, fix_prompt, github_comment_id, state, ignore_reason, ignored_by";
+
+/** 같은 PR 의 직전(끝난) 리뷰와 그 발견 항목. 커밋 사이 비교에 쓴다. */
+export async function getPreviousPrReview(
+  projectId: string,
+  prNumber: number,
+  reviewId: string,
+) {
+  const admin = createAdminClient();
+  const { data: previous } = await admin
+    .from("pr_reviews")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("pr_number", prNumber)
+    .eq("status", "done")
+    .neq("id", reviewId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!previous) return { review: null, findings: [] };
+  const { data: findings } = await admin
+    .from("pr_review_findings")
+    .select(PR_FINDING_COLUMNS)
+    .eq("review_id", previous.id);
+  return { review: previous, findings: findings ?? [] };
+}
+
+export async function listPrReviewFindingsForWorker(reviewId: string) {
+  return createAdminClient()
+    .from("pr_review_findings")
+    .select(PR_FINDING_COLUMNS)
+    .eq("review_id", reviewId);
+}
+
+export async function setPrFindingCommentIds(
+  rows: { id: string; commentId: number }[],
+) {
+  const admin = createAdminClient();
+  for (const row of rows) {
+    const { error } = await admin
+      .from("pr_review_findings")
+      .update({ github_comment_id: row.commentId })
+      .eq("id", row.id);
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+/** /lego ignore: 답글이 달린 줄 코멘트의 발견 항목과 그 PR 정보 */
+export async function findPrFindingByComment(commentId: number) {
+  return createAdminClient()
+    .from("pr_review_findings")
+    .select(
+      "id, fingerprint, rule_id, pr_reviews!inner(project_id, pr_number, projects!inner(installation_id, repo_full_name))",
+    )
+    .eq("github_comment_id", commentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+export async function getLatestPrReview(projectId: string, prNumber: number) {
+  return createAdminClient()
+    .from("pr_reviews")
+    .select("id, head_sha, check_run_id, summary, projects(id)")
+    .eq("project_id", projectId)
+    .eq("pr_number", prNumber)
+    .eq("status", "done")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+export async function ignorePrFindings(
+  reviewIds: string[],
+  fingerprint: string,
+  reason: string,
+  by: string,
+) {
+  return createAdminClient()
+    .from("pr_review_findings")
+    .update({ state: "ignored", ignore_reason: reason, ignored_by: by })
+    .in("review_id", reviewIds)
+    .eq("fingerprint", fingerprint);
+}
+
+/** 작업 키(T-3)로 이 리포에 연결된 스펙의 작업을 찾는다. 같은 키가 여러 스펙에 있으면 최근 스펙 것. */
+export async function listTasksByKeys(
+  installationId: number,
+  repoFullName: string,
+  keys: string[],
+) {
+  return createAdminClient()
+    .from("spec_tasks")
+    .select(
+      "key, title, description, acceptance_criteria, specs!inner(created_at, projects!inner(installation_id, repo_full_name))",
+    )
+    .in("key", keys.length > 0 ? keys : ["__none__"])
+    .eq("specs.projects.installation_id", installationId)
+    .eq("specs.projects.repo_full_name", repoFullName)
+    .order("created_at", { referencedTable: "specs", ascending: false });
 }
 
 export async function listProjectPrReviews(projectId: string) {
@@ -272,7 +379,7 @@ export async function listPrReviewFindings(reviewId: string) {
   return supabase
     .from("pr_review_findings")
     .select(
-      "id, rule_id, rule_title, severity, file_path, line, snippet, reason, ai_verdict, explanation, fix_prompt",
+      "id, rule_id, rule_title, severity, file_path, line, snippet, reason, ai_verdict, explanation, fix_prompt, state, ignore_reason, ignored_by",
     )
     .eq("review_id", reviewId)
     .order("created_at");

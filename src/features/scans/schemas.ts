@@ -126,13 +126,43 @@ export const PR_REVIEW_STATUSES = [
 ] as const;
 export type PrReviewStatus = (typeof PR_REVIEW_STATUSES)[number];
 
+const prFindingRefSchema = z.object({
+  ruleId: z.string(),
+  ruleTitle: z.string(),
+  filePath: z.string(),
+  line: z.number(),
+});
+export type PrFindingRef = z.infer<typeof prFindingRefSchema>;
+
+export const riskAreaSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  files: z.array(z.string()),
+  note: z.string().optional(),
+});
+export type PrRiskArea = z.infer<typeof riskAreaSchema>;
+
+export const prScopeSchema = z.object({
+  tasks: z.array(z.object({ key: z.string(), title: z.string() })),
+  outside: z.array(z.object({ path: z.string(), reason: z.string() })),
+});
+export type PrScope = z.infer<typeof prScopeSchema>;
+
 export const prReviewSummarySchema = z.object({
   files: z.number().default(0),
+  /** 남은(무시하지 않은) 문제의 심각도별 개수 */
   counts: z.partialRecord(z.enum(SEVERITIES), z.number()).default({}),
   conclusion: z.enum(["success", "neutral", "failure"]).optional(),
   llm: z.enum(["done", "skipped", "partial"]).optional(),
   note: z.string().nullable().optional(),
   posted: z.object({ review: z.boolean(), check: z.boolean() }).optional(),
+  /** 이 커밋에서 처음 나온 문제 수 */
+  newCount: z.number().default(0),
+  ignored: z.number().default(0),
+  /** 직전 커밋에는 있었는데 이번 커밋에서 사라진 문제 */
+  resolved: z.array(prFindingRefSchema).default([]),
+  risk: z.array(riskAreaSchema).default([]),
+  scope: prScopeSchema.nullable().default(null),
 });
 export type PrReviewSummary = z.infer<typeof prReviewSummarySchema>;
 
@@ -148,6 +178,9 @@ export type PrReviewRow = {
 
 export type PrFindingView = {
   id: string;
+  state: "open" | "ignored";
+  ignoreReason: string | null;
+  ignoredBy: string | null;
   ruleId: string;
   ruleTitle: string;
   severity: Severity;
@@ -172,3 +205,21 @@ export type GuardReviewRow = PrReviewRow & {
   projectId: string;
   repoFullName: string;
 };
+
+export const reviewCommentEvent = z.object({
+  action: z.string(),
+  installation: z.object({ id: z.number() }).optional(),
+  repository: z.object({ full_name: z.string() }),
+  pull_request: z.object({ number: z.number() }),
+  comment: z.object({
+    id: z.number(),
+    body: z.string(),
+    in_reply_to_id: z.number().optional(),
+    author_association: z.string(),
+    user: z.object({ login: z.string(), type: z.string() }),
+  }),
+});
+
+export const scopeOutput = z.object({
+  outside: z.array(z.object({ path: z.string(), reason: z.string() })),
+});

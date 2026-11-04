@@ -1,10 +1,12 @@
 import "server-only";
 import {
   codeContext,
+  fingerprint,
   maskSecrets,
   parsePatch,
   PR_RULES,
   reviewPullRequest,
+  riskAreas,
   STATIC_RULES,
   type Candidate,
   type ChangedFile,
@@ -13,9 +15,12 @@ import {
   completeCheckRun,
   createCheckRun,
   createPullReview,
+  listPullCommitMessages,
   listPullFiles,
+  listReviewComments,
   readFileAtRef,
-  type CheckAnnotation,
+  replyToReviewComment,
+  resolveThreads,
 } from "@/lib/github/pulls";
 import { isLlmConfigured, type LlmUsage } from "@/lib/llm";
 import { reportError } from "@/lib/monitoring";
@@ -23,23 +28,37 @@ import type { Insert } from "@/lib/supabase/types";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
   addTokenUsage,
+  getPreviousPrReview,
   getPrReviewForWorker,
   insertLlmCall,
   insertPrReview,
   listGuardedProjects,
   replacePrReviewFindings,
+  setPrFindingCommentIds,
   updatePrReview,
 } from "../repository";
 import {
   pullRequestEvent,
-  SEVERITIES,
+  type AiVerdict,
+  type PrFindingRef,
   type PrReviewSummary,
+  type PrScope,
   type Severity,
 } from "../schemas";
 import { explain, triage, type JudgeItem } from "./judge";
 import { PR_FIX_PROMPTS } from "./pr-guard-prompts";
+import {
+  CHECK_NAME,
+  checkOutput,
+  commentBody,
+  countBySeverity,
+  detailsUrl,
+  githubErrorNote,
+  reviewBody,
+  type PublishedFinding,
+} from "./pr-guard-publish";
+import { checkSpecScope } from "./pr-guard-scope";
 
-const CHECK_NAME = "레고 PR 가드";
 const REVIEWED_ACTIONS = new Set([
   "opened",
   "synchronize",
@@ -106,56 +125,90 @@ function stackLabel(detected: unknown) {
     : "알 수 없음";
 }
 
-const LEVEL: Record<Severity, CheckAnnotation["annotation_level"]> = {
-  critical: "failure",
-  high: "failure",
-  medium: "warning",
-  low: "notice",
+type Repo = { installationId: number; repo: string; headSha: string };
+
+/** 바뀐 파일(최신 내용 포함)과 .env.example 같은 템플릿 */
+async function readPullRequest(r: Repo, prNumber: number) {
+  const pullFiles = await listPullFiles(r.installationId, r.repo, prNumber);
+  const files: ChangedFile[] = [];
+  let read = 0;
+  for (const f of pullFiles) {
+    const status = f.status as ChangedFile["status"];
+    let content: string | undefined;
+    if (
+      status !== "removed" &&
+      READ_CONTENT.test(f.path) &&
+      read < MAX_CONTENT_FILES
+    ) {
+      read++;
+      content =
+        (await readFileAtRef(r.installationId, r.repo, f.path, r.headSha)) ??
+        undefined;
+    }
+    files.push({ path: f.path, status, patch: f.patch, content });
+  }
+  const templates: string[] = [];
+  for (const name of ENV_TEMPLATES) {
+    const text = await readFileAtRef(r.installationId, r.repo, name, r.headSha);
+    if (text !== null) templates.push(text);
+  }
+  return { files, templates };
+}
+
+type Item = JudgeItem & { candidate: Candidate; fingerprint: string };
+type Judged = {
+  verdict: AiVerdict | null;
+  explanation: string | null;
+  fixPrompt: string | null;
 };
 
-function conclusionOf(counts: Partial<Record<Severity, number>>) {
-  if ((counts.critical ?? 0) + (counts.high ?? 0) > 0)
-    return "failure" as const;
-  if ((counts.medium ?? 0) + (counts.low ?? 0) > 0) return "neutral" as const;
-  return "success" as const;
-}
-
-function summaryMarkdown(
-  rows: {
-    rule_id: string;
-    rule_title: string;
-    severity: Severity;
-    file_path: string;
-    line: number;
-  }[],
+/**
+ * 보안 규칙 후보만 AI 판별·설명. 직전 커밋에서 이미 판별한 같은 문제(fingerprint)는 그 결과를 다시 쓴다.
+ * PR 규칙은 diff 로 확정되므로 고정 안내를 쓴다.
+ */
+async function judgeItems(
+  items: Item[],
+  previous: Map<string, Judged>,
+  stack: string,
+  onUsage: (purpose: "triage" | "explain", usage: LlmUsage) => Promise<boolean>,
 ) {
-  if (rows.length === 0)
-    return "바뀐 줄에서 보안 문제나 위험한 변경을 찾지 못했습니다.";
-  const order = (s: Severity) => SEVERITIES.indexOf(s);
-  return [...rows]
-    .sort((a, b) => order(a.severity) - order(b.severity))
-    .map(
-      (r) =>
-        `- **${r.severity}** \`${r.rule_id}\` ${r.rule_title} — \`${r.file_path}:${r.line}\``,
-    )
-    .join("\n");
-}
-
-const detailsUrl = (projectId: string, reviewId: string) =>
-  process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/projects/${projectId}/reviews/${reviewId}`
-    : undefined;
-
-/** GitHub 권한이 없을 때 사용자에게 보여 줄 말 */
-function githubErrorNote(error: unknown, what: string) {
-  const status = (error as { status?: number }).status;
-  if (status === 403 || status === 404)
-    return `${what}: GitHub App 에 권한이 없습니다(Pull requests·Checks 쓰기 권한 필요).`;
-  return `${what}: GitHub 요청이 실패했습니다.`;
+  const results = new Map<number, Judged>();
+  const fresh: Item[] = [];
+  for (const item of items) {
+    const before = previous.get(item.fingerprint);
+    if (before?.verdict) results.set(item.id, before);
+    else if (item.ruleId.startsWith("SEC-")) fresh.push(item);
+  }
+  let llm: PrReviewSummary["llm"] = fresh.length === 0 ? undefined : "done";
+  if (fresh.length > 0 && !isLlmConfigured()) llm = "skipped";
+  else if (fresh.length > 0) {
+    const noop = async () => {};
+    const triaged = await triage(fresh, stack, onUsage, noop);
+    const confirmed = fresh.filter(
+      (i) => triaged.verdicts.get(i.id)?.verdict !== "false_positive",
+    );
+    let texts = new Map<number, { explanation: string; fixPrompt: string }>();
+    if (triaged.stopped) llm = "partial";
+    else if (confirmed.length > 0) {
+      const explained = await explain(confirmed, stack, onUsage, noop);
+      texts = explained.results;
+      if (explained.stopped || texts.size < confirmed.length) llm = "partial";
+    }
+    for (const item of fresh)
+      results.set(item.id, {
+        verdict: triaged.verdicts.get(item.id)?.verdict ?? null,
+        explanation: texts.get(item.id)?.explanation ?? null,
+        fixPrompt: texts.get(item.id)?.fixPrompt ?? null,
+      });
+  }
+  return { results, llm };
 }
 
 /**
- * 리뷰 하나를 끝까지 처리한다: 바뀐 파일 읽기 → 규칙 → (보안 규칙만) AI 판별·수정 프롬프트 → 저장 → GitHub 에 게시.
+ * 리뷰 하나를 끝까지 처리한다.
+ * 1. 바뀐 파일 → 규칙 → AI 판별(새 문제만) → 저장
+ * 2. 직전 커밋과 비교: 이미 코멘트한 문제는 다시 달지 않고, 사라진 문제는 '해결됨' 답글 + 대화 접기
+ * 3. 무시(/lego ignore)한 문제는 이어서 무시, 상태 체크는 남은 문제로만 결정
  * GitHub 게시가 실패해도 결과는 레고 화면에 남는다.
  */
 export async function processPrReview(reviewId: string) {
@@ -163,63 +216,29 @@ export async function processPrReview(reviewId: string) {
   if (error) throw new Error(`PR 리뷰 조회 실패: ${error.message}`);
   const project = review?.projects;
   if (!review || !project?.installation_id || review.status === "done") return;
-  const installationId = project.installation_id;
-  const repo = project.repo_full_name;
+  const r: Repo = {
+    installationId: project.installation_id,
+    repo: project.repo_full_name,
+    headSha: review.head_sha,
+  };
   await updatePrReview(reviewId, { status: "running", error: null });
 
   const notes: string[] = [];
   let checkRunId: number | null = null;
   try {
     checkRunId = await createCheckRun(
-      installationId,
-      repo,
-      review.head_sha,
+      r.installationId,
+      r.repo,
+      r.headSha,
       CHECK_NAME,
     );
+    await updatePrReview(reviewId, { check_run_id: checkRunId });
   } catch (e) {
     notes.push(githubErrorNote(e, "상태 체크"));
   }
 
   try {
-    // 1. 바뀐 파일과 최신 내용
-    const pullFiles = await listPullFiles(
-      installationId,
-      repo,
-      review.pr_number,
-    );
-    const files: ChangedFile[] = [];
-    let read = 0;
-    for (const f of pullFiles) {
-      const status = f.status as ChangedFile["status"];
-      let content: string | undefined;
-      if (
-        status !== "removed" &&
-        READ_CONTENT.test(f.path) &&
-        read < MAX_CONTENT_FILES
-      ) {
-        read++;
-        content =
-          (await readFileAtRef(
-            installationId,
-            repo,
-            f.path,
-            review.head_sha,
-          )) ?? undefined;
-      }
-      files.push({ path: f.path, status, patch: f.patch, content });
-    }
-    const templates: string[] = [];
-    for (const name of ENV_TEMPLATES) {
-      const text = await readFileAtRef(
-        installationId,
-        repo,
-        name,
-        review.head_sha,
-      );
-      if (text !== null) templates.push(text);
-    }
-
-    // 2. 규칙
+    const { files, templates } = await readPullRequest(r, review.pr_number);
     const { candidates, errors } = reviewPullRequest(
       files,
       templates.length > 0 ? templates : null,
@@ -229,167 +248,247 @@ export async function processPrReview(reviewId: string) {
         area: "pr-guard.rule",
         extra: { reviewId, rule: e.ruleId },
       });
+
+    // 같은 문제가 여러 번 잡히면(같은 줄) 하나만 남긴다.
     const contents = new Map(
       files
         .filter((f) => f.content !== undefined)
         .map((f) => [f.path, { path: f.path, content: f.content! }]),
     );
-    const items: (JudgeItem & { candidate: Candidate })[] = candidates.map(
-      (c, id) => ({
-        id,
-        candidate: c,
-        ruleId: c.ruleId,
-        ruleTitle: RULE_TITLES.get(c.ruleId) ?? c.ruleId,
-        filePath: c.filePath,
-        lineStart: c.lineStart,
-        lineEnd: c.lineEnd,
-        reason: c.reason,
-        context: codeContext(contents.get(c.filePath), c),
-      }),
+    const byFp = new Map<string, Candidate>();
+    for (const c of candidates) {
+      const fp = fingerprint(c);
+      if (!byFp.has(fp)) byFp.set(fp, c);
+    }
+    const items: Item[] = [...byFp].map(([fp, c], id) => ({
+      id,
+      fingerprint: fp,
+      candidate: c,
+      ruleId: c.ruleId,
+      ruleTitle: RULE_TITLES.get(c.ruleId) ?? c.ruleId,
+      filePath: c.filePath,
+      lineStart: c.lineStart,
+      lineEnd: c.lineEnd,
+      reason: c.reason,
+      context: codeContext(contents.get(c.filePath), c),
+    }));
+
+    const prev = await getPreviousPrReview(
+      project.id,
+      review.pr_number,
+      reviewId,
+    );
+    const prevByFp = new Map(prev.findings.map((f) => [f.fingerprint, f]));
+
+    const onUsage = async (purpose: string, usage: LlmUsage) => {
+      await insertLlmCall({
+        user_id: review.user_id,
+        pr_review_id: reviewId,
+        purpose: `pr-${purpose}`,
+        model: usage.model,
+        input_tokens: usage.inputTokens,
+        output_tokens: usage.outputTokens,
+        cost_usd: usage.costUsd,
+        latency_ms: usage.latencyMs,
+      });
+      const { data: hasRemaining } = await addTokenUsage(
+        review.user_id,
+        usage.inputTokens + usage.outputTokens,
+      );
+      return hasRemaining !== false;
+    };
+    const { results, llm } = await judgeItems(
+      items,
+      new Map(
+        prev.findings.map((f) => [
+          f.fingerprint,
+          {
+            verdict: f.ai_verdict as AiVerdict | null,
+            explanation: f.explanation,
+            fixPrompt: f.fix_prompt,
+          },
+        ]),
+      ),
+      stackLabel(project.detected_stack),
+      onUsage,
     );
 
-    // 3. 보안 규칙 후보만 AI 판별·설명. PR 규칙은 diff 로 확정되므로 고정 안내를 쓴다.
-    const security = items.filter((i) => i.ruleId.startsWith("SEC-"));
-    let verdicts = new Map<
-      number,
-      {
-        verdict: "true_positive" | "false_positive" | "uncertain";
-        reason: string;
-      }
-    >();
-    let texts = new Map<number, { explanation: string; fixPrompt: string }>();
-    let llm: PrReviewSummary["llm"] =
-      security.length === 0 ? undefined : "done";
-    if (security.length > 0 && !isLlmConfigured()) {
-      llm = "skipped";
-    } else if (security.length > 0) {
-      const onUsage = async (
-        purpose: "triage" | "explain",
-        usage: LlmUsage,
-      ) => {
-        await insertLlmCall({
-          user_id: review.user_id,
-          pr_review_id: reviewId,
-          purpose: `pr-${purpose}`,
-          model: usage.model,
-          input_tokens: usage.inputTokens,
-          output_tokens: usage.outputTokens,
-          cost_usd: usage.costUsd,
-          latency_ms: usage.latencyMs,
-        });
-        const { data: hasRemaining } = await addTokenUsage(
-          review.user_id,
-          usage.inputTokens + usage.outputTokens,
+    // 위험 영역 + 스펙 작업 범위(첫 리뷰에서만 AI 를 쓴다)
+    const risk = riskAreas(files);
+    let scope: PrScope | null = null;
+    if (!prev.review) {
+      try {
+        const commits = await listPullCommitMessages(
+          r.installationId,
+          r.repo,
+          review.pr_number,
         );
-        return hasRemaining !== false;
-      };
-      const stack = stackLabel(project.detected_stack);
-      const noop = async () => {};
-      const triaged = await triage(security, stack, onUsage, noop);
-      verdicts = triaged.verdicts;
-      const confirmed = security.filter(
-        (i) => verdicts.get(i.id)?.verdict !== "false_positive",
-      );
-      if (triaged.stopped) llm = "partial";
-      else if (confirmed.length > 0) {
-        const explained = await explain(confirmed, stack, onUsage, noop);
-        texts = explained.results;
-        if (explained.stopped || texts.size < confirmed.length) llm = "partial";
+        scope = await checkSpecScope({
+          installationId: r.installationId,
+          repoFullName: r.repo,
+          texts: [review.pr_title, ...commits],
+          files: files.map((f) => f.path),
+          onUsage: async (usage) => {
+            await onUsage("scope", usage);
+          },
+        });
+      } catch (e) {
+        reportError(e, { area: "pr-guard.scope", extra: { reviewId } });
       }
     }
 
-    // 4. 저장. AI 가 오탐이라 한 보안 후보는 게시하지 않고 기록만 남긴다.
-    const rows: Insert<"pr_review_findings">[] = items.map((item) => ({
-      review_id: reviewId,
-      user_id: review.user_id,
-      rule_id: item.ruleId,
-      rule_title: item.ruleTitle,
-      severity: item.candidate.severity,
-      file_path: item.filePath,
-      line: Math.max(1, item.lineStart),
-      snippet: maskSecrets(
-        item.candidate.snippet.split("\n").slice(0, 6).join("\n"),
-      ),
-      reason: item.reason,
-      ai_verdict: verdicts.get(item.id)?.verdict ?? null,
-      explanation: texts.get(item.id)?.explanation ?? null,
-      fix_prompt:
-        texts.get(item.id)?.fixPrompt ??
-        PR_FIX_PROMPTS[item.ruleId]?.(item.filePath, item.lineStart) ??
-        null,
-    }));
-    const { error: saveError } = await replacePrReviewFindings(reviewId, rows);
+    // 저장: 직전 커밋의 코멘트 id·무시 상태를 이어받는다.
+    const rows: Insert<"pr_review_findings">[] = items.map((item) => {
+      const before = prevByFp.get(item.fingerprint);
+      const judged = results.get(item.id);
+      return {
+        review_id: reviewId,
+        user_id: review.user_id,
+        fingerprint: item.fingerprint,
+        rule_id: item.ruleId,
+        rule_title: item.ruleTitle,
+        severity: item.candidate.severity,
+        file_path: item.filePath,
+        line: Math.max(1, item.lineStart),
+        snippet: maskSecrets(
+          item.candidate.snippet.split("\n").slice(0, 6).join("\n"),
+        ),
+        reason: item.reason,
+        ai_verdict: judged?.verdict ?? null,
+        explanation: judged?.explanation ?? null,
+        fix_prompt:
+          judged?.fixPrompt ??
+          PR_FIX_PROMPTS[item.ruleId]?.(item.filePath, item.lineStart) ??
+          null,
+        github_comment_id: before?.github_comment_id ?? null,
+        state: before?.state === "ignored" ? "ignored" : "open",
+        ignore_reason: before?.ignore_reason ?? null,
+        ignored_by: before?.ignored_by ?? null,
+      };
+    });
+    const { data: saved, error: saveError } = await replacePrReviewFindings(
+      reviewId,
+      rows,
+    );
     if (saveError)
       throw new Error(`PR 리뷰 결과 저장 실패: ${saveError.message}`);
+    const idByFp = new Map((saved ?? []).map((s) => [s.fingerprint, s.id]));
 
-    const shown = rows.filter((r) => r.ai_verdict !== "false_positive");
-    const counts: Partial<Record<Severity, number>> = {};
-    for (const r of shown)
-      counts[r.severity as Severity] =
-        (counts[r.severity as Severity] ?? 0) + 1;
-    const conclusion = conclusionOf(counts);
+    const shown = rows.filter(
+      (x) => x.ai_verdict !== "false_positive",
+    ) as (PublishedFinding & {
+      fingerprint: string;
+      github_comment_id: number | null;
+    })[];
+    const open = shown.filter((x) => x.state === "open");
+    const added = open.filter((x) => !prevByFp.has(x.fingerprint));
+    const current = new Set(rows.map((x) => x.fingerprint));
+    const gone = prev.findings.filter(
+      (f) =>
+        f.ai_verdict !== "false_positive" &&
+        f.state === "open" &&
+        !current.has(f.fingerprint),
+    );
+    const resolved: PrFindingRef[] = gone.map((f) => ({
+      ruleId: f.rule_id,
+      ruleTitle: f.rule_title,
+      filePath: f.file_path,
+      line: f.line,
+    }));
 
-    // 5. GitHub 에 게시: 줄 코멘트는 이 PR 에서 추가된 줄에만 달 수 있다.
+    // GitHub: 새 문제만 줄 코멘트(추가된 줄에만 달 수 있다)
     const addedLines = new Map(
       files.map((f) => [
         f.path,
         new Set(parsePatch(f.patch).added.map((a) => a.line)),
       ]),
     );
-    const inline = shown
-      .filter((r) => addedLines.get(r.file_path)?.has(r.line))
+    const inline = added
+      .filter((x) => addedLines.get(x.file_path)?.has(x.line))
       .slice(0, MAX_COMMENTS);
-    const body = [
-      `### ${CHECK_NAME}`,
-      summaryMarkdown(shown as Parameters<typeof summaryMarkdown>[0]),
-      shown.length > inline.length
-        ? `\n줄 코멘트로 달지 못한 항목 ${shown.length - inline.length}개는 위 목록과 레고 화면에서 볼 수 있습니다.`
-        : "",
-    ].join("\n\n");
-
+    const isFirst = !prev.review;
     let postedReview = false;
-    if (shown.length > 0) {
+    if (
+      added.length > 0 ||
+      resolved.length > 0 ||
+      (isFirst && risk.length > 0)
+    ) {
       try {
-        await createPullReview(installationId, repo, review.pr_number, {
-          commitId: review.head_sha,
-          body,
-          comments: inline.map((r) => ({
-            path: r.file_path,
-            line: r.line,
-            body: [
-              `**${r.severity}** \`${r.rule_id}\` ${r.rule_title}`,
-              r.explanation ?? r.reason,
-              r.fix_prompt
-                ? `<details><summary>AI 코딩 도구에 붙여넣을 수정 프롬프트</summary>\n\n\`\`\`\n${r.fix_prompt}\n\`\`\`\n</details>`
-                : "",
-            ]
-              .filter(Boolean)
-              .join("\n\n"),
-          })),
-        });
+        const githubReviewId = await createPullReview(
+          r.installationId,
+          r.repo,
+          review.pr_number,
+          {
+            commitId: r.headSha,
+            body: reviewBody({
+              isFirst,
+              added,
+              inlineCount: inline.length,
+              resolved,
+              risk,
+              scope,
+            }),
+            comments: inline.map((x) => ({
+              path: x.file_path,
+              line: x.line,
+              body: commentBody(x),
+            })),
+          },
+        );
         postedReview = true;
+        if (inline.length > 0) {
+          const comments = await listReviewComments(
+            r.installationId,
+            r.repo,
+            review.pr_number,
+            githubReviewId,
+          );
+          const updates = inline.flatMap((x) => {
+            const c = comments.find(
+              (c) => c.path === x.file_path && c.line === x.line,
+            );
+            const id = idByFp.get(x.fingerprint);
+            return c && id ? [{ id, commentId: c.id }] : [];
+          });
+          await setPrFindingCommentIds(updates);
+        }
       } catch (e) {
         notes.push(githubErrorNote(e, "리뷰 코멘트"));
       }
     }
+
+    // 사라진 문제: 그 코멘트에 '해결됨' 답글을 달고 대화를 접는다.
+    const goneComments = gone.flatMap((f) =>
+      f.github_comment_id ? [Number(f.github_comment_id)] : [],
+    );
+    if (goneComments.length > 0) {
+      try {
+        for (const id of goneComments)
+          await replyToReviewComment(
+            r.installationId,
+            r.repo,
+            review.pr_number,
+            id,
+            `✅ 커밋 ${r.headSha.slice(0, 7)} 에서 해결됐어요.`,
+          );
+        await resolveThreads(
+          r.installationId,
+          r.repo,
+          review.pr_number,
+          goneComments,
+        );
+      } catch (e) {
+        notes.push(githubErrorNote(e, "해결 표시"));
+      }
+    }
+
+    const output = checkOutput({ findings: shown, resolved, risk, scope });
     let postedCheck = false;
     if (checkRunId !== null) {
       try {
-        await completeCheckRun(installationId, repo, checkRunId, {
-          conclusion,
-          title: shown.length === 0 ? "문제 없음" : `문제 ${shown.length}개`,
-          summary: summaryMarkdown(
-            shown as Parameters<typeof summaryMarkdown>[0],
-          ),
+        await completeCheckRun(r.installationId, r.repo, checkRunId, {
+          ...output,
           detailsUrl: detailsUrl(project.id, reviewId),
-          annotations: shown.map((r) => ({
-            path: r.file_path,
-            start_line: r.line,
-            end_line: r.line,
-            annotation_level: LEVEL[r.severity as Severity],
-            title: `${r.rule_id} ${r.rule_title}`,
-            message: r.explanation ?? r.reason,
-          })),
         });
         postedCheck = true;
       } catch (e) {
@@ -399,11 +498,16 @@ export async function processPrReview(reviewId: string) {
 
     const summary: PrReviewSummary = {
       files: files.length,
-      counts,
-      conclusion,
+      counts: countBySeverity(open as { severity: Severity }[]),
+      conclusion: output.conclusion,
       llm,
       note: notes.length > 0 ? notes.join(" ") : null,
       posted: { review: postedReview, check: postedCheck },
+      newCount: added.length,
+      ignored: shown.length - open.length,
+      resolved,
+      risk,
+      scope,
     };
     await updatePrReview(reviewId, { status: "done", summary });
   } catch (e) {
@@ -413,7 +517,7 @@ export async function processPrReview(reviewId: string) {
       error: notes.concat(githubErrorNote(e, "PR 읽기")).join(" "),
     });
     if (checkRunId !== null) {
-      await completeCheckRun(installationId, repo, checkRunId, {
+      await completeCheckRun(r.installationId, r.repo, checkRunId, {
         conclusion: "neutral",
         title: "점검하지 못함",
         summary: "PR 을 읽는 중 오류가 나서 점검하지 못했습니다.",

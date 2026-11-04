@@ -1,6 +1,7 @@
 import { PageHeader } from "@/shared/ui/page-header";
 import type { PrFindingView, PrReviewRow } from "../schemas";
 import { PrFindingCard } from "./PrFindingCard";
+import { PrRiskSummary } from "./PrRiskSummary";
 
 type Props = {
   review: PrReviewRow & {
@@ -19,7 +20,14 @@ const CONCLUSION: Record<string, string> = {
 };
 
 export function PrReviewScreen({ review }: Props) {
-  const shown = review.findings.filter((f) => f.aiVerdict !== "false_positive");
+  const visible = review.findings.filter(
+    (f) => f.aiVerdict !== "false_positive",
+  );
+  // 남은 문제 먼저, 무시한 문제는 뒤로
+  const shown = [
+    ...visible.filter((f) => f.state === "open"),
+    ...visible.filter((f) => f.state === "ignored"),
+  ];
   const hidden = review.findings.length - shown.length;
   const { summary } = review;
   return (
@@ -60,6 +68,23 @@ export function PrReviewScreen({ review }: Props) {
       {review.status === "done" && summary.conclusion ? (
         <p className="text-sm">{CONCLUSION[summary.conclusion]}</p>
       ) : null}
+      {review.status === "done" ? (
+        <p className="text-muted-foreground text-sm">
+          남은 문제 {visible.length - summary.ignored}개
+          {summary.newCount > 0
+            ? ` · 이번 커밋에서 새로 ${summary.newCount}개`
+            : ""}
+          {summary.resolved.length > 0
+            ? ` · 해결 ${summary.resolved.length}개`
+            : ""}
+          {summary.ignored > 0 ? ` · 무시 ${summary.ignored}개` : ""}
+        </p>
+      ) : null}
+      <PrRiskSummary
+        risk={summary.risk}
+        scope={summary.scope}
+        resolved={summary.resolved}
+      />
       {summary.note ? (
         <p className="text-muted-foreground text-sm">{summary.note}</p>
       ) : null}

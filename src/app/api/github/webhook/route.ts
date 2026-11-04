@@ -4,6 +4,7 @@ import {
   handlePullRequestEvent,
   processPrReview,
 } from "@/features/scans/services/pr-guard";
+import { handleReviewCommentEvent } from "@/features/scans/services/pr-guard-ignore";
 import { handleSpecPush } from "@/features/specs/services/push";
 import {
   handleWebhookEvent,
@@ -31,7 +32,9 @@ export async function POST(request: NextRequest) {
       ? await handlePush(body)
       : event === "pull_request"
         ? await handlePullRequest(body)
-        : await handleWebhookEvent(event, body);
+        : event === "pull_request_review_comment"
+          ? await handleReviewCommentEvent(body)
+          : await handleWebhookEvent(event, body);
   if (!result.ok) {
     // 500 이면 GitHub 이 재전송한다. 형식 오류는 재전송해도 같으므로 400.
     const status = result.error.code === "invalid_payload" ? 400 : 500;

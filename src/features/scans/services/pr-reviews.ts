@@ -49,8 +49,8 @@ const toRow = (r: {
   prUrl: r.pr_url,
   status: r.status as PrReviewStatus,
   summary: prReviewSummarySchema
-    .catch({ files: 0, counts: {} })
-    .parse(r.summary),
+    .catch(() => prReviewSummarySchema.parse({}))
+    .parse(r.summary ?? {}),
   createdAt: r.created_at,
 });
 
@@ -65,6 +65,9 @@ export async function getPrReviewDetail(reviewId: string) {
   const { data: findings } = await listPrReviewFindings(reviewId);
   const views: PrFindingView[] = (findings ?? []).map((f) => ({
     id: f.id,
+    state: f.state === "ignored" ? "ignored" : "open",
+    ignoreReason: f.ignore_reason,
+    ignoredBy: f.ignored_by,
     ruleId: f.rule_id,
     ruleTitle: f.rule_title,
     severity: f.severity as Severity,
