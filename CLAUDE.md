@@ -1,7 +1,7 @@
 # 레고 (Lego) — 프로젝트 규칙
 
 레고는 바이브 코딩 동반자 플랫폼입니다. 전체 설계는 `docs/design.md`를 따릅니다.
-설계 문서의 5단계(보안 점검기, 컨텍스트 생성기, 스펙 변환기, 학습 도우미, 세션 회고·공유)를 모두 구현했다. 남은 일은 운영 검증과 측정(docs/deploy.md).
+도구는 다섯 개: 스펙 변환기, 컨텍스트(규칙 파일) 생성기, 보안 점검기, PR 가드, 운영 점검. 설계 문서의 학습 도우미·세션 회고(4·5단계)는 2026-11-04 에 없앴다(개념 사전만 점검 설명용으로 남김).
 
 ## 기술 스택
 
@@ -12,7 +12,7 @@ Next.js 16 (App Router), React 19, TypeScript(strict), Supabase(PostgreSQL, Auth
 pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 린트: pnpm lint / 테스트: pnpm test / 포맷: pnpm format
-- E2E: pnpm e2e (로그인 흐름은 먼저 pnpm e2e:login 으로 세션 저장, 실제 스캔은 E2E_RUN_SCAN=1)
+- E2E: pnpm e2e (로그인 흐름은 먼저 pnpm e2e:login 으로 세션 저장, 실제 스캔은 E2E_RUN_SCAN=1). PR 가드 로컬 E2E 는 `GITHUB_API_URL=http://localhost:4010 pnpm dev` 로 띄운 서버에서 돈다.
 - 로컬 E2E(GitHub 로그인 없이): pnpm e2e:local-seed 후 pnpm e2e --project=local-signed-in (로컬 Supabase 전용 테스트 사용자)
 - 탐지율 측정: pnpm --filter @lego/scanner bench [--osv] → packages/scanner/benchmark/RESULTS.md
 - 로컬 DB: npx supabase start (Docker 필요, docs/local-dev.md) / 초기화: npx supabase db reset
@@ -86,25 +86,28 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - `prompt_templates`: 작업 프롬프트를 '템플릿으로 저장'하면 다음 스펙의 프롬프트 예시로 쓰인다(스택 태그가 겹치는 것 2개).
 - 규칙 파일 조합(`shared/context`)은 context 와 specs 가 같이 쓴다.
 
-## 학습 도우미 (4단계)
+## 개념 사전
 
-- 코드는 `features/learn`. 화면은 `/learn`, `/learn/[explanationId]`, `/learn/finding/[findingId]`(발견 항목의 '이게 뭐예요?'), 공개 `/concepts`, `/concepts/[slug]`.
-- 설명은 Sonnet 한 번(구조화 출력: 요약·단계·Mermaid·개념·퀴즈 3문항). 코드는 `maskSecrets` 후 sha256 으로 캐시한다(같은 사용자는 기존 것, 다른 사용자는 내용 복사).
-- 퀴즈 정답·해설은 화면에 보내지 않고 채점할 때만 돌려준다. 숙련도는 처음엔 점수, 이후 이전 60% + 이번 40%.
-- Mermaid 는 클라이언트에서 strict 모드로 그린다. 실패하면 Haiku 로 한 번 다시 만들고, 또 실패하면 숨긴다.
-- 개념 사전(`concepts`)은 공개 데이터라 secret 키로 읽고 `"use cache"` 로 캐시한다. anon 에 lego 스키마를 열지 않는다. 보안 규칙(22개)은 모두 개념 하나 이상에 연결돼 있어야 한다.
-- 설계와 다른 점: 설명은 스트리밍 Route Handler 대신 Server Action 하나로 만든다(구조화 출력, 약 15초).
+- 코드는 `features/concepts`. 화면은 공개 `/concepts`, `/concepts/[slug]`, 점검 결과의 '이게 뭐예요?' 는 `/concepts/rule/[ruleId]` 가 연결된 개념으로 보낸다.
+- 공개 데이터라 secret 키로 읽고 `"use cache"` 로 캐시한다. anon 에 lego 스키마를 열지 않는다. 보안 규칙(22개)은 모두 개념 하나 이상에 연결돼 있어야 한다.
 
-## 세션 회고·공유 (5단계)
+## PR 가드
 
-- 코드는 `features/sessions`. 화면은 `/sessions`, `/sessions/new`, `/sessions/[sessionId]`, 공개 `/gallery`, `/s/[slug]`(+ `opengraph-image`).
-- **원본 로그는 서버로 보내지 않는다.** 브라우저에서 형식별 파서(`services/parse`: Claude Code JSONL, Cursor 마크다운, 텍스트)로 공통 메시지로 바꾸고,
-  `services/mask.ts`(SEC-001 패턴, 개인 키, URL 비밀번호, KEY=value, 이메일, 홈 경로)로 가린 뒤 미리보기 확인 → 서명 URL 로 비공개 버킷 `lego-sessions` 에 JSON 만 올린다.
-  서버는 finalize 에서 같은 함수로 2차 검사하고, 바뀐 게 있으면 덮어쓴다. 마스킹 테스트 세트(`mask.test.ts`)는 누출 0건이어야 한다.
-- `services/parse`, `mask.ts`, `stats.ts`, `condense.ts` 는 브라우저에서도 돌므로 `server-only`·Node API 를 쓰지 않는다. `@lego/scanner/secrets` 만 import 한다.
-- 분석은 finalize 뒤 `after()` 로 Sonnet 한 번(긴 세션은 `condenseTranscript` 로 6만 자 이내). 큐 대신 실패·10분 정체 시 '다시 분석'.
-- 공개·링크 공유 세션과 갤러리는 서버가 visibility 를 확인한 뒤 secret 키로 읽는다(anon 에 lego 스키마를 열지 않음). 신고 3건이면 자동으로 숨긴다.
-- `sessions → profiles` 조인은 `profiles!sessions_user_id_fkey` 로 쓴다(session_likes 때문에 관계가 둘).
+- 코드는 `features/scans`(pr-guard·pr-reviews·pr-guard-prompts), 규칙은 `packages/scanner/src/diff`. 화면은 프로젝트 화면의 'PR 가드' 칸과 `/projects/[projectId]/reviews/[reviewId]`.
+- GitHub App 으로 연결한 리포에서만 켤 수 있다(`projects.pr_guard_enabled`). pull_request webhook(opened·synchronize·reopened·ready_for_review, draft 제외) → `pr_reviews`(project, PR, head sha 로 중복 방지) → `after()` 로 처리.
+- 보안 규칙은 바뀐 파일의 최신 내용 전체로 돌리고 **추가된 줄에 걸친 후보만** 남긴다. 리포 전체를 봐야 하는 SEC-002·SEC-016 은 PR 에서 돌리지 않는다.
+- PR 규칙(PR-001 테스트 삭제·skip, PR-002 검사 끄기, PR-003 RLS 약화, PR-004 문서 없는 환경 변수, PR-005 이름을 흉내 낸 패키지·설치 스크립트)은 diff 로 확정되므로 AI 대신 고정 수정 프롬프트를 쓴다. 보안 후보만 AI 판별·설명.
+- GitHub 게시: 상태 체크(치명·높음이면 failure) + 리뷰 하나(COMMENT, 추가된 줄에만 줄 코멘트, 최대 20개). 권한이 없으면 결과는 레고에만 남기고 summary.note 에 이유를 쓴다.
+- GitHub API 주소는 `GITHUB_API_URL` 로 바꿀 수 있다(production 이 아닐 때만). 로컬 E2E 는 모의 서버(localhost:4010)를 쓴다.
+
+## 운영 점검
+
+- 코드는 `features/live`, 판정은 `packages/scanner/src/live`(LIVE-001~007, AI 안 씀). 화면은 `/projects/[projectId]/live`.
+- **소유 확인 전에는 점검하지 않는다.** 사이트의 `/.well-known/lego-verify.txt` 에 토큰이 있어야 한다. Supabase 주소·공개 키는 사용자에게 받지 않고 배포된 JS 에서 찾는다(공격자가 보는 그대로).
+- 서버 요청은 `@/lib/net/safe-fetch` 만 쓴다: https 만, DNS 로 풀어 사설 IP 거절, 리다이렉트마다 재검사, 8초·2MB, 점검 한 번에 요청 80개. 개발 환경에서만 localhost http 허용.
+- 읽기 요청만 보낸다(테이블은 `limit=1` + `count=exact`, 버킷은 목록 5개). 응답 내용(행·파일·키 원문)은 저장하지 않고 판정만 `live_checks.results` 에 남긴다.
+- 코드 비교(LIVE-006)는 가장 최근 스캔 커밋의 마이그레이션으로 한다. 직전 점검에 없던 항목은 '새로 생김'. 수동 점검은 2분 간격.
+- 하루 한 번: pg_cron 의 `lego.kick_scan_worker()` 가 하루 지난 대상이 있으면 `/api/scan-worker` 를 부르고, 워커가 `runDueLiveChecks()` 로 3개씩 점검한다.
 
 ## 인증 / 권한
 

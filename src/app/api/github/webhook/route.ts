@@ -1,5 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { handlePushEvent } from "@/features/context/services/push";
+import {
+  handlePullRequestEvent,
+  processPrReview,
+} from "@/features/scans/services/pr-guard";
 import { handleSpecPush } from "@/features/specs/services/push";
 import {
   handleWebhookEvent,
@@ -25,7 +29,9 @@ export async function POST(request: NextRequest) {
   const result =
     event === "push"
       ? await handlePush(body)
-      : await handleWebhookEvent(event, body);
+      : event === "pull_request"
+        ? await handlePullRequest(body)
+        : await handleWebhookEvent(event, body);
   if (!result.ok) {
     // 500 이면 GitHub 이 재전송한다. 형식 오류는 재전송해도 같으므로 400.
     const status = result.error.code === "invalid_payload" ? 400 : 500;
@@ -47,4 +53,16 @@ async function handlePush(body: unknown) {
     ok: true as const,
     data: { handled: context.data.handled || spec.data.handled },
   };
+}
+
+/** PR 가드: 리뷰를 만들고 응답한 뒤 같은 서버에서 처리한다(GitHub 은 10초 안에 응답을 기다린다). */
+async function handlePullRequest(body: unknown) {
+  const result = await handlePullRequestEvent(body);
+  if (!result.ok) return result;
+  for (const { reviewId } of result.data.reviews) {
+    after(() =>
+      processPrReview(reviewId).catch((e) => console.error("[pr-guard]", e)),
+    );
+  }
+  return { ok: true as const, data: { handled: result.data.handled } };
 }

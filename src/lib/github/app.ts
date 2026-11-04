@@ -6,10 +6,12 @@ import { serverEnv } from "@/lib/env.server";
 
 function createApp() {
   const env = serverEnv();
+  const baseUrl =
+    process.env.NODE_ENV !== "production" ? env.GITHUB_API_URL : undefined;
   return new App({
     appId: env.GITHUB_APP_ID,
     privateKey: env.GITHUB_APP_PRIVATE_KEY,
-    Octokit,
+    Octokit: baseUrl ? Octokit.defaults({ baseUrl }) : Octokit,
   });
 }
 

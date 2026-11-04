@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { ConceptIndex } from "@/features/learn/components/ConceptIndex";
-import { getConceptList } from "@/features/learn/services/views";
+import { ConceptIndex } from "@/features/concepts/components/ConceptIndex";
+import { getConceptList } from "@/features/concepts/services/views";
 import { PageHeader } from "@/shared/ui/page-header";
 
 export const metadata: Metadata = {

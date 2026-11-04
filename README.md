@@ -1,6 +1,14 @@
 # 레고 (Lego)
 
-바이브 코딩 동반자 플랫폼. GitHub 리포를 연결하면 AI로 만든 앱에서 자주 생기는 보안 실수를 찾고, 바로 붙여넣을 수 있는 수정 프롬프트를 제공합니다.
+바이브 코딩 동반자 플랫폼. AI 로 만든 앱을 기획부터 운영까지 돕는 도구 다섯 개가 있습니다.
+
+| 도구             | 하는 일                                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 스펙 변환기      | 한 줄 아이디어 → PRD·설계·작업 목록·작업별 프롬프트. 커밋 `[T-n]` 으로 작업 자동 완료                                                                    |
+| 규칙 파일 생성기 | 리포를 분석해 CLAUDE.md · .cursorrules · AGENTS.md 생성                                                                                                  |
+| 보안 점검기      | 보안 실수 22가지를 찾고 수정 프롬프트 제공(정적 탐지 + AI 판별)                                                                                          |
+| PR 가드          | PR 마다 바뀐 줄만 점검해 GitHub 리뷰 코멘트·상태 체크. 테스트 삭제·검사 끄기·RLS 약화·문서 없는 환경 변수·가짜 패키지(PR-001~005)                        |
+| 운영 점검        | 배포된 사이트를 밖에서 확인: 로그인 없이 읽히는 테이블·버킷, JS 속 비밀 키, 보안 헤더, 열린 .env, 코드와 다른 RLS(LIVE-001~007). 소유 확인 후 하루 한 번 |
 
 - 전체 설계: [docs/design.md](docs/design.md)
 - 개발 규칙: [CLAUDE.md](CLAUDE.md)
@@ -19,7 +27,7 @@ pnpm dev
 ## 구조
 
 - `src/app` — 라우트 전용
-- `src/features/{auth,projects,scans,marketing}` — 기능별 components / hooks / actions / services / repository / schemas
+- `src/features/{auth,projects,scans,context,specs,live,concepts,marketing}` — 기능별 components / hooks / actions / services / repository / schemas
 - `src/shared` — 공용 UI(shadcn/ui), 유틸
 - `packages/scanner` — 프레임워크 무관 스캔 엔진 (`@lego/scanner`)
 - `supabase` — 마이그레이션 (`pnpm db:migrate`, 공유 프로젝트라 db push 금지)

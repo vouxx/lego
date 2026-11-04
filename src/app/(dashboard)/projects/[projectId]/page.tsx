@@ -2,8 +2,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProjectHeader } from "@/features/projects/components/ProjectHeader";
 import { getProject } from "@/features/projects/services/projects";
+import { PrGuardSection } from "@/features/scans/components/PrGuardSection";
 import { ScanHistorySection } from "@/features/scans/components/ScanHistorySection";
 import { StartScanButton } from "@/features/scans/components/StartScanButton";
+import {
+  getPrGuardState,
+  getProjectPrReviews,
+} from "@/features/scans/services/pr-reviews";
 import { getProjectScans } from "@/features/scans/services/scans";
 
 type Props = PageProps<"/projects/[projectId]">;
@@ -22,9 +27,11 @@ export default function ProjectPage({ params }: Props) {
 
 async function Project({ params }: Pick<Props, "params">) {
   const { projectId } = await params;
-  const [project, scans] = await Promise.all([
+  const [project, scans, guard, reviews] = await Promise.all([
     getProject(projectId),
     getProjectScans(projectId),
+    getPrGuardState(projectId),
+    getProjectPrReviews(projectId),
   ]);
   if (!project.ok) notFound();
 
@@ -37,6 +44,7 @@ async function Project({ params }: Pick<Props, "params">) {
         scanAction={<StartScanButton projectId={projectId} />}
       />
       <ScanHistorySection projectId={projectId} scans={scans} />
+      <PrGuardSection projectId={projectId} {...guard} reviews={reviews} />
     </>
   );
 }

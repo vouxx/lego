@@ -54,7 +54,7 @@ export function FindingCard({ finding, isNew = false }: Props) {
             status={finding.status}
           />
           <Link
-            href={`/learn/finding/${finding.id}`}
+            href={`/concepts/rule/${finding.ruleId}`}
             className="text-muted-foreground text-sm hover:underline"
           >
             이게 뭐예요? →

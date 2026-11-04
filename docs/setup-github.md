@@ -34,7 +34,7 @@ github.com/settings/apps/new (조직 소유로 만들려면 조직 Settings → 
 | **Request user authorization (OAuth) during installation** | **체크 (필수)** |
 | Webhook → Active | 배포 전에는 해제해도 됩니다. 켜려면 공개 URL `https://<배포 도메인>/api/github/webhook` |
 | Webhook secret | 임의의 긴 문자열 (`openssl rand -hex 32`) |
-| Repository permissions | **Contents: Read-only**, Metadata: Read-only (기본) |
+| Repository permissions | **Contents: Read-only**, Metadata: Read-only (기본). 규칙 파일 PR·PR 가드를 쓰려면 docs/deploy.md '2-1' 의 쓰기 권한과 이벤트를 추가 |
 | Where can this GitHub App be installed? | 개발 중에는 Only on this account |
 
 ‘설치 중 사용자 인증’이 꺼져 있으면 설치 콜백에 `code`가 오지 않아 연결이 거절됩니다. 레고는 이 `code`로 설치한 사람이 로그인한 사람과 같은지 확인합니다.

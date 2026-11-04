@@ -40,7 +40,7 @@ export const SAMPLE_PROMPT = `[SEC-004] src/components/AdminPanel.tsx 에서 ser
 2. 해당 키를 Supabase 대시보드에서 폐기하고 새로 발급한다.
 확인: 빌드 결과(.next/static)에서 SUPABASE_SERVICE_ROLE_KEY 값이 검색되지 않는다.`;
 
-/** 작업대 위의 도구 5개. 사용자 흐름 순서(기획 → 회고). */
+/** 작업대 위의 도구 5개. 사용자 흐름 순서(기획 → 운영). */
 export const TOOLS = [
   {
     stage: "기획",
@@ -67,29 +67,29 @@ export const TOOLS = [
     href: "/projects",
   },
   {
-    stage: "이해",
-    command: "learn",
-    title: "학습 도우미",
-    text: "AI 가 쓴 코드를 내 수준에 맞춰 설명하고, 흐름도와 퀴즈로 정말 이해했는지 확인합니다.",
-    output: ["흐름 5단계 · 개념 3개", "퀴즈 3/3"],
-    href: "/learn",
+    stage: "리뷰",
+    command: "guard",
+    title: "PR 가드",
+    text: "AI 가 한 번에 고친 PR 을 바뀐 줄만 점검해 GitHub 에 리뷰 코멘트를 답니다. 테스트 삭제, 검사 끄기, RLS 약화, 가짜 패키지도 찾습니다.",
+    output: ["바뀐 파일 4개 · 문제 5개", "상태 체크: 실패(높음 2)"],
+    href: "/projects",
   },
   {
-    stage: "회고",
-    command: "retro",
-    title: "세션 회고",
-    text: "Claude Code·Cursor 대화를 올리면 잘 먹힌 프롬프트와 막힌 지점을 정리합니다. 원본은 서버로 보내지 않습니다.",
-    output: ["가린 값 447개 · 1,475턴", "잘 먹힌 프롬프트 3개"],
-    href: "/sessions/new",
+    stage: "운영",
+    command: "live",
+    title: "운영 점검",
+    text: "배포된 사이트를 밖에서 공격자처럼 확인합니다. 로그인 없이 읽히는 테이블, JS 에 든 비밀 키, 열린 .env 를 하루 한 번 봅니다.",
+    output: ["테이블 12개 · 버킷 2개 · JS 9개", "새로 생김 1개"],
+    href: "/projects",
   },
 ] as const;
 
 /** 측정값. 출처: README, packages/scanner/benchmark/RESULTS.md, docs/stack-bench.md */
 export const PROOF = [
   {
-    value: "87%",
+    value: "86%",
     label: "보안 규칙 탐지율",
-    note: "취약점을 심은 샘플 앱 10개, 문제 52개",
+    note: "취약점을 심은 샘플 앱 12개, 문제 64개",
   },
   {
     value: "18/20",
@@ -97,9 +97,9 @@ export const PROOF = [
     note: "공개 리포 20개, 모노레포 포함",
   },
   {
-    value: "0건",
-    label: "세션 마스킹 누출",
-    note: "비밀값 14종을 심은 테스트 로그",
+    value: "74초",
+    label: "리포 등록 → 수정 프롬프트",
+    note: "처음 쓰는 사람 흐름, 운영에서 측정",
   },
   {
     value: "82초",
@@ -218,5 +218,5 @@ export const PROMISES = [
   "코드는 GitHub App 읽기 권한으로만 가져오고, 결과에는 문제가 된 몇 줄만 남깁니다.",
   ".env 파일은 이름만 확인하고 내용은 열지 않습니다.",
   "AI 에 보내거나 저장하기 전에 비밀 키를 sk-ant-****abcd 처럼 가립니다.",
-  "세션 로그는 브라우저에서 가린 뒤, 확인한 내용만 올라갑니다.",
+  "운영 점검은 소유를 확인한 사이트만, 읽기 요청만 보내고 응답 내용은 저장하지 않습니다.",
 ] as const;

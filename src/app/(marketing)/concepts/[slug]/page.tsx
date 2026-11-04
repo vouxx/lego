@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ConceptArticle } from "@/features/learn/components/ConceptArticle";
+import { ConceptArticle } from "@/features/concepts/components/ConceptArticle";
 import {
   getConceptList,
   getConceptPage,
-} from "@/features/learn/services/views";
+} from "@/features/concepts/services/views";
 
 type Props = PageProps<"/concepts/[slug]">;
 

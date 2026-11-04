@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "레고",
   description:
-    "AI 로 만드는 앱의 작업대 — 스펙, 규칙 파일, 보안 점검, 코드 설명, 세션 회고",
+    "AI 로 만드는 앱의 작업대 — 스펙, 규칙 파일, 보안 점검, PR 가드, 운영 점검",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

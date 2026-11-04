@@ -1,10 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { after, NextResponse, type NextRequest } from "next/server";
+import { runDueLiveChecks } from "@/features/live/services/live";
 import { runScanWorker } from "@/features/scans/services/worker";
 import { serverEnv } from "@/lib/env.server";
 import { reportError } from "@/lib/monitoring";
 
-// pg_cron(pg_net) 이 큐에 작업이 있을 때 호출한다. Authorization: Bearer <SCAN_WORKER_SECRET>
+// pg_cron(pg_net) 이 큐에 작업이 있거나 하루가 지난 운영 점검 대상이 있을 때 호출한다. Authorization: Bearer <SCAN_WORKER_SECRET>
 // 기본은 202 를 바로 돌려주고 after() 로 처리한다(pg_net 연결을 오래 잡지 않도록).
 // ?wait=1 이면 끝날 때까지 기다려 결과를 돌려준다(수동 확인용).
 export const maxDuration = 300;
@@ -23,7 +24,9 @@ export async function POST(request: NextRequest) {
   }
   if (request.nextUrl.searchParams.get("wait") === "1") {
     try {
-      return NextResponse.json(await runScanWorker());
+      const scans = await runScanWorker();
+      const live = await runDueLiveChecks();
+      return NextResponse.json({ ...scans, live });
     } catch (error) {
       reportError(error, { area: "scan-worker" });
       return NextResponse.json({ error: "worker_failed" }, { status: 500 });
@@ -34,6 +37,12 @@ export async function POST(request: NextRequest) {
       await runScanWorker();
     } catch (error) {
       reportError(error, { area: "scan-worker" });
+    }
+    // 하루가 지난 운영 점검 대상(pg_cron 이 대상이 있을 때도 부른다).
+    try {
+      await runDueLiveChecks();
+    } catch (error) {
+      reportError(error, { area: "live.daily" });
     }
   });
   return NextResponse.json({ accepted: true }, { status: 202 });

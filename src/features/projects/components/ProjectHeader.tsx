@@ -14,7 +14,7 @@ type Props = {
   scanAction?: ReactNode;
 };
 
-/** 프로젝트 머리말과 이 리포에서 쓰는 도구 세 칸. */
+/** 프로젝트 머리말과 이 리포에서 쓰는 도구 네 칸. */
 export function ProjectHeader({
   projectId,
   repoFullName,
@@ -33,6 +33,12 @@ export function ProjectHeader({
       title: "AI 규칙 파일",
       text: "CLAUDE.md · .cursorrules · AGENTS.md 를 만듭니다.",
       href: `/projects/${projectId}/context`,
+    },
+    {
+      command: "live",
+      title: "운영 점검",
+      text: "배포된 사이트를 밖에서 공격자처럼 확인합니다.",
+      href: `/projects/${projectId}/live`,
     },
     {
       command: "spec",
@@ -59,7 +65,7 @@ export function ProjectHeader({
           />
         }
       />
-      <ul className="bg-border grid gap-px overflow-hidden rounded-lg border sm:grid-cols-3">
+      <ul className="bg-border grid gap-px overflow-hidden rounded-lg border sm:grid-cols-2 lg:grid-cols-4">
         {tools.map((tool) => (
           <li
             key={tool.command}

@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { cn } from "@/shared/lib/cn";
 
-// 사용자 흐름 순서. 보안 점검·규칙 파일은 프로젝트 안에 있다. 갤러리·개념 사전은 로그인 없이 볼 수 있다.
+// 사용자 흐름 순서. 보안 점검·규칙 파일·PR 가드·운영 점검은 프로젝트 안에 있다. 개념 사전은 로그인 없이 볼 수 있다.
 const ITEMS = [
   { href: "/specs", label: "스펙", match: "/specs" },
   { href: "/projects", label: "프로젝트", match: "/projects" },
-  { href: "/learn", label: "학습", match: "/learn" },
-  { href: "/sessions", label: "회고", match: "/sessions" },
-  { href: "/gallery", label: "갤러리", match: "/gallery" },
   { href: "/concepts", label: "개념 사전", match: "/concepts" },
 ];
 

@@ -10,7 +10,9 @@ export async function findMyProject(projectId: string) {
   const supabase = await createClient();
   return supabase
     .from("projects")
-    .select("id, user_id, installation_id, repo_full_name, default_branch")
+    .select(
+      "id, user_id, installation_id, repo_full_name, default_branch, pr_guard_enabled",
+    )
     .eq("id", projectId)
     .maybeSingle();
 }
@@ -175,4 +177,103 @@ export async function getPreviousScanId(scanId: string) {
 export async function getScanDiffRows(scanId: string) {
   const supabase = await createClient();
   return supabase.rpc("scan_diff", { p_scan_id: scanId });
+}
+
+// PR 가드 ---------------------------------------------------------------------
+
+export async function setPrGuard(projectId: string, enabled: boolean) {
+  return createAdminClient()
+    .from("projects")
+    .update({ pr_guard_enabled: enabled })
+    .eq("id", projectId);
+}
+
+/** webhook 의 설치·리포로 PR 가드를 켠 프로젝트를 찾는다(사용자마다 하나씩 있을 수 있다). */
+export async function listGuardedProjects(
+  installationId: number,
+  repoFullName: string,
+) {
+  return createAdminClient()
+    .from("projects")
+    .select("id, user_id, installation_id, repo_full_name, detected_stack")
+    .eq("installation_id", installationId)
+    .eq("repo_full_name", repoFullName)
+    .eq("pr_guard_enabled", true);
+}
+
+/** 같은 커밋의 리뷰가 이미 있으면(재전송) 만들지 않고 null 을 돌려준다. */
+export async function insertPrReview(row: Insert<"pr_reviews">) {
+  return createAdminClient()
+    .from("pr_reviews")
+    .upsert(row, {
+      onConflict: "project_id,pr_number,head_sha",
+      ignoreDuplicates: true,
+    })
+    .select("id")
+    .maybeSingle();
+}
+
+export async function getPrReviewForWorker(reviewId: string) {
+  return createAdminClient()
+    .from("pr_reviews")
+    .select(
+      "id, user_id, pr_number, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack)",
+    )
+    .eq("id", reviewId)
+    .maybeSingle();
+}
+
+export async function updatePrReview(
+  reviewId: string,
+  patch: Update<"pr_reviews">,
+) {
+  return createAdminClient()
+    .from("pr_reviews")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", reviewId);
+}
+
+export async function replacePrReviewFindings(
+  reviewId: string,
+  rows: Insert<"pr_review_findings">[],
+) {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("pr_review_findings")
+    .delete()
+    .eq("review_id", reviewId);
+  if (error || rows.length === 0) return { error };
+  return admin.from("pr_review_findings").insert(rows);
+}
+
+export async function listProjectPrReviews(projectId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("pr_reviews")
+    .select("id, pr_number, pr_title, pr_url, status, summary, created_at")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+}
+
+export async function getMyPrReview(reviewId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("pr_reviews")
+    .select(
+      "id, project_id, pr_number, pr_title, pr_url, head_sha, status, summary, error, created_at, projects(repo_full_name)",
+    )
+    .eq("id", reviewId)
+    .maybeSingle();
+}
+
+export async function listPrReviewFindings(reviewId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("pr_review_findings")
+    .select(
+      "id, rule_id, rule_title, severity, file_path, line, snippet, reason, ai_verdict, explanation, fix_prompt",
+    )
+    .eq("review_id", reviewId)
+    .order("created_at");
 }

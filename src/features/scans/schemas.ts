@@ -97,3 +97,65 @@ export type ScanDiffView = {
     lineStart: number;
   }[];
 };
+
+// PR 가드 ---------------------------------------------------------------------
+
+export const prGuardInput = z.object({
+  projectId: z.uuid(),
+  enabled: z.boolean(),
+});
+
+export const pullRequestEvent = z.object({
+  action: z.string(),
+  installation: z.object({ id: z.number() }).optional(),
+  repository: z.object({ full_name: z.string() }),
+  pull_request: z.object({
+    number: z.number(),
+    title: z.string(),
+    html_url: z.string(),
+    draft: z.boolean().default(false),
+    head: z.object({ sha: z.string().regex(/^[0-9a-f]{40}$/) }),
+  }),
+});
+
+export const PR_REVIEW_STATUSES = [
+  "queued",
+  "running",
+  "done",
+  "failed",
+] as const;
+export type PrReviewStatus = (typeof PR_REVIEW_STATUSES)[number];
+
+export const prReviewSummarySchema = z.object({
+  files: z.number().default(0),
+  counts: z.partialRecord(z.enum(SEVERITIES), z.number()).default({}),
+  conclusion: z.enum(["success", "neutral", "failure"]).optional(),
+  llm: z.enum(["done", "skipped", "partial"]).optional(),
+  note: z.string().nullable().optional(),
+  posted: z.object({ review: z.boolean(), check: z.boolean() }).optional(),
+});
+export type PrReviewSummary = z.infer<typeof prReviewSummarySchema>;
+
+export type PrReviewRow = {
+  id: string;
+  prNumber: number;
+  prTitle: string;
+  prUrl: string | null;
+  status: PrReviewStatus;
+  summary: PrReviewSummary;
+  createdAt: string;
+};
+
+export type PrFindingView = {
+  id: string;
+  ruleId: string;
+  ruleTitle: string;
+  severity: Severity;
+  filePath: string;
+  line: number;
+  snippet: string;
+  reason: string;
+  aiVerdict: AiVerdict | null;
+  explanation: string | null;
+  fixPrompt: string | null;
+};

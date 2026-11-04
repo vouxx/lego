@@ -13,6 +13,9 @@ export {
   type Dependency,
 } from "./dependencies/lockfile";
 export { STATIC_RULES };
+export { reviewPullRequest, envNames } from "./diff/review";
+export { PR_RULES, type ChangedFile } from "./diff/rules";
+export { parsePatch } from "./diff/patch";
 
 /** 규칙을 모두 실행해 후보 목록을 돌려준다. 규칙 하나가 실패해도 나머지는 계속한다. */
 export function runRules(input: ScanInput, rules: Rule[] = STATIC_RULES) {
@@ -30,3 +33,4 @@ export function runRules(input: ScanInput, rules: Rule[] = STATIC_RULES) {
   }
   return { candidates, errors };
 }
+export * from "./live/analyze";

@@ -9,7 +9,7 @@ export function ToolGrid() {
       <SectionHeading
         id="tools-title"
         eyebrow="01 · 도구"
-        title="기획부터 회고까지, 도구 다섯 개"
+        title="기획부터 운영까지, 도구 다섯 개"
         text="순서대로 써도 되고, 필요한 것만 골라 써도 됩니다. 회색 칸은 예시 출력입니다."
       />
       <ol className="bg-border grid gap-px overflow-hidden rounded-lg border sm:grid-cols-2 lg:grid-cols-3">
@@ -49,8 +49,8 @@ export function ToolGrid() {
         <li className="bg-muted/40 text-muted-foreground flex flex-col justify-center gap-2 p-5 font-mono text-xs">
           <p>모든 도구가 같은 리포·같은 결과를 씁니다.</p>
           <p>점검 결과 → 규칙 파일의 &lsquo;주의할 점&rsquo;</p>
-          <p>점검 결과 → 학습 도우미의 개념 설명</p>
-          <p>회고의 좋은 프롬프트 → 스펙의 작업 프롬프트</p>
+          <p>보안 규칙 22개 → PR 가드가 바뀐 줄마다 다시 확인</p>
+          <p>마이그레이션의 RLS → 운영 점검이 실제 DB 와 비교</p>
         </li>
       </ol>
     </section>

@@ -204,64 +204,6 @@ export type Database = {
           },
         ];
       };
-      explanations: {
-        Row: {
-          code: string;
-          code_hash: string;
-          content: NonNullable<Json>;
-          created_at: string;
-          id: string;
-          language: string | null;
-          level: string;
-          project_id: string | null;
-          source: string;
-          source_ref: string | null;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          code: string;
-          code_hash: string;
-          content: NonNullable<Json>;
-          created_at?: string;
-          id?: string;
-          language?: string | null;
-          level: string;
-          project_id?: string | null;
-          source: string;
-          source_ref?: string | null;
-          user_id: string;
-        };
-        Update: {
-          code?: string;
-          code_hash?: string;
-          content?: NonNullable<Json>;
-          created_at?: string;
-          id?: string;
-          language?: string | null;
-          level?: string;
-          project_id?: string | null;
-          source?: string;
-          source_ref?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "explanations_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "explanations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       findings: {
         Row: {
           ai_verdict: string | null;
@@ -372,21 +314,124 @@ export type Database = {
           },
         ];
       };
+      live_checks: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          results: NonNullable<Json>;
+          status: string;
+          summary: NonNullable<Json>;
+          target_id: string;
+          trigger: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          results?: NonNullable<Json>;
+          status?: string;
+          summary?: NonNullable<Json>;
+          target_id: string;
+          trigger?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          results?: NonNullable<Json>;
+          status?: string;
+          summary?: NonNullable<Json>;
+          target_id?: string;
+          trigger?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_checks_target_id_fkey";
+            columns: ["target_id"];
+            isOneToOne: false;
+            referencedRelation: "live_targets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "live_checks_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      live_targets: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_checked_at: string | null;
+          project_id: string;
+          site_url: string;
+          user_id: string;
+          verified_at: string | null;
+          verify_token: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_checked_at?: string | null;
+          project_id: string;
+          site_url: string;
+          user_id: string;
+          verified_at?: string | null;
+          verify_token: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_checked_at?: string | null;
+          project_id?: string;
+          site_url?: string;
+          user_id?: string;
+          verified_at?: string | null;
+          verify_token?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "live_targets_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: true;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "live_targets_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       llm_calls: {
         Row: {
           cached: boolean;
           context_file_id: string | null;
           cost_usd: number;
           created_at: string;
-          explanation_id: string | null;
           id: string;
           input_tokens: number;
           latency_ms: number | null;
           model: string;
           output_tokens: number;
+          pr_review_id: string | null;
           purpose: string;
           scan_id: string | null;
-          session_id: string | null;
           spec_id: string | null;
           user_id: string;
         };
@@ -396,15 +441,14 @@ export type Database = {
           context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
-          explanation_id?: string | null;
           id?: string;
           input_tokens?: number;
           latency_ms?: number | null;
           model: string;
           output_tokens?: number;
+          pr_review_id?: string | null;
           purpose: string;
           scan_id?: string | null;
-          session_id?: string | null;
           spec_id?: string | null;
           user_id: string;
         };
@@ -413,15 +457,14 @@ export type Database = {
           context_file_id?: string | null;
           cost_usd?: number;
           created_at?: string;
-          explanation_id?: string | null;
           id?: string;
           input_tokens?: number;
           latency_ms?: number | null;
           model?: string;
           output_tokens?: number;
+          pr_review_id?: string | null;
           purpose?: string;
           scan_id?: string | null;
-          session_id?: string | null;
           spec_id?: string | null;
           user_id?: string;
         };
@@ -434,10 +477,10 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "llm_calls_explanation_id_fkey";
-            columns: ["explanation_id"];
+            foreignKeyName: "llm_calls_pr_review_id_fkey";
+            columns: ["pr_review_id"];
             isOneToOne: false;
-            referencedRelation: "explanations";
+            referencedRelation: "pr_reviews";
             referencedColumns: ["id"];
           },
           {
@@ -445,13 +488,6 @@ export type Database = {
             columns: ["scan_id"];
             isOneToOne: false;
             referencedRelation: "scans";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "llm_calls_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: false;
-            referencedRelation: "sessions";
             referencedColumns: ["id"];
           },
           {
@@ -463,6 +499,134 @@ export type Database = {
           },
           {
             foreignKeyName: "llm_calls_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pr_review_findings: {
+        Row: {
+          ai_verdict: string | null;
+          created_at: string;
+          explanation: string | null;
+          file_path: string;
+          fix_prompt: string | null;
+          id: string;
+          line: number;
+          reason: string;
+          review_id: string;
+          rule_id: string;
+          rule_title: string;
+          severity: string;
+          snippet: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_verdict?: string | null;
+          created_at?: string;
+          explanation?: string | null;
+          file_path: string;
+          fix_prompt?: string | null;
+          id?: string;
+          line: number;
+          reason: string;
+          review_id: string;
+          rule_id: string;
+          rule_title: string;
+          severity: string;
+          snippet?: string;
+          user_id: string;
+        };
+        Update: {
+          ai_verdict?: string | null;
+          created_at?: string;
+          explanation?: string | null;
+          file_path?: string;
+          fix_prompt?: string | null;
+          id?: string;
+          line?: number;
+          reason?: string;
+          review_id?: string;
+          rule_id?: string;
+          rule_title?: string;
+          severity?: string;
+          snippet?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pr_review_findings_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
+            referencedRelation: "pr_reviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pr_review_findings_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pr_reviews: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          head_sha: string;
+          id: string;
+          pr_number: number;
+          pr_title: string;
+          pr_url: string | null;
+          project_id: string;
+          status: string;
+          summary: NonNullable<Json>;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          head_sha: string;
+          id?: string;
+          pr_number: number;
+          pr_title?: string;
+          pr_url?: string | null;
+          project_id: string;
+          status?: string;
+          summary?: NonNullable<Json>;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          head_sha?: string;
+          id?: string;
+          pr_number?: number;
+          pr_title?: string;
+          pr_url?: string | null;
+          project_id?: string;
+          status?: string;
+          summary?: NonNullable<Json>;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pr_reviews_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pr_reviews_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -502,6 +666,7 @@ export type Database = {
           detected_stack: NonNullable<Json>;
           id: string;
           installation_id: number | null;
+          pr_guard_enabled: boolean;
           repo_full_name: string;
           user_id: string;
         };
@@ -512,6 +677,7 @@ export type Database = {
           detected_stack?: NonNullable<Json>;
           id?: string;
           installation_id?: number | null;
+          pr_guard_enabled?: boolean;
           repo_full_name: string;
           user_id: string;
         };
@@ -521,6 +687,7 @@ export type Database = {
           detected_stack?: NonNullable<Json>;
           id?: string;
           installation_id?: number | null;
+          pr_guard_enabled?: boolean;
           repo_full_name?: string;
           user_id?: string;
         };
@@ -577,86 +744,6 @@ export type Database = {
           {
             foreignKeyName: "prompt_templates_owner_id_fkey";
             columns: ["owner_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quiz_attempts: {
-        Row: {
-          answers: NonNullable<Json>;
-          created_at: string;
-          id: string;
-          quiz_id: string;
-          score: number;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          answers: NonNullable<Json>;
-          created_at?: string;
-          id?: string;
-          quiz_id: string;
-          score: number;
-          user_id: string;
-        };
-        Update: {
-          answers?: NonNullable<Json>;
-          created_at?: string;
-          id?: string;
-          quiz_id?: string;
-          score?: number;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "quiz_attempts_quiz_id_fkey";
-            columns: ["quiz_id"];
-            isOneToOne: false;
-            referencedRelation: "quizzes";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quiz_attempts_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quizzes: {
-        Row: {
-          explanation_id: string;
-          id: string;
-          questions: NonNullable<Json>;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          explanation_id: string;
-          id?: string;
-          questions: NonNullable<Json>;
-          user_id: string;
-        };
-        Update: {
-          explanation_id?: string;
-          id?: string;
-          questions?: NonNullable<Json>;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "quizzes_explanation_id_fkey";
-            columns: ["explanation_id"];
-            isOneToOne: true;
-            referencedRelation: "explanations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "quizzes_user_id_fkey";
-            columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -828,214 +915,6 @@ export type Database = {
           version?: string;
         };
         Relationships: [];
-      };
-      session_insights: {
-        Row: {
-          content: string;
-          id: string;
-          kind: string;
-          prompt_text: string | null;
-          session_id: string;
-          sort_order: number;
-          turn_index: number | null;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          content: string;
-          id?: string;
-          kind: string;
-          prompt_text?: string | null;
-          session_id: string;
-          sort_order?: number;
-          turn_index?: number | null;
-          user_id: string;
-        };
-        Update: {
-          content?: string;
-          id?: string;
-          kind?: string;
-          prompt_text?: string | null;
-          session_id?: string;
-          sort_order?: number;
-          turn_index?: number | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "session_insights_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: false;
-            referencedRelation: "sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "session_insights_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      session_likes: {
-        Row: {
-          created_at: string;
-          session_id: string;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          session_id: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          session_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "session_likes_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: false;
-            referencedRelation: "sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "session_likes_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      session_reports: {
-        Row: {
-          created_at: string;
-          id: string;
-          reason: string;
-          reporter_id: string;
-          session_id: string;
-          status: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          id?: string;
-          reason: string;
-          reporter_id: string;
-          session_id: string;
-          status?: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          reason?: string;
-          reporter_id?: string;
-          session_id?: string;
-          status?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "session_reports_reporter_id_fkey";
-            columns: ["reporter_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "session_reports_session_id_fkey";
-            columns: ["session_id"];
-            isOneToOne: false;
-            referencedRelation: "sessions";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      sessions: {
-        Row: {
-          analysis_started_at: string | null;
-          created_at: string;
-          error: string | null;
-          goal: string | null;
-          hidden: boolean;
-          id: string;
-          like_count: number;
-          outcome: string | null;
-          project_id: string | null;
-          slug: string | null;
-          stats: NonNullable<Json>;
-          status: string;
-          storage_path: string;
-          tags: string[];
-          title: string;
-          tool: string;
-          updated_at: string;
-          user_id: string;
-          visibility: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          analysis_started_at?: string | null;
-          created_at?: string;
-          error?: string | null;
-          goal?: string | null;
-          hidden?: boolean;
-          id?: string;
-          like_count?: number;
-          outcome?: string | null;
-          project_id?: string | null;
-          slug?: string | null;
-          stats?: NonNullable<Json>;
-          status?: string;
-          storage_path: string;
-          tags?: string[];
-          title?: string;
-          tool: string;
-          updated_at?: string;
-          user_id: string;
-          visibility?: string;
-        };
-        Update: {
-          analysis_started_at?: string | null;
-          created_at?: string;
-          error?: string | null;
-          goal?: string | null;
-          hidden?: boolean;
-          id?: string;
-          like_count?: number;
-          outcome?: string | null;
-          project_id?: string | null;
-          slug?: string | null;
-          stats?: NonNullable<Json>;
-          status?: string;
-          storage_path?: string;
-          tags?: string[];
-          title?: string;
-          tool?: string;
-          updated_at?: string;
-          user_id?: string;
-          visibility?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "sessions_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "sessions_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
       };
       spec_tasks: {
         Row: {
@@ -1215,43 +1094,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "usage_quotas_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      user_concepts: {
-        Row: {
-          concept_slug: string;
-          last_seen_at: string;
-          mastery: number;
-          user_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          concept_slug: string;
-          last_seen_at?: string;
-          mastery?: number;
-          user_id: string;
-        };
-        Update: {
-          concept_slug?: string;
-          last_seen_at?: string;
-          mastery?: number;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "user_concepts_concept_slug_fkey";
-            columns: ["concept_slug"];
-            isOneToOne: false;
-            referencedRelation: "concepts";
-            referencedColumns: ["slug"];
-          },
-          {
-            foreignKeyName: "user_concepts_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";

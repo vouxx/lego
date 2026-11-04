@@ -17,6 +17,8 @@ const serverEnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1).optional().catch(undefined),
   // 없으면 /api/scan-worker 를 막는다. pg_cron 이 배포 주소를 부를 때 쓴다.
   SCAN_WORKER_SECRET: z.string().min(16).optional().catch(undefined),
+  // 로컬 E2E 의 GitHub API 모의 서버 주소. 운영(production)에서는 무시한다.
+  GITHUB_API_URL: z.url().optional().catch(undefined),
 });
 
 let cached: z.infer<typeof serverEnvSchema> | undefined;

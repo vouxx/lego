@@ -6,9 +6,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { err, type Result } from "@/shared/lib/result";
 import {
   findingStatusInput,
+  prGuardInput,
   startScanInput,
   type FindingStatus,
 } from "./schemas";
+import { changePrGuard } from "./services/pr-reviews";
 import { changeFindingStatus, startScan } from "./services/scans";
 import { runScanWorker } from "./services/worker";
 
@@ -44,4 +46,19 @@ export async function updateFindingStatusAction(
 
   // RLS 와 컬럼 권한이 자기 항목의 status 만 바꾸도록 막는다.
   return changeFindingStatus(parsed.data.findingId, parsed.data.status);
+}
+
+export async function setPrGuardAction(
+  input: unknown,
+): Promise<Result<{ enabled: boolean }>> {
+  const parsed = prGuardInput.safeParse(input);
+  if (!parsed.success) return err("invalid_input", "요청이 올바르지 않습니다.");
+  const user = await getCurrentUser();
+  if (!user) return err("unauthorized", "로그인이 필요합니다.");
+  const result = await changePrGuard(
+    parsed.data.projectId,
+    parsed.data.enabled,
+  );
+  if (result.ok) revalidatePath(`/projects/${parsed.data.projectId}`);
+  return result;
 }

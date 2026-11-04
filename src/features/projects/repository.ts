@@ -92,7 +92,7 @@ export async function getMyProject(projectId: string) {
     .maybeSingle();
 }
 
-/** 점검·발견 항목·규칙 파일은 cascade 로 지워지고, 스펙·설명·세션은 연결만 끊긴다(set null). */
+/** 점검·발견 항목·규칙 파일·PR 리뷰·운영 점검은 cascade 로 지워지고, 스펙은 연결만 끊긴다(set null). */
 export async function deleteProjectRow(projectId: string) {
   return createAdminClient().from("projects").delete().eq("id", projectId);
 }

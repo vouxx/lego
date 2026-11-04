@@ -11,8 +11,8 @@ test("랜딩 페이지가 도구 5개와 점검 항목 22개를 보여 준다", 
     "스펙 변환기",
     "규칙 파일 생성기",
     "보안 점검기",
-    "학습 도우미",
-    "세션 회고",
+    "PR 가드",
+    "운영 점검",
   ]) {
     await expect(
       page.getByRole("heading", { level: 3, name: tool }),
