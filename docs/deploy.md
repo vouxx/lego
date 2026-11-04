@@ -87,7 +87,7 @@ git push origin main
 | 20261104000003_lego_live_checks | 운영 점검 대상·결과, 워커 호출 조건에 일일 점검 추가 |
 | 20261104000004_lego_pr_guard_tracking | PR 가드: fingerprint·코멘트 id·무시 상태·체크 id |
 
-학습 도우미·세션 회고는 없앴다. 비공개 Storage 버킷 `lego-sessions` 는 SQL 로 지울 수 없어 빈 채로 남아 있다(대시보드 Storage 에서 지울 수 있음).
+학습 도우미·세션 회고는 없앴다. 비공개 Storage 버킷 `lego-sessions` 는 SQL 로 지울 수 없어 2026-11-04 에 대시보드에서 지웠다.
 `extensions.pg_trgm` 은 다른 앱이 쓸 수 있어 그대로 둔다.
 
 ## 운영 점검 (로그인 흐름)
