@@ -3,7 +3,7 @@
 - 프로젝트: Vercel `vouxxs-projects/lego`, 함수 리전 `icn1`(Supabase 와 같은 서울)
 - 운영 주소: https://vouxx-lego.vercel.app
 - 배포: `vercel deploy --prod --scope vouxxs-projects` (GitHub 연결 후에는 main push 로 자동)
-- 환경 변수는 Vercel Production 에 있다. `SCAN_WORKER_SECRET` 은 로컬과 다른 운영 전용 값이다.
+- 환경 변수는 Vercel Production 에 있다. `SCAN_WORKER_SECRET` 은 로컬과 다른 운영 전용 값이다. `ADMIN_USER_IDS` 에는 관리자 화면(/admin/feedback)을 볼 계정의 auth user id 를 넣는다.
 
 ## 운영에서 로그인·리포 연결이 되려면
 

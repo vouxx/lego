@@ -1,4 +1,5 @@
-import { getCurrentUser, requireUser } from "@/lib/auth";
+import Link from "next/link";
+import { getCurrentUser, isAdmin, requireUser } from "@/lib/auth";
 import { SignOutButton } from "./SignOutButton";
 import { StartLink } from "./StartLink";
 import { UserBadge } from "./UserBadge";
@@ -14,6 +15,14 @@ export async function HeaderAccount({ required = false }: Props) {
   if (!user) return <StartLink />;
   return (
     <>
+      {isAdmin(user) ? (
+        <Link
+          href="/admin/feedback"
+          className="text-muted-foreground hover:text-foreground text-sm"
+        >
+          관리
+        </Link>
+      ) : null}
       <span className="hidden sm:inline">
         <UserBadge githubLogin={user.githubLogin} avatarUrl={user.avatarUrl} />
       </span>

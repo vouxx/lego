@@ -19,7 +19,11 @@ export type LiveFinding = {
   target: string;
   detail: string;
   fix: string;
+  /** 리포에서 이 테이블·버킷을 만든 곳(마이그레이션) */
+  code?: CodeLocation;
 };
+
+export type CodeLocation = { path: string; line: number; what: string };
 
 export const LIVE_TITLES: Record<string, string> = {
   "LIVE-001": "로그인 없이 읽히는 테이블",
@@ -300,10 +304,13 @@ const ENABLE_RLS = new RegExp(
 const BUCKET_ROW =
   /insert\s+into\s+storage\.buckets[\s\S]*?values\s*([\s\S]*)/i;
 
-/** 마이그레이션에서 만든 테이블과 RLS 를 켰는지(LIVE-006 비교용), Storage 버킷 이름 */
+/** 마이그레이션에서 만든 테이블과 RLS 를 켰는지(LIVE-006 비교용), Storage 버킷 이름, 각각 만든 위치 */
 export function schemaFromMigrations(files: SourceFile[]) {
   const rls = new Map<string, boolean>();
   const buckets = new Set<string>();
+  const tableAt = new Map<string, CodeLocation>();
+  const rlsAt = new Map<string, CodeLocation>();
+  const bucketAt = new Map<string, CodeLocation>();
   const sql = files
     .filter((f) => isSqlFile(f.path))
     .sort((a, b) => a.path.localeCompare(b.path));
@@ -313,16 +320,65 @@ export function schemaFromMigrations(files: SourceFile[]) {
       if (create) {
         const name = normalizeTableName(create[1]!);
         if (!rls.has(name)) rls.set(name, false);
+        if (!tableAt.has(name))
+          tableAt.set(name, {
+            path: file.path,
+            line: stmt.line,
+            what: "create table",
+          });
       }
       const enable = stmt.text.match(ENABLE_RLS);
-      if (enable) rls.set(normalizeTableName(enable[1]!), true);
+      if (enable) {
+        const name = normalizeTableName(enable[1]!);
+        rls.set(name, true);
+        rlsAt.set(name, {
+          path: file.path,
+          line: stmt.line,
+          what: "enable row level security",
+        });
+      }
       const bucket = stmt.text.match(BUCKET_ROW);
       if (bucket)
-        for (const m of bucket[1]!.matchAll(/\(\s*'([^']+)'/g))
+        for (const m of bucket[1]!.matchAll(/\(\s*'([^']+)'/g)) {
           buckets.add(m[1]!);
+          if (!bucketAt.has(m[1]!))
+            bucketAt.set(m[1]!, {
+              path: file.path,
+              line: stmt.line,
+              what: "storage.buckets",
+            });
+        }
     }
   }
-  return { rls, buckets };
+  return { rls, buckets, tableAt, rlsAt, bucketAt };
+}
+
+/**
+ * 운영에서 찾은 문제를 리포의 마이그레이션 위치와 잇는다.
+ * LIVE-001: 테이블을 만든 곳, LIVE-006: RLS 를 켠 곳(운영에 반영 안 됨), LIVE-002: 버킷을 만든 곳.
+ * 수정 프롬프트에도 파일을 적어 AI 코딩 도구가 바로 찾아가게 한다.
+ */
+export function linkToCode(
+  findings: LiveFinding[],
+  schema: ReturnType<typeof schemaFromMigrations>,
+): LiveFinding[] {
+  return findings.map((f) => {
+    const name = normalizeTableName(f.target);
+    const code =
+      f.id === "LIVE-001"
+        ? schema.tableAt.get(name)
+        : f.id === "LIVE-006"
+          ? (schema.rlsAt.get(name) ?? schema.tableAt.get(name))
+          : f.id === "LIVE-002"
+            ? schema.bucketAt.get(f.target)
+            : undefined;
+    if (!code) return f;
+    return {
+      ...f,
+      code,
+      fix: `${f.fix}\n참고: 리포에서 이것을 만든 곳은 ${code.path}:${code.line} (${code.what}) 입니다. 그 파일을 고치지 말고 새 마이그레이션을 추가한다.`,
+    };
+  });
 }
 
 const SUPABASE_URL =

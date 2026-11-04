@@ -8,6 +8,7 @@ import {
   checkSourceMap,
   checkTableExposure,
   findSupabaseConfig,
+  linkToCode,
   schemaFromMigrations,
   SENSITIVE_PATHS,
   type LiveFinding,
@@ -89,6 +90,7 @@ export async function probeSite(
   let requests = 0;
   const notes: string[] = [];
   const findings: LiveFinding[] = [];
+  let schema: ReturnType<typeof schemaFromMigrations> | null = null;
   const get = async (url: string, init?: Parameters<typeof safeFetch>[1]) => {
     if (requests >= MAX_REQUESTS) return null;
     requests++;
@@ -142,7 +144,7 @@ export async function probeSite(
       apikey: config.key,
       authorization: `Bearer ${config.key}`,
     };
-    const schema = await repoSchema(repo, notes);
+    schema = await repoSchema(repo, notes);
 
     const names = new Set<string>();
     const openapi = await get(`${config.url}/rest/v1/`, { headers });
@@ -224,7 +226,7 @@ export async function probeSite(
     );
 
   return {
-    findings,
+    findings: schema ? linkToCode(findings, schema) : findings,
     requests,
     supabase: config ? "found" : "not_found",
     tables,
@@ -240,7 +242,7 @@ async function repoSchema(repo: Repo, notes: string[]) {
     notes.push(
       "이 프로젝트를 보안 점검한 적이 없어 코드(마이그레이션)와 운영 상태는 비교하지 않았습니다.",
     );
-    return { rls: new Map<string, boolean>(), buckets: new Set<string>() };
+    return schemaFromMigrations([]);
   }
   try {
     const snapshot = await readRepoAtCommit(
@@ -252,6 +254,6 @@ async function repoSchema(repo: Repo, notes: string[]) {
   } catch (error) {
     reportError(error, { area: "live.repo" });
     notes.push("리포를 읽지 못해 코드와 운영 상태는 비교하지 않았습니다.");
-    return { rls: new Map<string, boolean>(), buckets: new Set<string>() };
+    return schemaFromMigrations([]);
   }
 }

@@ -21,6 +21,10 @@ export const liveResultSchema = z.object({
   detail: z.string(),
   fix: z.string(),
   isNew: z.boolean().default(false),
+  /** 리포에서 이 테이블·버킷을 만든 마이그레이션 위치 */
+  code: z
+    .object({ path: z.string(), line: z.number(), what: z.string() })
+    .optional(),
 });
 export type LiveResult = z.infer<typeof liveResultSchema>;
 
@@ -31,6 +35,8 @@ export const liveSummarySchema = z.object({
   buckets: z.number().default(0),
   scripts: z.number().default(0),
   notes: z.array(z.string()).default([]),
+  /** 코드 위치를 찾은 커밋(GitHub 링크용) */
+  commitSha: z.string().nullable().default(null),
 });
 export type LiveSummary = z.infer<typeof liveSummarySchema>;
 

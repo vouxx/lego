@@ -104,6 +104,27 @@ export async function insertLlmCall(row: Insert<"llm_calls">) {
   return createAdminClient().from("llm_calls").insert(row);
 }
 
+/** 보안 추이: 끝난 점검 최근 30개와 그 발견 항목(사용자 세션, RLS) */
+export async function listTrendScans(projectId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("scans")
+    .select("id, created_at")
+    .eq("project_id", projectId)
+    .eq("status", "done")
+    .order("created_at", { ascending: false })
+    .limit(30);
+}
+
+export async function listTrendFindings(scanIds: string[]) {
+  const supabase = await createClient();
+  return supabase
+    .from("findings")
+    .select("scan_id, fingerprint, severity, ai_verdict, status")
+    .in("scan_id", scanIds)
+    .limit(10_000);
+}
+
 export async function listProjectScans(projectId: string) {
   const supabase = await createClient();
   return supabase
@@ -196,6 +217,19 @@ export async function setPrGuardStrictness(
     .from("projects")
     .update({ pr_guard_strictness: strictness })
     .eq("id", projectId);
+}
+
+/** 스펙 작업에 이어진 PR 에 PR 가드 체크 결론을 남긴다(이어진 작업이 없으면 아무것도 안 바뀐다). */
+export async function setTaskPrCheck(
+  repoFullName: string,
+  prNumber: number,
+  conclusion: "success" | "neutral" | "failure",
+) {
+  return createAdminClient()
+    .from("spec_task_prs")
+    .update({ check_conclusion: conclusion })
+    .eq("repo_full_name", repoFullName)
+    .eq("pr_number", prNumber);
 }
 
 /** webhook 의 설치·리포로 PR 가드를 켠 프로젝트를 찾는다(사용자마다 하나씩 있을 수 있다). */

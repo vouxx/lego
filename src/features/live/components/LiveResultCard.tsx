@@ -4,9 +4,14 @@ import { CopyButton } from "@/shared/ui/copy-button";
 import { SeverityMark } from "@/shared/ui/severity";
 import type { LiveResult } from "../schemas";
 
-type Props = { result: LiveResult };
+type Props = {
+  result: LiveResult;
+  repoFullName: string;
+  commitSha: string | null;
+};
 
-export function LiveResultCard({ result }: Props) {
+export function LiveResultCard({ result, repoFullName, commitSha }: Props) {
+  const code = result.code;
   return (
     <Card>
       <CardHeader className="gap-2">
@@ -24,6 +29,26 @@ export function LiveResultCard({ result }: Props) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-sm">{result.detail}</p>
+        {code ? (
+          <p className="text-sm">
+            <span className="text-muted-foreground">코드에서 만든 곳: </span>
+            {commitSha ? (
+              <a
+                href={`https://github.com/${repoFullName}/blob/${commitSha}/${code.path}#L${code.line}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-xs underline"
+              >
+                {code.path}:{code.line}
+              </a>
+            ) : (
+              <code className="font-mono text-xs">
+                {code.path}:{code.line}
+              </code>
+            )}{" "}
+            <span className="text-muted-foreground text-xs">({code.what})</span>
+          </p>
+        ) : null}
         <details className="text-sm">
           <summary className="cursor-pointer">
             고치는 방법(AI 코딩 도구에 붙여넣기)

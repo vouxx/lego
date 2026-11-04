@@ -198,6 +198,7 @@ export async function runCheck(
         buckets: result.buckets,
         scripts: result.scripts,
         notes: result.notes,
+        commitSha: scan?.commit_sha ?? null,
       },
       finished_at: new Date().toISOString(),
     });

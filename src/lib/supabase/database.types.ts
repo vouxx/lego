@@ -937,6 +937,61 @@ export type Database = {
         };
         Relationships: [];
       };
+      spec_task_prs: {
+        Row: {
+          check_conclusion: string | null;
+          id: string;
+          pr_number: number;
+          pr_title: string;
+          pr_url: string | null;
+          repo_full_name: string;
+          state: string;
+          task_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          check_conclusion?: string | null;
+          id?: string;
+          pr_number: number;
+          pr_title?: string;
+          pr_url?: string | null;
+          repo_full_name: string;
+          state?: string;
+          task_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          check_conclusion?: string | null;
+          id?: string;
+          pr_number?: number;
+          pr_title?: string;
+          pr_url?: string | null;
+          repo_full_name?: string;
+          state?: string;
+          task_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "spec_task_prs_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "spec_tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "spec_task_prs_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       spec_tasks: {
         Row: {
           acceptance_criteria: NonNullable<Json>;
@@ -1146,6 +1201,18 @@ export type Database = {
           msg_id: number;
           read_ct: number;
           scan_id: string;
+        }[];
+      };
+      rule_feedback: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          ai_false_positive: number;
+          ai_uncertain: number;
+          rule_id: string;
+          rule_title: string;
+          source: string;
+          total: number;
+          user_ignored: number;
         }[];
       };
       scan_diff: {

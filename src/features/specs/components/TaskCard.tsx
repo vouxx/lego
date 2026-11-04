@@ -15,6 +15,13 @@ import type { SpecTaskView, TaskStatus } from "../schemas";
 
 type Props = { task: SpecTaskView };
 
+const PR_STATE = { open: "열림", closed: "닫힘", merged: "머지됨" } as const;
+const PR_CHECK = {
+  success: "PR 가드 통과",
+  neutral: "PR 가드 경고",
+  failure: "PR 가드 실패",
+} as const;
+
 const NEXT: Record<TaskStatus, { status: TaskStatus; label: string } | null> = {
   todo: { status: "doing", label: "시작" },
   doing: { status: "done", label: "완료" },
@@ -76,9 +83,44 @@ export function TaskCard({ task }: Props) {
             선행: {task.dependsOn.join(", ")}
           </p>
         ) : null}
+        {task.prs.length > 0 ? (
+          <ul className="flex flex-col gap-1" aria-label={`${task.key} PR`}>
+            {task.prs.map((pr) => (
+              <li
+                key={pr.number}
+                className="flex flex-wrap items-center gap-1.5 text-xs"
+              >
+                <a
+                  href={pr.url ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono underline"
+                >
+                  PR #{pr.number}
+                </a>
+                <span className="text-muted-foreground">
+                  {PR_STATE[pr.state]}
+                </span>
+                {pr.check && pr.state === "open" ? (
+                  <span
+                    className={
+                      pr.check === "failure"
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    · {PR_CHECK[pr.check]}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {task.doneCommit ? (
           <p className="text-muted-foreground text-xs">
-            커밋 {task.doneCommit.slice(0, 7)} 으로 완료
+            {/^[0-9a-f]{40}$/.test(task.doneCommit)
+              ? `커밋 ${task.doneCommit.slice(0, 7)} 으로 완료`
+              : `${task.doneCommit} 으로 완료`}
           </p>
         ) : null}
         <details className="text-xs">

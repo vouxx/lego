@@ -176,7 +176,7 @@ export async function listTasksForRepo(
   return createAdminClient()
     .from("spec_tasks")
     .select(
-      "id, key, status, specs!inner(id, projects!inner(installation_id, repo_full_name))",
+      "id, key, status, user_id, specs!inner(id, projects!inner(installation_id, repo_full_name))",
     )
     .eq("specs.projects.installation_id", installationId)
     .eq("specs.projects.repo_full_name", repoFullName);
@@ -199,6 +199,24 @@ export async function markTasksDone(
     if (error) return { error };
   }
   return { error: null };
+}
+
+/** PR webhook: [T-n] 으로 이은 작업과 PR. 같은 작업·PR 이면 덮어쓴다. */
+export async function upsertTaskPrs(rows: Insert<"spec_task_prs">[]) {
+  return createAdminClient()
+    .from("spec_task_prs")
+    .upsert(rows, { onConflict: "task_id,pr_number" });
+}
+
+export async function listSpecTaskPrs(specId: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("spec_task_prs")
+    .select(
+      "task_id, pr_number, pr_title, pr_url, state, check_conclusion, spec_tasks!inner(spec_id)",
+    )
+    .eq("spec_tasks.spec_id", specId)
+    .order("pr_number");
 }
 
 /** 작업(spec_tasks)은 cascade 로 같이 지워진다. */

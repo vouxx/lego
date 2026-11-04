@@ -8,6 +8,7 @@ import {
   ignorePrFindings,
   listPrReviewFindingsForWorker,
   updatePrReview,
+  setTaskPrCheck,
 } from "../repository";
 import {
   prReviewSummarySchema,
@@ -121,6 +122,11 @@ export async function handleReviewCommentEvent(
       ignored: findings.length - open.length,
     };
     await updatePrReview(latest.id, { summary: next });
+    await setTaskPrCheck(
+      repository.full_name,
+      pull_request.number,
+      output.conclusion,
+    );
     if (latest.check_run_id)
       await completeCheckRun(
         installation.id,

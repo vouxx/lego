@@ -13,6 +13,7 @@ import {
   insertTemplate,
   listMyProjectsForSpec,
   listMySpecs,
+  listSpecTaskPrs,
   listSpecTasks,
   updateSpec,
   updateTask,
@@ -29,6 +30,7 @@ import {
   type SpecSummary,
   type SpecTable,
   type SpecTaskView,
+  type TaskPrView,
   type TaskStatus,
 } from "../schemas";
 import { generateQuestions, regeneratePrompt } from "./llm-stages";
@@ -143,8 +145,23 @@ const STALE_MS = 10 * 60 * 1000;
 export async function getSpecView(specId: string): Promise<Result<SpecView>> {
   const { data: spec } = await getMySpec(specId);
   if (!spec) return NOT_FOUND;
-  const { data: rows, error } = await listSpecTasks(specId);
+  const [{ data: rows, error }, { data: prRows }] = await Promise.all([
+    listSpecTasks(specId),
+    listSpecTaskPrs(specId),
+  ]);
   if (error) return err("db_error", "작업을 불러오지 못했습니다.");
+  const prsByTask = new Map<string, TaskPrView[]>();
+  for (const p of prRows ?? []) {
+    const list = prsByTask.get(p.task_id) ?? [];
+    list.push({
+      number: p.pr_number,
+      title: p.pr_title,
+      url: p.pr_url,
+      state: p.state as TaskPrView["state"],
+      check: p.check_conclusion as TaskPrView["check"],
+    });
+    prsByTask.set(p.task_id, list);
+  }
 
   const statusByKey = new Map(rows.map((r) => [r.key, r.status as TaskStatus]));
   const stackTags = spec.stack_tags.filter((t): t is StackTag =>
@@ -197,6 +214,7 @@ export async function getSpecView(specId: string): Promise<Result<SpecView>> {
           ? (r.status as TaskStatus)
           : "todo",
         doneCommit: r.done_commit,
+        prs: prsByTask.get(r.id) ?? [],
         locked: isLocked({ dependsOn }, statusByKey),
       };
     }),

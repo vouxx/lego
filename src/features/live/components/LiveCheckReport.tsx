@@ -1,12 +1,12 @@
 import { SEVERITIES, type LiveCheckView } from "../schemas";
 import { LiveResultCard } from "./LiveResultCard";
 
-type Props = { check: LiveCheckView };
+type Props = { check: LiveCheckView; repoFullName: string };
 
 const order = (s: (typeof SEVERITIES)[number]) => SEVERITIES.indexOf(s);
 
 /** 가장 최근 점검 결과 */
-export function LiveCheckReport({ check }: Props) {
+export function LiveCheckReport({ check, repoFullName }: Props) {
   if (check.status === "running")
     return (
       <p className="text-sm">점검하는 중입니다. 잠시 뒤 새로고침해 주세요.</p>
@@ -52,7 +52,11 @@ export function LiveCheckReport({ check }: Props) {
       <ul className="flex flex-col gap-3">
         {results.map((r) => (
           <li key={`${r.id}-${r.target}`}>
-            <LiveResultCard result={r} />
+            <LiveResultCard
+              result={r}
+              repoFullName={repoFullName}
+              commitSha={summary.commitSha}
+            />
           </li>
         ))}
       </ul>

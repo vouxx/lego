@@ -224,3 +224,129 @@ test("한 push 에 여러 작업 키가 있으면 모두 완료한다", async ({
     "done",
   ]);
 });
+
+async function sendPullRequest(
+  request: APIRequestContext,
+  pr: {
+    action: string;
+    number: number;
+    title: string;
+    branch: string;
+    merged?: boolean;
+    mergeSha?: string;
+  },
+) {
+  const body = JSON.stringify({
+    action: pr.action,
+    installation: { id: INSTALLATION },
+    repository: { full_name: REPO },
+    pull_request: {
+      number: pr.number,
+      title: pr.title,
+      html_url: `https://github.com/${REPO}/pull/${pr.number}`,
+      draft: false,
+      merged: pr.merged ?? false,
+      merge_commit_sha: pr.mergeSha ?? null,
+      head: { sha: sha(), ref: pr.branch },
+    },
+  });
+  const signature = `sha256=${createHmac(
+    "sha256",
+    process.env.GITHUB_WEBHOOK_SECRET ?? "",
+  )
+    .update(body)
+    .digest("hex")}`;
+  return request.post("/api/github/webhook", {
+    data: body,
+    headers: {
+      "content-type": "application/json",
+      "x-github-event": "pull_request",
+      "x-hub-signature-256": signature,
+    },
+  });
+}
+
+test("PR 제목·브랜치의 작업 키로 PR 을 잇고, 머지되면 작업을 완료한다", async ({
+  request,
+  page,
+}) => {
+  await admin
+    .from("spec_tasks")
+    .update({ status: "todo", done_commit: null })
+    .eq("spec_id", ids.spec)
+    .in("key", ["T-2", "T-3"]);
+  expect(
+    (
+      await sendPullRequest(request, {
+        action: "opened",
+        number: 21,
+        title: "[T-2] 프로필 저장",
+        branch: "feature/profile",
+      })
+    ).status(),
+  ).toBe(200);
+  // 제목에 키가 없어도 브랜치 이름(t-3)으로 잇는다.
+  await sendPullRequest(request, {
+    action: "opened",
+    number: 22,
+    title: "알림 설정 화면",
+    branch: "feat/t-3-alarm",
+  });
+  const links = async () =>
+    (
+      await admin
+        .from("spec_task_prs")
+        .select("pr_number, state, spec_tasks!inner(key, spec_id)")
+        .eq("spec_tasks.spec_id", ids.spec)
+        .order("pr_number")
+    ).data ?? [];
+  expect(
+    (await links()).map((l) => [
+      (l.spec_tasks as unknown as { key: string }).key,
+      l.pr_number,
+      l.state,
+    ]),
+  ).toEqual([
+    ["T-2", 21, "open"],
+    ["T-3", 22, "open"],
+  ]);
+
+  await page.goto(`/specs/${ids.spec}`, { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: /작업/ }).click();
+  const t2 = page.getByRole("list", { name: "T-2 PR" });
+  await expect(t2).toContainText("PR #21");
+  await expect(t2).toContainText("열림");
+
+  // 머지 → 작업 완료(머지 커밋), 닫힘(머지 안 됨) → 작업은 그대로
+  const mergeSha = sha();
+  await sendPullRequest(request, {
+    action: "closed",
+    number: 21,
+    title: "[T-2] 프로필 저장",
+    branch: "feature/profile",
+    merged: true,
+    mergeSha,
+  });
+  await sendPullRequest(request, {
+    action: "closed",
+    number: 22,
+    title: "알림 설정 화면",
+    branch: "feat/t-3-alarm",
+  });
+  const tasks = await taskStatus();
+  expect(tasks.find((t) => t.key === "T-2")).toMatchObject({
+    status: "done",
+    done_commit: mergeSha,
+  });
+  expect(tasks.find((t) => t.key === "T-3")?.status).toBe("todo");
+  expect((await links()).map((l) => l.state)).toEqual(["merged", "closed"]);
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: /작업/ }).click();
+  await expect(page.getByRole("list", { name: "T-2 PR" })).toContainText(
+    "머지됨",
+  );
+  await expect(
+    page.getByText(`커밋 ${mergeSha.slice(0, 7)} 으로 완료`),
+  ).toBeVisible();
+});

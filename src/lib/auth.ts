@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { serverEnv } from "@/lib/env.server";
 import { createClient } from "@/lib/supabase/server";
 
 export type CurrentUser = {
@@ -31,6 +32,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     avatarUrl: typeof meta.avatar_url === "string" ? meta.avatar_url : null,
   };
 });
+
+/**
+ * 관리자인지. user_metadata 는 사용자가 바꿀 수 있으니 서버가 정한 auth user id 로만 판단한다.
+ */
+export function isAdmin(user: CurrentUser | null) {
+  return !!user && serverEnv().ADMIN_USER_IDS.includes(user.id);
+}
 
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();

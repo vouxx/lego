@@ -25,8 +25,9 @@ export function TaskBoard({ tasks }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground text-sm">
-        {done}/{tasks.length} 완료 · 커밋 메시지에 [T-3] 처럼 작업 ID 를 넣으면
-        연결된 리포에 push 할 때 자동으로 완료됩니다.
+        {done}/{tasks.length} 완료 · 커밋 메시지나 PR 제목에 [T-3] 처럼 작업 ID
+        를 넣으면(브랜치 이름 t-3 도 됨) PR 이 작업에 이어지고, 기본 브랜치에
+        들어가면 자동으로 완료됩니다.
       </p>
       <div className="grid gap-4 md:grid-cols-3">
         {TASK_STATUSES.map((status) => {

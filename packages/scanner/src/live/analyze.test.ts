@@ -8,6 +8,7 @@ import {
   checkSourceMap,
   checkTableExposure,
   findSupabaseConfig,
+  linkToCode,
   schemaFromMigrations,
 } from "./analyze";
 
@@ -129,5 +130,48 @@ describe("설정 찾기", () => {
       ["notes", false],
     ]);
     expect([...buckets]).toEqual(["avatars", "docs"]);
+  });
+});
+
+describe("운영 문제 → 코드 위치", () => {
+  const schema = schemaFromMigrations([
+    {
+      path: "supabase/migrations/0001_init.sql",
+      content: [
+        "-- 시작",
+        "create table public.orders (id int);",
+        "",
+        "create table notes (id int);",
+        "alter table notes enable row level security;",
+        "insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true);",
+      ].join("\n"),
+    },
+  ]);
+
+  it("테이블·RLS·버킷을 만든 파일과 줄을 붙이고 수정 프롬프트에도 적는다", () => {
+    const linked = linkToCode(
+      [
+        ...checkTableExposure("orders", 3, schema.rls),
+        ...checkTableExposure("notes", 1, schema.rls),
+        ...checkBucketListing("avatars", 2),
+        ...checkHeaders({}),
+      ],
+      schema,
+    );
+    const byId = (id: string, target: string) =>
+      linked.find((f) => f.id === id && f.target === target);
+    expect(byId("LIVE-001", "orders")?.code).toEqual({
+      path: "supabase/migrations/0001_init.sql",
+      line: 2,
+      what: "create table",
+    });
+    expect(byId("LIVE-006", "notes")?.code?.line).toBe(5);
+    expect(byId("LIVE-002", "avatars")?.code?.what).toBe("storage.buckets");
+    expect(byId("LIVE-001", "orders")?.fix).toContain(
+      "supabase/migrations/0001_init.sql:2",
+    );
+    expect(
+      linked.filter((f) => f.id === "LIVE-004").every((f) => !f.code),
+    ).toBe(true);
   });
 });

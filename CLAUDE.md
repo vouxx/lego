@@ -101,6 +101,10 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 커밋 사이 비교는 fingerprint(규칙+파일+코드 줄). 직전 리뷰에 있던 문제는 다시 코멘트하지 않고(`github_comment_id` 를 이어받음), 사라진 문제는 그 코멘트에 '해결됨' 답글 + GraphQL 로 대화를 접는다. 같은 문제의 AI 판별은 다시 하지 않는다.
 - `/lego ignore 이유`: 레고 줄 코멘트에 답글(pull_request_review_comment 이벤트). author_association 이 OWNER·MEMBER·COLLABORATOR 일 때만, 코멘트가 그 설치·리포·PR 의 것인지 확인한 뒤 무시하고 체크를 다시 계산한다. 다음 커밋에도 이어진다.
 - 엄격도(`projects.pr_guard_strictness`): strict=medium 이상 실패, normal=high 이상 실패(기본), relaxed=critical 만 실패·low 는 줄 코멘트 없음. 기준은 `schemas.ts STRICTNESS_RULES`. 리뷰 summary.strictness 에 남겨 무시 후 재계산도 같은 기준을 쓴다. GitHub 리뷰별 코멘트 API 는 line 을 비워 주므로 코멘트 id 는 PR 전체 코멘트 목록에서 pull_request_review_id 로 찾는다.
+- 스펙 작업 ↔ PR(`spec_task_prs`): pull_request webhook 에서 PR 제목 `[T-n]`·브랜치 이름 `t-n` 으로 작업을 잇는다(PR 가드를 꺼도 동작). 머지되면 작업 완료(done_commit=머지 커밋). PR 가드 결론은 `setTaskPrCheck` 로 같은 PR 에 남긴다.
+- 운영 점검 → 코드 위치: `schemaFromMigrations` 가 테이블·RLS·버킷을 만든 파일:줄을 돌려주고 `linkToCode` 가 LIVE-001/002/006 에 붙인다(수정 프롬프트에도 적음). 마지막 보안 점검 커밋 기준.
+- 관리자 오탐 피드백(`/admin/feedback`): `ADMIN_USER_IDS`(auth user id, 쉼표) 계정만. user_metadata 는 사용자가 바꿀 수 있으니 쓰지 않는다. 집계는 `lego.rule_feedback()`(service_role 전용), 같은 (프로젝트, fingerprint) 는 한 건.
+- 프로젝트 보안 추이: `services/trend.ts computeTrend`(순수 함수) — 끝난 점검 최근 30개, 오탐·무시 제외, 해결 시간 중앙값.
 - 위험 영역(`scanner/diff/risk.ts`: 로그인·DB·결제·설정·CI·의존성·큰 변경)과 스펙 작업 범위(제목·커밋의 [T-n] → 작업 설명과 바뀐 파일을 Haiku 로 비교, 첫 리뷰에서만)를 리뷰 본문·체크·화면에 보여 준다.
 - GitHub API 주소는 `GITHUB_API_URL` 로 바꿀 수 있다(production 이 아닐 때만). 로컬 E2E 는 모의 서버(localhost:4010)를 쓴다.
 

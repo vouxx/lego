@@ -58,7 +58,9 @@ export function LiveScreen({ projectId, repoFullName, target, checks }: Props) {
           </p>
         </div>
       ) : null}
-      {latest ? <LiveCheckReport check={latest} /> : null}
+      {latest ? (
+        <LiveCheckReport check={latest} repoFullName={repoFullName} />
+      ) : null}
       <LiveHistory checks={checks} />
     </div>
   );

@@ -120,6 +120,14 @@ export const saveTemplateInput = z.object({ taskId: z.uuid() });
 
 // 화면 표시용 -----------------------------------------------------------------
 
+export type TaskPrView = {
+  number: number;
+  title: string;
+  url: string | null;
+  state: "open" | "closed" | "merged";
+  check: "success" | "neutral" | "failure" | null;
+};
+
 export type SpecTaskView = {
   id: string;
   key: string;
@@ -130,6 +138,8 @@ export type SpecTaskView = {
   prompt: string;
   status: TaskStatus;
   doneCommit: string | null;
+  /** [T-n] 으로 이어진 PR */
+  prs: TaskPrView[];
   /** 선행 작업이 아직 끝나지 않았는지 */
   locked: boolean;
 };

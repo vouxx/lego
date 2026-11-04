@@ -35,6 +35,7 @@ import {
   listGuardedProjects,
   replacePrReviewFindings,
   setPrFindingCommentIds,
+  setTaskPrCheck,
   updatePrReview,
 } from "../repository";
 import {
@@ -523,6 +524,7 @@ export async function processPrReview(reviewId: string) {
       strictness,
     };
     await updatePrReview(reviewId, { status: "done", summary });
+    await setTaskPrCheck(r.repo, review.pr_number, output.conclusion);
   } catch (e) {
     reportError(e, { area: "pr-guard", extra: { reviewId } });
     await updatePrReview(reviewId, {

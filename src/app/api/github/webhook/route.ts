@@ -5,6 +5,7 @@ import {
   processPrReview,
 } from "@/features/scans/services/pr-guard";
 import { handleReviewCommentEvent } from "@/features/scans/services/pr-guard-ignore";
+import { handleSpecPullRequest } from "@/features/specs/services/pull-request";
 import { handleSpecPush } from "@/features/specs/services/push";
 import {
   handleWebhookEvent,
@@ -58,10 +59,17 @@ async function handlePush(body: unknown) {
   };
 }
 
-/** PR 가드: 리뷰를 만들고 응답한 뒤 같은 서버에서 처리한다(GitHub 은 10초 안에 응답을 기다린다). */
+/**
+ * pull_request 는 스펙 작업 ↔ PR 연결과 PR 가드 두 곳에 쓴다.
+ * PR 가드는 리뷰를 만들고 응답한 뒤 같은 서버에서 처리한다(GitHub 은 10초 안에 응답을 기다린다).
+ */
 async function handlePullRequest(body: unknown) {
-  const result = await handlePullRequestEvent(body);
+  const [spec, result] = await Promise.all([
+    handleSpecPullRequest(body),
+    handlePullRequestEvent(body),
+  ]);
   if (!result.ok) return result;
+  if (!spec.ok) return spec;
   for (const { reviewId } of result.data.reviews) {
     after(() =>
       processPrReview(reviewId).catch((e) => console.error("[pr-guard]", e)),
