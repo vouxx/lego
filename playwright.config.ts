@@ -34,7 +34,19 @@ export default defineConfig({
     },
     {
       name: "local-signed-in",
-      testMatch: /(context|spec|learn|session|delete)-flow\.spec\.ts/,
+      testMatch: /(context|spec|learn|session|webhook)-flow\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: existsSync(LOCAL_AUTH_STATE)
+          ? LOCAL_AUTH_STATE
+          : undefined,
+      },
+    },
+    {
+      // 같은 테스트 사용자의 스펙·프로젝트를 지우므로 다른 로컬 흐름이 끝난 뒤에 돈다.
+      name: "local-delete",
+      testMatch: /delete-flow\.spec\.ts/,
+      dependencies: ["local-signed-in"],
       use: {
         ...devices["Desktop Chrome"],
         storageState: existsSync(LOCAL_AUTH_STATE)
@@ -45,7 +57,7 @@ export default defineConfig({
     {
       // 운영 점검: E2E_BASE_URL 을 운영 주소로 두고 실행한다(tests/e2e/prod-flow.spec.ts 참고).
       name: "prod-signed-in",
-      testMatch: /(prod|scan)-flow\.spec\.ts/,
+      testMatch: /(prod|scan|onboarding)-flow\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: existsSync(PROD_AUTH_STATE) ? PROD_AUTH_STATE : undefined,

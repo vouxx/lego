@@ -13,13 +13,13 @@ type Props = PageProps<"/s/[slug]">;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const meta = await getSharedSessionMeta((await params).slug);
-  return meta
-    ? {
-        title: `${meta.title} · 레고 세션 회고`,
-        description: meta.goal,
-        robots: { index: false },
-      }
-    : {};
+  // 본문은 스트리밍 중에 notFound 를 부르므로 상태 코드가 200 으로 나간다. 여기서 먼저 404 로 끝낸다.
+  if (!meta) notFound();
+  return {
+    title: `${meta.title} · 레고 세션 회고`,
+    description: meta.goal,
+    robots: { index: false },
+  };
 }
 
 export default function SharedSessionPage({ params }: Props) {

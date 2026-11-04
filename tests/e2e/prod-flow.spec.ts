@@ -139,8 +139,9 @@ const LOG = [
   .map((l) => JSON.stringify(l))
   .join("\n");
 
-test("회고: 로그를 올려 분석하고, 키가 가려졌는지 본 뒤 지운다", async ({
+test("회고: 로그를 올려 분석하고, 키 마스킹·갤러리 공개를 확인한 뒤 지운다", async ({
   page,
+  browser,
 }) => {
   test.setTimeout(180_000);
   await page.goto("/sessions/new", { waitUntil: "networkidle" });
@@ -167,7 +168,41 @@ test("회고: 로그를 올려 분석하고, 키가 가려졌는지 본 뒤 지�
     timeout: 150_000,
   });
   await expect(page.getByText(FAKE_KEY)).toHaveCount(0);
+
+  // 공개하면 로그인하지 않은 사람도 갤러리·공유 페이지에서 본다. 지우면 갤러리에서 사라진다.
+  await page
+    .getByRole("combobox")
+    .filter({ hasText: "나만 보기" })
+    .selectOption("public");
+  const shareLink = page.getByRole("link", { name: /^\/s\// });
+  await expect(shareLink).toBeVisible();
+  const sharePath = (await shareLink.textContent())!.trim();
+  const anon = await browser.newContext({ storageState: undefined });
+  const visitor = await anon.newPage();
+  await visitor.goto("/gallery", { waitUntil: "networkidle" });
+  await expect(visitor.locator(`a[href="${sharePath}"]`)).toBeVisible();
+  await visitor.goto(sharePath);
+  await expect(
+    visitor.getByRole("heading", { name: "대화 타임라인" }),
+  ).toBeVisible();
+  await expect(visitor.getByText(FAKE_KEY)).toHaveCount(0);
+
   await deleteHere(page, "세션 지우기", /\/sessions$/);
+  await visitor.goto("/gallery", { waitUntil: "networkidle" });
+  await expect(visitor.locator(`a[href="${sharePath}"]`)).toHaveCount(0);
+  // 지운 세션은 내용 없이 '찾을 수 없음'. 링크 미리보기 봇은 상태 코드로도 404 를 받는다.
+  await visitor.goto(sharePath);
+  await expect(
+    visitor.getByText(/could not be found|찾을 수 없/),
+  ).toBeVisible();
+  await expect(
+    visitor.getByRole("heading", { name: "대화 타임라인" }),
+  ).toHaveCount(0);
+  const botView = await visitor.request.get(sharePath, {
+    headers: { "user-agent": "Slackbot-LinkExpanding 1.0" },
+  });
+  expect(botView.status()).toBe(404);
+  await anon.close();
 });
 
 test("스펙: 아이디어로 작업까지 만든 뒤 지운다", async ({ page }) => {
