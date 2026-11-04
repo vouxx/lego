@@ -79,7 +79,7 @@ export async function getScanForWorker(scanId: string) {
   return createAdminClient()
     .from("scans")
     .select(
-      "id, user_id, status, commit_sha, projects(installation_id, repo_full_name, detected_stack)",
+      "id, user_id, project_id, status, commit_sha, projects(installation_id, repo_full_name, detected_stack)",
     )
     .eq("id", scanId)
     .maybeSingle();
@@ -261,7 +261,7 @@ export async function getPrReviewForWorker(reviewId: string) {
   return createAdminClient()
     .from("pr_reviews")
     .select(
-      "id, user_id, pr_number, pr_title, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack, pr_guard_strictness)",
+      "id, user_id, pr_number, pr_title, pr_url, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack, pr_guard_strictness)",
     )
     .eq("id", reviewId)
     .maybeSingle();

@@ -1,4 +1,5 @@
 import "server-only";
+import { notifyPrGuard } from "@/features/notifications/services/notify";
 import {
   codeContext,
   fingerprint,
@@ -523,8 +524,23 @@ export async function processPrReview(reviewId: string) {
       scope,
       strictness,
     };
-    await updatePrReview(reviewId, { status: "done", summary });
     await setTaskPrCheck(r.repo, review.pr_number, output.conclusion);
+    // 처음부터 실패이거나 이번 커밋에 새 문제가 생겨 실패일 때만 알린다(같은 실패를 커밋마다 보내지 않는다).
+    if (output.conclusion === "failure" && (isFirst || added.length > 0))
+      await notifyPrGuard({
+        projectId: project.id,
+        reviewId,
+        prNumber: review.pr_number,
+        prTitle: review.pr_title,
+        prUrl: review.pr_url,
+        title: output.title,
+        added: added.map((a) => ({
+          severity: a.severity,
+          title: a.rule_title,
+          where: `${a.file_path}:${a.line}`,
+        })),
+      });
+    await updatePrReview(reviewId, { status: "done", summary });
   } catch (e) {
     reportError(e, { area: "pr-guard", extra: { reviewId } });
     await updatePrReview(reviewId, {

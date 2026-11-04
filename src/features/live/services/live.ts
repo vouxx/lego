@@ -1,4 +1,5 @@
 import "server-only";
+import { notifyLiveCheck } from "@/features/notifications/services/notify";
 import { randomBytes } from "node:crypto";
 import {
   BlockedUrlError,
@@ -201,6 +202,11 @@ export async function runCheck(
         commitSha: scan?.commit_sha ?? null,
       },
       finished_at: new Date().toISOString(),
+    });
+    await notifyLiveCheck({
+      projectId: project.id,
+      siteUrl: target.site_url,
+      results,
     });
     return ok({ checkId: check.id });
   } catch (e) {

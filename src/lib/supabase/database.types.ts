@@ -937,6 +937,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      slack_connections: {
+        Row: {
+          channel_id: string;
+          channel_name: string;
+          created_at: string;
+          last_error: string | null;
+          notify_guard: boolean;
+          notify_live: boolean;
+          notify_scan: boolean;
+          project_id: string;
+          team_id: string;
+          team_name: string;
+          updated_at: string;
+          user_id: string;
+          webhook_url: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          channel_id: string;
+          channel_name?: string;
+          created_at?: string;
+          last_error?: string | null;
+          notify_guard?: boolean;
+          notify_live?: boolean;
+          notify_scan?: boolean;
+          project_id: string;
+          team_id: string;
+          team_name?: string;
+          updated_at?: string;
+          user_id: string;
+          webhook_url: string;
+        };
+        Update: {
+          channel_id?: string;
+          channel_name?: string;
+          created_at?: string;
+          last_error?: string | null;
+          notify_guard?: boolean;
+          notify_live?: boolean;
+          notify_scan?: boolean;
+          project_id?: string;
+          team_id?: string;
+          team_name?: string;
+          updated_at?: string;
+          user_id?: string;
+          webhook_url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "slack_connections_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: true;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "slack_connections_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       spec_task_prs: {
         Row: {
           check_conclusion: string | null;

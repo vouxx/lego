@@ -51,6 +51,7 @@ export function ToolGrid() {
           <p>스펙 작업 [T-3] → PR 연결 → 머지되면 완료</p>
           <p>보안 규칙 22개 → PR 가드가 바뀐 줄마다 다시 확인</p>
           <p>운영에서 열린 테이블 → 만든 마이그레이션 파일:줄</p>
+          <p>운영 점검 새 문제·PR 가드 실패 → 내 Slack 채널</p>
           <p>
             점검 결과의 &lsquo;이게 뭐예요?&rsquo; →{" "}
             <Link href="/concepts" className="underline">

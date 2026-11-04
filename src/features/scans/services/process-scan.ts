@@ -1,4 +1,5 @@
 import "server-only";
+import { notifyScan } from "@/features/notifications/services/notify";
 import { reportError } from "@/lib/monitoring";
 import {
   auditDependencies,
@@ -226,5 +227,11 @@ export async function processScan(scanId: string) {
     progress: 100,
     summary,
     finished_at: new Date().toISOString(),
+  });
+  await notifyScan({
+    projectId: scan.project_id,
+    scanId,
+    counts: summary.bySeverity,
+    total: summary.total,
   });
 }

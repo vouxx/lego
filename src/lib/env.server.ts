@@ -19,6 +19,11 @@ const serverEnvSchema = z.object({
   SCAN_WORKER_SECRET: z.string().min(16).optional().catch(undefined),
   // 로컬 E2E 의 GitHub API 모의 서버 주소. 운영(production)에서는 무시한다.
   GITHUB_API_URL: z.url().optional().catch(undefined),
+  // 사용자용 Slack 알림("Slack 에 추가"). 없으면 프로젝트 화면에서 연결 버튼을 막는다.
+  SLACK_CLIENT_ID: z.string().min(1).optional().catch(undefined),
+  SLACK_CLIENT_SECRET: z.string().min(1).optional().catch(undefined),
+  // 로컬 E2E 의 Slack API 모의 서버 주소. 운영(production)에서는 무시한다.
+  SLACK_API_URL: z.url().optional().catch(undefined),
   // 관리자 화면(/admin/*)을 볼 수 있는 로그인 계정의 auth user id(uuid), 쉼표로 구분.
   ADMIN_USER_IDS: z
     .string()

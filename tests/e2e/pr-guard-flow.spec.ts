@@ -131,6 +131,9 @@ const reviewComments = new Map<
 >();
 let nextReviewId = 88;
 let server: Server;
+// 프로젝트에 Slack 알림을 이어 두고 모의 webhook 으로 받는다.
+const slackPosts: string[] = [];
+let slack: Server;
 
 function startMock() {
   server = createServer((req, res) => {
@@ -319,6 +322,15 @@ test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async () => {
   await startMock();
+  slack = createServer((req, res) => {
+    let raw = "";
+    req.on("data", (c) => (raw += c));
+    req.on("end", () => {
+      slackPosts.push(String((JSON.parse(raw) as { text: string }).text));
+      res.writeHead(200);
+      res.end("ok");
+    });
+  }).listen(4031);
   const { data: profile } = await admin
     .from("profiles")
     .select("id")
@@ -346,6 +358,14 @@ test.beforeAll(async () => {
     .select("id")
     .single();
   projectId = project!.id;
+  await admin.from("slack_connections").insert({
+    project_id: projectId,
+    user_id: profile.id,
+    team_id: "T0E2E",
+    channel_id: "C0E2E",
+    channel_name: "lego-alerts",
+    webhook_url: "http://localhost:4031/hook/guard",
+  });
   // [T-1] 커밋이 가리킬 스펙 작업(범위 확인용)
   const { data: spec } = await admin
     .from("specs")
@@ -371,6 +391,7 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   server?.close();
+  slack?.close();
   await admin.from("specs").delete().eq("project_id", projectId);
   await admin.from("projects").delete().eq("id", projectId);
   await admin
@@ -437,6 +458,8 @@ test("PR 을 열면 코멘트·상태 체크·위험 영역·스펙 범위를 �
 
   const check = lastCall("PATCH", "/check-runs/77");
   expect(check?.body.conclusion).toBe("failure");
+  // 첫 리뷰가 실패면 Slack 으로 알린다.
+  expect(slackPosts.at(-1)).toContain("e2e/guard-repo PR #7");
   const posted = lastCall("POST", "/pulls/7/reviews");
   expect(posted?.body.commit_id).toBe(head);
   expect(String(posted?.body.body)).toContain("이 PR 이 건드린 위험 영역");
@@ -567,8 +590,9 @@ test("/lego ignore 답글로 무시하고, 권한 없는 사람은 거절하며,
     "무시 1개",
   );
 
-  // 다음 커밋에서도 무시 상태가 이어지고, 다시 코멘트하지 않는다.
+  // 다음 커밋에서도 무시 상태가 이어지고, 다시 코멘트하지 않는다. 새 문제가 없으니 Slack 도 조용하다.
   calls.length = 0;
+  const slackBefore = slackPosts.length;
   const head = sha();
   await sendPullRequest(request, head, "synchronize");
   const third = await waitForReview(head);
@@ -576,6 +600,7 @@ test("/lego ignore 답글로 무시하고, 권한 없는 사람은 거절하며,
     (await findings(third.id)).find((f) => f.rule_id === "PR-002")?.state,
   ).toBe("ignored");
   expect(lastCall("POST", "/pulls/7/reviews")).toBeUndefined();
+  expect(slackPosts.length).toBe(slackBefore);
 
   await page.goto(`/projects/${projectId}/reviews/${third.id}`, {
     waitUntil: "networkidle",

@@ -105,6 +105,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 운영 점검 → 코드 위치: `schemaFromMigrations` 가 테이블·RLS·버킷을 만든 파일:줄을 돌려주고 `linkToCode` 가 LIVE-001/002/006 에 붙인다(수정 프롬프트에도 적음). 마지막 보안 점검 커밋 기준.
 - 관리자 오탐 피드백(`/admin/feedback`): `ADMIN_USER_IDS`(auth user id, 쉼표) 계정만. user_metadata 는 사용자가 바꿀 수 있으니 쓰지 않는다. 집계는 `lego.rule_feedback()`(service_role 전용), 같은 (프로젝트, fingerprint) 는 한 건.
 - 프로젝트 보안 추이: `services/trend.ts computeTrend`(순수 함수) — 끝난 점검 최근 30개, 오탐·무시 제외, 해결 시간 중앙값.
+- 사용자용 Slack 알림(`features/notifications`, `slack_connections`): "Slack 에 추가" = OAuth v2 `incoming-webhook` 스코프만(봇 서버·토큰 저장 없음). `/api/slack/oauth/start` 가 state 쿠키(nonce.projectId)를 두고, callback 이 맞춰 본 뒤 webhook 을 저장한다. webhook_url 은 authenticated 에 열 권한이 없다(서버 전용). 보내는 곳: 운영 점검(새 문제), PR 가드(첫 리뷰 실패 또는 새 문제로 실패), 보안 점검(기본 꺼짐). 실패는 삼키고 last_error 에 남긴다. 로컬 E2E 는 `SLACK_API_URL` 모의 서버(운영에서는 무시, webhook 은 hooks.slack.com 만).
 - 위험 영역(`scanner/diff/risk.ts`: 로그인·DB·결제·설정·CI·의존성·큰 변경)과 스펙 작업 범위(제목·커밋의 [T-n] → 작업 설명과 바뀐 파일을 Haiku 로 비교, 첫 리뷰에서만)를 리뷰 본문·체크·화면에 보여 준다.
 - GitHub API 주소는 `GITHUB_API_URL` 로 바꿀 수 있다(production 이 아닐 때만). 로컬 E2E 는 모의 서버(localhost:4010)를 쓴다.
 
