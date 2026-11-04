@@ -274,6 +274,9 @@ export async function getPreviousPrReview(
     .from("pr_review_findings")
     .select(PR_FINDING_COLUMNS)
     .eq("review_id", previous.id);
+  // fingerprint 가 없는 예전 리뷰는 비교할 수 없으니 없던 것으로 본다(남은 문제가 해결로 잡히지 않게).
+  if (findings?.some((f) => !f.fingerprint))
+    return { review: null, findings: [] };
   return { review: previous, findings: findings ?? [] };
 }
 
