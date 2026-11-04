@@ -11,7 +11,7 @@ export async function findMyProject(projectId: string) {
   return supabase
     .from("projects")
     .select(
-      "id, user_id, installation_id, repo_full_name, default_branch, pr_guard_enabled",
+      "id, user_id, installation_id, repo_full_name, default_branch, pr_guard_enabled, pr_guard_strictness",
     )
     .eq("id", projectId)
     .maybeSingle();
@@ -188,6 +188,16 @@ export async function setPrGuard(projectId: string, enabled: boolean) {
     .eq("id", projectId);
 }
 
+export async function setPrGuardStrictness(
+  projectId: string,
+  strictness: string,
+) {
+  return createAdminClient()
+    .from("projects")
+    .update({ pr_guard_strictness: strictness })
+    .eq("id", projectId);
+}
+
 /** webhook 의 설치·리포로 PR 가드를 켠 프로젝트를 찾는다(사용자마다 하나씩 있을 수 있다). */
 export async function listGuardedProjects(
   installationId: number,
@@ -217,7 +227,7 @@ export async function getPrReviewForWorker(reviewId: string) {
   return createAdminClient()
     .from("pr_reviews")
     .select(
-      "id, user_id, pr_number, pr_title, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack)",
+      "id, user_id, pr_number, pr_title, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack, pr_guard_strictness)",
     )
     .eq("id", reviewId)
     .maybeSingle();
@@ -393,7 +403,9 @@ export async function listMyGuardProjects() {
   const supabase = await createClient();
   return supabase
     .from("projects")
-    .select("id, repo_full_name, installation_id, pr_guard_enabled")
+    .select(
+      "id, repo_full_name, installation_id, pr_guard_enabled, pr_guard_strictness",
+    )
     .order("created_at", { ascending: false });
 }
 

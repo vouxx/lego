@@ -7,10 +7,12 @@ import { err, type Result } from "@/shared/lib/result";
 import {
   findingStatusInput,
   prGuardInput,
+  prGuardStrictnessInput,
   startScanInput,
   type FindingStatus,
+  type Strictness,
 } from "./schemas";
-import { changePrGuard } from "./services/pr-reviews";
+import { changePrGuard, changePrGuardStrictness } from "./services/pr-reviews";
 import { changeFindingStatus, startScan } from "./services/scans";
 import { runScanWorker } from "./services/worker";
 
@@ -60,5 +62,23 @@ export async function setPrGuardAction(
     parsed.data.enabled,
   );
   if (result.ok) revalidatePath(`/projects/${parsed.data.projectId}`);
+  return result;
+}
+
+export async function setPrGuardStrictnessAction(
+  input: unknown,
+): Promise<Result<{ strictness: Strictness }>> {
+  const parsed = prGuardStrictnessInput.safeParse(input);
+  if (!parsed.success) return err("invalid_input", "요청이 올바르지 않습니다.");
+  const user = await getCurrentUser();
+  if (!user) return err("unauthorized", "로그인이 필요합니다.");
+  const result = await changePrGuardStrictness(
+    parsed.data.projectId,
+    parsed.data.strictness,
+  );
+  if (result.ok) {
+    revalidatePath(`/projects/${parsed.data.projectId}`);
+    revalidatePath("/guard");
+  }
   return result;
 }

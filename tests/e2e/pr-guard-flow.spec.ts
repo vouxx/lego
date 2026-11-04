@@ -606,3 +606,79 @@ test("App 에 권한이 없으면 레고 화면에만 결과를 남기고 이유
   ).toBeVisible();
   deny = false;
 });
+
+const FLAG = [
+  `export function flag() {`,
+  `  // eslint-disable-next-line`,
+  `  return process.env.NEW_FLAG_TOKEN === "on";`,
+  `}`,
+].join("\n");
+const RELAXED_STATE: PrState = {
+  files: [
+    { filename: "src/lib/pay.ts", status: "modified", patch: PAY_PATCH },
+    { filename: "package.json", status: "modified", patch: PKG_PATCH },
+    { filename: "src/lib/flag.ts", status: "added", patch: asNewFile(FLAG) },
+  ],
+  contents: { ...FIRST.contents, "src/lib/flag.ts": FLAG },
+};
+
+test("엄격도를 느슨으로 바꾸면 high 는 경고로, low 는 줄 코멘트 없이 남긴다", async ({
+  request,
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await page.goto(`/projects/${projectId}`, { waitUntil: "networkidle" });
+  const group = page.getByRole("radiogroup", { name: "PR 가드 엄격도" });
+  await expect(group.getByRole("radio", { name: "보통" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
+  await group.getByRole("radio", { name: "느슨" }).click();
+  await expect(page.getByText(/critical 만 체크 실패/)).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        (
+          await admin
+            .from("projects")
+            .select("pr_guard_strictness")
+            .eq("id", projectId)
+            .single()
+        ).data?.pr_guard_strictness,
+    )
+    .toBe("relaxed");
+
+  calls.length = 0;
+  pr = RELAXED_STATE;
+  const head = sha();
+  await sendPullRequest(request, head, "synchronize");
+  const review = await waitForReview(head);
+  expect(review.status).toBe("done");
+  expect((review.summary as { strictness: string }).strictness).toBe("relaxed");
+  const rows = await findings(review.id);
+  // 이름을 흉내 낸 패키지(PR-005, high)가 남아 있어도 느슨에서는 실패가 아니다.
+  expect(rows.some((f) => f.rule_id === "PR-005")).toBe(true);
+  expect(
+    rows.some(
+      (f) => f.rule_id === "PR-004" && f.file_path === "src/lib/flag.ts",
+    ),
+  ).toBe(true);
+  const check = lastCall("PATCH", "/check-runs/77");
+  expect(check?.body.conclusion).toBe("neutral");
+  expect(String((check?.body.output as { summary: string }).summary)).toContain(
+    "엄격도 느슨",
+  );
+  // 새 문제 중 medium(PR-002)만 줄 코멘트, low(PR-004)는 달지 않는다.
+  const posted = lastCall("POST", "/pulls/7/reviews");
+  const comments = posted?.body.comments as { path: string; body: string }[];
+  expect(comments.some((c) => c.body.includes("`PR-002`"))).toBe(true);
+  expect(comments.some((c) => c.body.includes("`PR-004`"))).toBe(false);
+
+  // PR 가드 메뉴에서도 같은 값이 보인다.
+  await page.goto("/guard", { waitUntil: "networkidle" });
+  const row = page.getByRole("listitem").filter({ hasText: REPO });
+  await expect(row.getByRole("radio", { name: "느슨" })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
+});

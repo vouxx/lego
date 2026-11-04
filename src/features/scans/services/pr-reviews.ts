@@ -8,9 +8,12 @@ import {
   listMyRecentPrReviews,
   listProjectPrReviews,
   setPrGuard,
+  setPrGuardStrictness,
 } from "../repository";
 import {
   prReviewSummarySchema,
+  strictnessSchema,
+  type Strictness,
   type AiVerdict,
   type PrFindingView,
   type PrReviewRow,
@@ -33,6 +36,25 @@ export async function changePrGuard(
   const { error } = await setPrGuard(projectId, enabled);
   return error ? err("db_error", error.message) : ok({ enabled });
 }
+
+/** PR 가드 엄격도 바꾸기. 다음 PR 커밋부터 적용된다. */
+export async function changePrGuardStrictness(
+  projectId: string,
+  strictness: Strictness,
+): Promise<Result<{ strictness: Strictness }>> {
+  const { data: project } = await findMyProject(projectId);
+  if (!project) return err("not_found", "프로젝트를 찾을 수 없습니다.");
+  if (!project.installation_id)
+    return err(
+      "not_supported",
+      "주소로 등록한 공개 리포는 PR 가드를 쓸 수 없습니다. GitHub App 으로 연결해 주세요.",
+    );
+  const { error } = await setPrGuardStrictness(projectId, strictness);
+  return error ? err("db_error", error.message) : ok({ strictness });
+}
+
+const readStrictness = (v: unknown) =>
+  strictnessSchema.catch("normal").parse(v);
 
 const toRow = (r: {
   id: string;
@@ -95,6 +117,7 @@ export async function getPrGuardState(projectId: string) {
   return {
     available: !!project?.installation_id,
     enabled: !!project?.pr_guard_enabled,
+    strictness: readStrictness(project?.pr_guard_strictness),
   };
 }
 
@@ -110,6 +133,7 @@ export async function getGuardOverview() {
       repoFullName: p.repo_full_name,
       available: p.installation_id !== null,
       enabled: p.pr_guard_enabled,
+      strictness: readStrictness(p.pr_guard_strictness),
     })),
     reviews: (reviews ?? []).map((r) => ({
       ...toRow(r),

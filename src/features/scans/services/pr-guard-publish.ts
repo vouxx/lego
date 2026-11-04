@@ -2,10 +2,12 @@ import "server-only";
 import type { CheckAnnotation } from "@/lib/github/pulls";
 import {
   SEVERITIES,
+  STRICTNESS_RULES,
   type PrFindingRef,
   type PrRiskArea,
   type PrScope,
   type Severity,
+  type Strictness,
 } from "../schemas";
 
 /** GitHub 에 올리는 문구. 리뷰 본문·줄 코멘트·상태 체크가 같은 모양을 쓴다. */
@@ -43,11 +45,21 @@ export function countBySeverity(rows: { severity: Severity }[]) {
   return counts;
 }
 
+const atLeast = (s: Severity, min: Severity) => order(s) <= order(min);
+
+/** 줄 코멘트를 달 문제인지 */
+export const shouldComment = (s: Severity, strictness: Strictness) =>
+  atLeast(s, STRICTNESS_RULES[strictness].commentAt);
+
 /** 남은 문제로 정한다. 무시한 항목은 세지 않는다. */
-export function conclusionOf(counts: Partial<Record<Severity, number>>) {
-  if ((counts.critical ?? 0) + (counts.high ?? 0) > 0)
+export function conclusionOf(
+  counts: Partial<Record<Severity, number>>,
+  strictness: Strictness = "normal",
+) {
+  const present = SEVERITIES.filter((s) => (counts[s] ?? 0) > 0);
+  if (present.some((s) => atLeast(s, STRICTNESS_RULES[strictness].failAt)))
     return "failure" as const;
-  if ((counts.medium ?? 0) + (counts.low ?? 0) > 0) return "neutral" as const;
+  if (present.length > 0) return "neutral" as const;
   return "success" as const;
 }
 
@@ -111,7 +123,7 @@ export function reviewBody(params: {
     );
     if (params.added.length > params.inlineCount)
       parts.push(
-        `줄 코멘트로 달지 못한 항목 ${params.added.length - params.inlineCount}개(지운 파일, 바뀌지 않은 줄)는 위 목록과 레고 화면에서 볼 수 있습니다.`,
+        `줄 코멘트로 달지 않은 항목 ${params.added.length - params.inlineCount}개(지운 파일, 바뀌지 않은 줄, 엄격도 기준 밖)는 위 목록과 레고 화면에서 볼 수 있습니다.`,
       );
   }
   if (params.resolved.length > 0)
@@ -148,10 +160,12 @@ export function checkOutput(params: {
   resolved: PrFindingRef[];
   risk: PrRiskArea[];
   scope: PrScope | null;
+  strictness: Strictness;
 }) {
   const open = bySeverity(params.findings.filter((f) => f.state === "open"));
   const ignored = params.findings.filter((f) => f.state === "ignored");
-  const conclusion = conclusionOf(countBySeverity(open));
+  const conclusion = conclusionOf(countBySeverity(open), params.strictness);
+  const rule = STRICTNESS_RULES[params.strictness];
   const title = [
     open.length === 0 ? "남은 문제 없음" : `남은 문제 ${open.length}개`,
     params.resolved.length > 0 ? `해결 ${params.resolved.length}개` : "",
@@ -175,6 +189,7 @@ export function checkOutput(params: {
       ? `#### 해결됨\n${params.resolved.map((r) => `- \`${r.ruleId}\` ${r.ruleTitle} — \`${r.filePath}:${r.line}\``).join("\n")}`
       : "",
     riskMarkdown(params.risk, params.scope),
+    `<sub>엄격도 ${rule.label}: ${rule.description}</sub>`,
   ]
     .filter(Boolean)
     .join("\n\n");

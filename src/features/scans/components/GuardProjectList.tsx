@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { GuardProjectRow } from "../schemas";
+import { PrGuardStrictness } from "./PrGuardStrictness";
 import { PrGuardToggle } from "./PrGuardToggle";
 
 type Props = { projects: GuardProjectRow[] };
@@ -34,6 +35,13 @@ export function GuardProjectList({ projects }: Props) {
               <span className="text-muted-foreground text-xs">
                 {p.enabled ? "켜짐 · PR 마다 자동 점검" : "꺼짐"}
               </span>
+              {p.enabled ? (
+                <PrGuardStrictness
+                  projectId={p.id}
+                  strictness={p.strictness}
+                  compact
+                />
+              ) : null}
               <PrGuardToggle projectId={p.id} enabled={p.enabled} />
             </>
           ) : (

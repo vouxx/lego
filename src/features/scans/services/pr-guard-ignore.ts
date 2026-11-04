@@ -111,6 +111,7 @@ export async function handleReviewCommentEvent(
       resolved: summary.resolved,
       risk: summary.risk,
       scope: summary.scope,
+      strictness: summary.strictness,
     });
     const open = findings.filter((f) => f.state === "open");
     const next: PrReviewSummary = {

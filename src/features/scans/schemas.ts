@@ -105,6 +105,43 @@ export const prGuardInput = z.object({
   enabled: z.boolean(),
 });
 
+/** PR 가드 엄격도: 체크를 실패로 둘 심각도·줄 코멘트를 달 심각도 */
+export const STRICTNESS = ["strict", "normal", "relaxed"] as const;
+export type Strictness = (typeof STRICTNESS)[number];
+export const strictnessSchema = z.enum(STRICTNESS);
+
+/** 엄격도별 기준: 이 심각도 이상이면 체크 실패, 이 심각도 이상이면 줄 코멘트 */
+export const STRICTNESS_RULES: Record<
+  Strictness,
+  { label: string; failAt: Severity; commentAt: Severity; description: string }
+> = {
+  strict: {
+    label: "엄격",
+    failAt: "medium",
+    commentAt: "low",
+    description: "medium 이상이면 체크 실패. 모든 문제에 줄 코멘트.",
+  },
+  normal: {
+    label: "보통",
+    failAt: "high",
+    commentAt: "low",
+    description:
+      "high 이상이면 체크 실패, medium·low 는 경고. 모든 문제에 줄 코멘트.",
+  },
+  relaxed: {
+    label: "느슨",
+    failAt: "critical",
+    commentAt: "medium",
+    description:
+      "critical 만 체크 실패. low 는 코멘트 없이 체크 요약과 레고 화면에만.",
+  },
+};
+
+export const prGuardStrictnessInput = z.object({
+  projectId: z.uuid(),
+  strictness: strictnessSchema,
+});
+
 export const pullRequestEvent = z.object({
   action: z.string(),
   installation: z.object({ id: z.number() }).optional(),
@@ -163,6 +200,8 @@ export const prReviewSummarySchema = z.object({
   resolved: z.array(prFindingRefSchema).default([]),
   risk: z.array(riskAreaSchema).default([]),
   scope: prScopeSchema.nullable().default(null),
+  /** 이 리뷰를 판단한 엄격도(무시 후 다시 계산할 때도 같은 기준을 쓴다) */
+  strictness: strictnessSchema.default("normal"),
 });
 export type PrReviewSummary = z.infer<typeof prReviewSummarySchema>;
 
@@ -199,6 +238,7 @@ export type GuardProjectRow = {
   /** GitHub App 으로 연결한 리포인지(주소로 등록한 공개 리포는 쓸 수 없음) */
   available: boolean;
   enabled: boolean;
+  strictness: Strictness;
 };
 
 export type GuardReviewRow = PrReviewRow & {

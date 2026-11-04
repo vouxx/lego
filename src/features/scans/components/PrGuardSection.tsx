@@ -1,4 +1,5 @@
-import type { PrReviewRow } from "../schemas";
+import type { PrReviewRow, Strictness } from "../schemas";
+import { PrGuardStrictness } from "./PrGuardStrictness";
 import { PrGuardToggle } from "./PrGuardToggle";
 import { PrReviewList } from "./PrReviewList";
 
@@ -6,6 +7,7 @@ type Props = {
   projectId: string;
   available: boolean;
   enabled: boolean;
+  strictness: Strictness;
   reviews: PrReviewRow[];
 };
 
@@ -14,6 +16,7 @@ export function PrGuardSection({
   projectId,
   available,
   enabled,
+  strictness,
   reviews,
 }: Props) {
   return (
@@ -33,6 +36,9 @@ export function PrGuardSection({
           <PrGuardToggle projectId={projectId} enabled={enabled} />
         ) : null}
       </div>
+      {available && enabled ? (
+        <PrGuardStrictness projectId={projectId} strictness={strictness} />
+      ) : null}
       {available ? (
         enabled || reviews.length > 0 ? (
           <PrReviewList projectId={projectId} reviews={reviews} />

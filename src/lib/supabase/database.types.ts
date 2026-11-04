@@ -685,6 +685,7 @@ export type Database = {
           id: string;
           installation_id: number | null;
           pr_guard_enabled: boolean;
+          pr_guard_strictness: string;
           repo_full_name: string;
           user_id: string;
         };
@@ -696,6 +697,7 @@ export type Database = {
           id?: string;
           installation_id?: number | null;
           pr_guard_enabled?: boolean;
+          pr_guard_strictness?: string;
           repo_full_name: string;
           user_id: string;
         };
@@ -706,6 +708,7 @@ export type Database = {
           id?: string;
           installation_id?: number | null;
           pr_guard_enabled?: boolean;
+          pr_guard_strictness?: string;
           repo_full_name?: string;
           user_id?: string;
         };

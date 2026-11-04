@@ -39,6 +39,7 @@ import {
 } from "../repository";
 import {
   pullRequestEvent,
+  strictnessSchema,
   type AiVerdict,
   type PrFindingRef,
   type PrReviewSummary,
@@ -55,6 +56,7 @@ import {
   detailsUrl,
   githubErrorNote,
   reviewBody,
+  shouldComment,
   type PublishedFinding,
 } from "./pr-guard-publish";
 import { checkSpecScope } from "./pr-guard-scope";
@@ -221,6 +223,9 @@ export async function processPrReview(reviewId: string) {
     repo: project.repo_full_name,
     headSha: review.head_sha,
   };
+  const strictness = strictnessSchema
+    .catch("normal")
+    .parse(project.pr_guard_strictness);
   await updatePrReview(reviewId, { status: "running", error: null });
 
   const notes: string[] = [];
@@ -404,6 +409,7 @@ export async function processPrReview(reviewId: string) {
       ]),
     );
     const inline = added
+      .filter((x) => shouldComment(x.severity, strictness))
       .filter((x) => addedLines.get(x.file_path)?.has(x.line))
       .slice(0, MAX_COMMENTS);
     const isFirst = !prev.review;
@@ -482,7 +488,13 @@ export async function processPrReview(reviewId: string) {
       }
     }
 
-    const output = checkOutput({ findings: shown, resolved, risk, scope });
+    const output = checkOutput({
+      findings: shown,
+      resolved,
+      risk,
+      scope,
+      strictness,
+    });
     let postedCheck = false;
     if (checkRunId !== null) {
       try {
@@ -508,6 +520,7 @@ export async function processPrReview(reviewId: string) {
       resolved,
       risk,
       scope,
+      strictness,
     };
     await updatePrReview(reviewId, { status: "done", summary });
   } catch (e) {
