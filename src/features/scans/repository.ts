@@ -277,3 +277,24 @@ export async function listPrReviewFindings(reviewId: string) {
     .eq("review_id", reviewId)
     .order("created_at");
 }
+
+/** PR 가드 메뉴: 내 프로젝트의 가드 상태 */
+export async function listMyGuardProjects() {
+  const supabase = await createClient();
+  return supabase
+    .from("projects")
+    .select("id, repo_full_name, installation_id, pr_guard_enabled")
+    .order("created_at", { ascending: false });
+}
+
+/** PR 가드 메뉴: 모든 프로젝트의 최근 PR 리뷰 */
+export async function listMyRecentPrReviews() {
+  const supabase = await createClient();
+  return supabase
+    .from("pr_reviews")
+    .select(
+      "id, project_id, pr_number, pr_title, pr_url, status, summary, created_at, projects(repo_full_name)",
+    )
+    .order("created_at", { ascending: false })
+    .limit(30);
+}

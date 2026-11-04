@@ -4,6 +4,8 @@ import {
   findMyProject,
   getMyPrReview,
   listPrReviewFindings,
+  listMyGuardProjects,
+  listMyRecentPrReviews,
   listProjectPrReviews,
   setPrGuard,
 } from "../repository";
@@ -90,5 +92,26 @@ export async function getPrGuardState(projectId: string) {
   return {
     available: !!project?.installation_id,
     enabled: !!project?.pr_guard_enabled,
+  };
+}
+
+/** PR 가드 메뉴: 프로젝트별 상태와 모든 프로젝트의 최근 PR 리뷰 */
+export async function getGuardOverview() {
+  const [{ data: projects }, { data: reviews }] = await Promise.all([
+    listMyGuardProjects(),
+    listMyRecentPrReviews(),
+  ]);
+  return {
+    projects: (projects ?? []).map((p) => ({
+      id: p.id,
+      repoFullName: p.repo_full_name,
+      available: p.installation_id !== null,
+      enabled: p.pr_guard_enabled,
+    })),
+    reviews: (reviews ?? []).map((r) => ({
+      ...toRow(r),
+      projectId: r.project_id,
+      repoFullName: r.projects?.repo_full_name ?? "",
+    })),
   };
 }

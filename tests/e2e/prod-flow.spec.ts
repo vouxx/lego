@@ -105,3 +105,20 @@ test("프로젝트: 공개 리포를 주소로 등록한 뒤 지운다", async (
     page.getByRole("main").getByText("vouxx/vouxx.github.io"),
   ).toHaveCount(0);
 });
+
+test("메뉴의 PR 가드·운영 점검 화면이 열린다", async ({ page }) => {
+  const nav = page.getByRole("navigation", { name: "주 메뉴" });
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  await nav.getByRole("link", { name: "PR 가드" }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "PR 가드" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "프로젝트별 설정" }),
+  ).toBeVisible();
+  await nav.getByRole("link", { name: "운영 점검" }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "운영 점검" }),
+  ).toBeVisible();
+  await expect(page.getByRole("main").getByText(RULE_REPO)).toBeVisible();
+});

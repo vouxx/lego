@@ -123,3 +123,30 @@ export async function getLatestScanCommit(projectId: string) {
     .limit(1)
     .maybeSingle();
 }
+
+/** 운영 점검 메뉴: 내 프로젝트와 점검 대상 */
+export async function listMyProjectsWithTargets() {
+  const supabase = await createClient();
+  return supabase
+    .from("projects")
+    .select(
+      "id, repo_full_name, live_targets(id, site_url, verified_at, last_checked_at)",
+    )
+    .order("created_at", { ascending: false });
+}
+
+/** 대상마다 가장 최근 점검을 고르기 위해 최근 점검을 넉넉히 읽는다. */
+export async function listMyRecentChecks(targetIds: string[]) {
+  const supabase = await createClient();
+  return supabase
+    .from("live_checks")
+    .select("id, target_id, status, results, created_at")
+    .in(
+      "target_id",
+      targetIds.length > 0
+        ? targetIds
+        : ["00000000-0000-0000-0000-000000000000"],
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+}

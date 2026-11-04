@@ -93,7 +93,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 ## PR 가드
 
-- 코드는 `features/scans`(pr-guard·pr-reviews·pr-guard-prompts), 규칙은 `packages/scanner/src/diff`. 화면은 프로젝트 화면의 'PR 가드' 칸과 `/projects/[projectId]/reviews/[reviewId]`.
+- 코드는 `features/scans`(pr-guard·pr-reviews·pr-guard-prompts), 규칙은 `packages/scanner/src/diff`. 화면은 메뉴 `/guard`(최근 PR 리뷰 전체·프로젝트별 켜기/끄기), 프로젝트 화면의 'PR 가드' 칸, `/projects/[projectId]/reviews/[reviewId]`.
 - GitHub App 으로 연결한 리포에서만 켤 수 있다(`projects.pr_guard_enabled`). pull_request webhook(opened·synchronize·reopened·ready_for_review, draft 제외) → `pr_reviews`(project, PR, head sha 로 중복 방지) → `after()` 로 처리.
 - 보안 규칙은 바뀐 파일의 최신 내용 전체로 돌리고 **추가된 줄에 걸친 후보만** 남긴다. 리포 전체를 봐야 하는 SEC-002·SEC-016 은 PR 에서 돌리지 않는다.
 - PR 규칙(PR-001 테스트 삭제·skip, PR-002 검사 끄기, PR-003 RLS 약화, PR-004 문서 없는 환경 변수, PR-005 이름을 흉내 낸 패키지·설치 스크립트)은 diff 로 확정되므로 AI 대신 고정 수정 프롬프트를 쓴다. 보안 후보만 AI 판별·설명.
@@ -102,7 +102,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 ## 운영 점검
 
-- 코드는 `features/live`, 판정은 `packages/scanner/src/live`(LIVE-001~007, AI 안 씀). 화면은 `/projects/[projectId]/live`.
+- 코드는 `features/live`, 판정은 `packages/scanner/src/live`(LIVE-001~007, AI 안 씀). 화면은 메뉴 `/live`(프로젝트별 대상·최근 결과)와 `/projects/[projectId]/live`.
 - **소유 확인 전에는 점검하지 않는다.** 사이트의 `/.well-known/lego-verify.txt` 에 토큰이 있어야 한다. Supabase 주소·공개 키는 사용자에게 받지 않고 배포된 JS 에서 찾는다(공격자가 보는 그대로).
 - 서버 요청은 `@/lib/net/safe-fetch` 만 쓴다: https 만, DNS 로 풀어 사설 IP 거절, 리다이렉트마다 재검사, 8초·2MB, 점검 한 번에 요청 80개. 개발 환경에서만 localhost http 허용.
 - 읽기 요청만 보낸다(테이블은 `limit=1` + `count=exact`, 버킷은 목록 5개). 응답 내용(행·파일·키 원문)은 저장하지 않고 판정만 `live_checks.results` 에 남긴다.

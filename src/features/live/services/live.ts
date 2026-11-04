@@ -17,6 +17,8 @@ import {
   insertCheck,
   listDueTargets,
   listMyChecks,
+  listMyProjectsWithTargets,
+  listMyRecentChecks,
   updateCheck,
   updateTarget,
   upsertTarget,
@@ -26,6 +28,8 @@ import {
   liveSummarySchema,
   VERIFY_PATH,
   type LiveCheckView,
+  type LiveOverviewRow,
+  type Severity,
   type LiveResult,
   type LiveTargetView,
 } from "../schemas";
@@ -221,4 +225,41 @@ export async function runDueLiveChecks(limit = 3) {
     if (result.ok) checked++;
   }
   return { checked };
+}
+
+/** 운영 점검 메뉴: 프로젝트마다 점검 대상과 가장 최근 결과 */
+export async function getLiveOverview(): Promise<LiveOverviewRow[]> {
+  const { data: projects } = await listMyProjectsWithTargets();
+  const rows = projects ?? [];
+  const target = (p: (typeof rows)[number]) =>
+    Array.isArray(p.live_targets) ? p.live_targets[0] : p.live_targets;
+  const ids = rows.map(target).flatMap((t) => (t ? [t.id] : []));
+  const { data: checks } = await listMyRecentChecks(ids);
+  const latest = new Map<string, NonNullable<typeof checks>[number]>();
+  for (const c of checks ?? [])
+    if (!latest.has(c.target_id)) latest.set(c.target_id, c);
+
+  return rows.map((p) => {
+    const t = target(p);
+    const check = t ? latest.get(t.id) : undefined;
+    const results = check
+      ? liveResultSchema.array().catch([]).parse(check.results)
+      : [];
+    const counts: Partial<Record<Severity, number>> = {};
+    for (const r of results) counts[r.severity] = (counts[r.severity] ?? 0) + 1;
+    return {
+      projectId: p.id,
+      repoFullName: p.repo_full_name,
+      siteUrl: t?.site_url ?? null,
+      verified: !!t?.verified_at,
+      lastCheck: check
+        ? {
+            status: check.status as LiveCheckView["status"],
+            createdAt: check.created_at,
+            counts,
+            newCount: results.filter((r) => r.isNew).length,
+          }
+        : null,
+    };
+  });
 }

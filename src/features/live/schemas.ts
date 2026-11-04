@@ -53,3 +53,16 @@ export type LiveTargetView = {
 };
 
 export const VERIFY_PATH = "/.well-known/lego-verify.txt";
+
+export type LiveOverviewRow = {
+  projectId: string;
+  repoFullName: string;
+  siteUrl: string | null;
+  verified: boolean;
+  lastCheck: {
+    status: LiveCheckView["status"];
+    createdAt: string;
+    counts: Partial<Record<Severity, number>>;
+    newCount: number;
+  } | null;
+};

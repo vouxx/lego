@@ -25,6 +25,7 @@ const admin = createClient(url, process.env.SUPABASE_SECRET_KEY ?? "", {
 let server: Server;
 let verifyToken = "";
 let projectId = "";
+let seedRepo = "";
 
 const psql = (sql: string) => {
   const container = execSync("docker ps --format '{{.Names}}'")
@@ -84,8 +85,9 @@ test.beforeAll(async () => {
       "tests/e2e/.auth/local-project.json",
       "utf8",
     ),
-  ) as { projectId: string };
+  ) as { projectId: string; repo: string };
   projectId = seed.projectId;
+  seedRepo = seed.repo;
   await admin.from("live_targets").delete().eq("project_id", projectId);
 });
 
@@ -100,8 +102,20 @@ test.afterAll(async () => {
 test("소유 확인 전에는 점검할 수 없고, 토큰 파일을 올리면 확인된다", async ({
   page,
 }) => {
-  await page.goto(`/projects/${projectId}`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: /운영 점검/ }).click();
+  // 메뉴 → 운영 점검 → 프로젝트 줄 → 프로젝트의 운영 점검 화면
+  await page.goto("/specs", { waitUntil: "networkidle" });
+  await page
+    .getByRole("navigation", { name: "주 메뉴" })
+    .getByRole("link", { name: "운영 점검" })
+    .click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "운영 점검" }),
+  ).toBeVisible();
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: /주소 등록 →/ })
+    .filter({ hasText: seedRepo })
+    .click();
   await expect(
     page.getByRole("heading", { name: "운영 상태 점검" }),
   ).toBeVisible();
@@ -205,6 +219,11 @@ test("고친 뒤 다시 점검하면 사라지고, 새로 생긴 문제는 표�
     page.getByText("e2e_live_messages", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "점검 기록" })).toBeVisible();
+
+  // 운영 점검 메뉴에서도 새로 생긴 문제가 보인다.
+  await page.goto("/live", { waitUntil: "networkidle" });
+  await expect(page.getByText(/새로 생김 \d+/)).toBeVisible();
+  await page.goto(`/projects/${projectId}/live`, { waitUntil: "networkidle" });
 
   // 바로 다시 누르면 간격 제한에 걸린다.
   await page.getByRole("button", { name: "지금 점검" }).click();

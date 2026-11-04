@@ -1,11 +1,26 @@
 import Link from "next/link";
 import { cn } from "@/shared/lib/cn";
 
-// 사용자 흐름 순서. 보안 점검·규칙 파일·PR 가드·운영 점검은 프로젝트 안에 있다. 개념 사전은 로그인 없이 볼 수 있다.
+// 사용자 흐름 순서. 보안 점검·규칙 파일은 프로젝트 안에 있고, PR 가드·운영 점검은 프로젝트를 모아 보는 메뉴가 따로 있다.
+// 프로젝트 안의 PR 리뷰·운영 점검 화면에서는 해당 메뉴를 강조한다. 개념 사전은 로그인 없이 볼 수 있다.
 const ITEMS = [
-  { href: "/specs", label: "스펙", match: "/specs" },
-  { href: "/projects", label: "프로젝트", match: "/projects" },
-  { href: "/concepts", label: "개념 사전", match: "/concepts" },
+  { href: "/specs", label: "스펙", match: /^\/specs/ },
+  {
+    href: "/projects",
+    label: "프로젝트",
+    match: /^\/projects(?!\/[^/]+\/(?:reviews|live)(?:\/|$))/,
+  },
+  {
+    href: "/guard",
+    label: "PR 가드",
+    match: /^\/guard|^\/projects\/[^/]+\/reviews(?:\/|$)/,
+  },
+  {
+    href: "/live",
+    label: "운영 점검",
+    match: /^\/live|^\/projects\/[^/]+\/live(?:\/|$)/,
+  },
+  { href: "/concepts", label: "개념 사전", match: /^\/concepts/ },
 ];
 
 type Props = { activePath: string | null };
@@ -21,7 +36,7 @@ export function SiteNavLinks({ activePath }: Props) {
         lego<span className="text-ok">_</span>
       </Link>
       {ITEMS.map((item) => {
-        const active = activePath?.startsWith(item.match) ?? false;
+        const active = activePath ? item.match.test(activePath) : false;
         return (
           <Link
             key={item.href}

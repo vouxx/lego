@@ -216,11 +216,19 @@ test("PR 가드를 켜기 전에는 PR 을 점검하지 않는다", async ({
   const res = await sendPullRequest(request, sha());
   expect(await res.json()).toEqual({ handled: false });
 
-  await page.goto(`/projects/${projectId}`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "PR 가드 켜기" }).click();
+  // 메뉴 → PR 가드 → 프로젝트별 설정에서 켠다.
+  await page.goto("/projects", { waitUntil: "networkidle" });
+  await page
+    .getByRole("navigation", { name: "주 메뉴" })
+    .getByRole("link", { name: "PR 가드" })
+    .click();
   await expect(
-    page.getByRole("button", { name: "PR 가드 끄기" }),
+    page.getByRole("heading", { level: 1, name: "PR 가드" }),
   ).toBeVisible();
+  const row = page.getByRole("listitem").filter({ hasText: REPO });
+  await row.getByRole("button", { name: "PR 가드 켜기" }).click();
+  await expect(row.getByRole("button", { name: "PR 가드 끄기" })).toBeVisible();
+  await expect(row.getByText(/켜짐/)).toBeVisible();
 });
 
 test("PR 을 열면 바뀐 줄을 점검해 상태 체크와 리뷰 코멘트를 남긴다", async ({
@@ -282,8 +290,16 @@ test("PR 을 열면 바뀐 줄을 점검해 상태 체크와 리뷰 코멘트를
   expect(comments.some((c) => c.path === "src/auth.test.ts")).toBe(false);
   expect(String(posted?.body.body)).toContain("src/auth.test.ts");
 
-  await page.goto(`/projects/${projectId}`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: /#7 링크 미리보기 추가/ }).click();
+  // PR 가드 메뉴의 최근 PR 목록에서 연다.
+  await page.goto("/guard", { waitUntil: "networkidle" });
+  const recent = page.getByRole("link", { name: new RegExp(`${REPO} #7`) });
+  await expect(recent).toContainText("체크 실패");
+  await recent.click();
+  await expect(
+    page
+      .getByRole("navigation", { name: "주 메뉴" })
+      .getByRole("link", { name: "PR 가드" }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(
     page.getByRole("heading", { name: "링크 미리보기 추가" }),
   ).toBeVisible();

@@ -159,3 +159,16 @@ export type PrFindingView = {
   explanation: string | null;
   fixPrompt: string | null;
 };
+
+export type GuardProjectRow = {
+  id: string;
+  repoFullName: string;
+  /** GitHub App 으로 연결한 리포인지(주소로 등록한 공개 리포는 쓸 수 없음) */
+  available: boolean;
+  enabled: boolean;
+};
+
+export type GuardReviewRow = PrReviewRow & {
+  projectId: string;
+  repoFullName: string;
+};
