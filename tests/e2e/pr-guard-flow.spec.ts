@@ -179,10 +179,25 @@ function startMock() {
         reviewComments.set(id, comments);
         return send(200, { id });
       }
+      // 실제 GitHub 처럼 리뷰별 목록은 line 을 비우고, PR 전체 목록에만 line 이 있다.
       const listed = path.match(
         new RegExp(`^/repos/${REPO}/pulls/7/reviews/(\\d+)/comments$`),
       );
-      if (listed) return send(200, reviewComments.get(Number(listed[1])) ?? []);
+      if (listed)
+        return send(
+          200,
+          (reviewComments.get(Number(listed[1])) ?? []).map((c) => ({
+            ...c,
+            line: null,
+          })),
+        );
+      if (path === `/repos/${REPO}/pulls/7/comments`)
+        return send(
+          200,
+          [...reviewComments].flatMap(([reviewId, cs]) =>
+            cs.map((c) => ({ ...c, pull_request_review_id: reviewId })),
+          ),
+        );
       if (
         new RegExp(`^/repos/${REPO}/pulls/7/comments/\\d+/replies$`).test(path)
       )
@@ -311,16 +326,14 @@ test.beforeAll(async () => {
     .single();
   if (!profile) throw new Error("pnpm e2e:local-seed 를 먼저 실행하세요.");
   await admin.from("projects").delete().eq("repo_full_name", REPO);
-  await admin
-    .from("github_installations")
-    .upsert(
-      {
-        user_id: profile.id,
-        installation_id: INSTALLATION,
-        account_login: "e2e",
-      },
-      { onConflict: "installation_id" },
-    );
+  await admin.from("github_installations").upsert(
+    {
+      user_id: profile.id,
+      installation_id: INSTALLATION,
+      account_login: "e2e",
+    },
+    { onConflict: "installation_id" },
+  );
   const { data: project } = await admin
     .from("projects")
     .insert({

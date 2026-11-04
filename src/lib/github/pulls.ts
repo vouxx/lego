@@ -163,20 +163,18 @@ export async function listReviewComments(
   reviewId: number,
 ) {
   const octokit = await installationOctokit(installationId);
-  const { data } = await octokit.request(
-    "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments",
-    {
-      ...splitRepo(repoFullName),
-      pull_number: pullNumber,
-      review_id: reviewId,
-      per_page: 100,
-    },
+  // 리뷰별 코멘트 API 는 line 을 비워서 준다. PR 전체 코멘트에서 이 리뷰 것만 고른다.
+  const data = await octokit.paginate(
+    "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments",
+    { ...splitRepo(repoFullName), pull_number: pullNumber, per_page: 100 },
   );
-  return data.map((c) => ({
-    id: Number(c.id),
-    path: c.path,
-    line: (c as { line?: number | null }).line ?? null,
-  }));
+  return data
+    .filter((c) => c.pull_request_review_id === reviewId)
+    .map((c) => ({
+      id: Number(c.id),
+      path: c.path,
+      line: c.line ?? c.original_line ?? null,
+    }));
 }
 
 /** 줄 코멘트에 답글을 단다(같은 대화로 묶인다). */
