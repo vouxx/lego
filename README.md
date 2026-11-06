@@ -2,13 +2,22 @@
 
 바이브 코딩 동반자 플랫폼. AI 로 만든 앱을 기획부터 운영까지 돕는 도구 다섯 개가 있습니다.
 
-| 도구             | 하는 일                                                                                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 스펙 변환기      | 한 줄 아이디어 → PRD·설계·작업 목록·작업별 프롬프트. 커밋 `[T-n]` 으로 작업 자동 완료                                                                    |
-| 규칙 파일 생성기 | 리포를 분석해 CLAUDE.md · .cursorrules · AGENTS.md 생성                                                                                                  |
-| 보안 점검기      | 보안 실수 22가지를 찾고 수정 프롬프트 제공(정적 탐지 + AI 판별)                                                                                          |
-| PR 가드          | PR 마다 바뀐 줄만 점검해 GitHub 리뷰 코멘트·상태 체크. 테스트 삭제·검사 끄기·RLS 약화·문서 없는 환경 변수·가짜 패키지(PR-001~005)                        |
-| 운영 점검        | 배포된 사이트를 밖에서 확인: 로그인 없이 읽히는 테이블·버킷, JS 속 비밀 키, 보안 헤더, 열린 .env, 코드와 다른 RLS(LIVE-001~007). 소유 확인 후 하루 한 번 |
+| 도구             | 하는 일                                                                                                                                                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 스펙 변환기      | 한 줄 아이디어 → PRD·설계·작업 목록·작업별 프롬프트. PR 제목 `[T-n]` 이나 브랜치 `t-n` 으로 PR 을 작업에 잇고, 머지되면 작업 완료                                                                                      |
+| 규칙 파일 생성기 | 리포를 분석해 CLAUDE.md · .cursorrules · AGENTS.md 생성. 의존성이 바뀌면 다시 만들 때라고 알려 줌                                                                                                                      |
+| 보안 점검기      | 보안 실수 22가지를 찾고 수정 프롬프트 제공(정적 탐지 + AI 판별). 점검할수록 문제가 줄어드는지 추이로 보여 줌                                                                                                           |
+| PR 가드          | PR 마다 바뀐 줄만 점검해 GitHub 리뷰 코멘트·상태 체크. 고친 문제는 대화를 접고 `/lego ignore` 로 무시 가능. 엄격도는 엄격·보통·느슨. 테스트 삭제·검사 끄기·RLS 약화·문서 없는 환경 변수·가짜 패키지(PR-001~005)도 찾음 |
+| 운영 점검        | 배포된 사이트를 밖에서 확인: 로그인 없이 읽히는 테이블·버킷, JS 속 비밀 키, 보안 헤더, 열린 .env, 코드와 다른 RLS(LIVE-001~007). 소유 확인 후 하루 한 번, 문제를 만든 마이그레이션 파일과 줄까지 알려 줌               |
+
+도구 다섯 개를 함께 받쳐 주는 기능입니다.
+
+| 기능        | 하는 일                                                                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Slack 알림  | "Slack 에 추가" 로 프로젝트마다 채널 하나를 연결. 운영 점검의 새 문제, PR 가드 실패, 보안 점검 결과, 매주 월요일 주간 요약을 보냄. 고른 채널에 글을 쓰는 권한만 받음 |
+| 팀 멤버     | GitHub 아이디로 초대 링크를 만들어 보기 전용으로 공유. 멤버는 점검 결과·PR 리뷰·운영 점검을 보기만 하고, 실행과 설정 변경은 소유자만 함                              |
+| 개념 사전   | 점검 결과의 '이게 뭐예요?' 에서 왜 위험한지 쉬운 말로 설명                                                                                                           |
+| 오탐 피드백 | 관리자 화면(`/admin/feedback`)에서 규칙별로 무시·오탐이 많은 항목을 봄                                                                                               |
 
 - 전체 설계: [docs/design.md](docs/design.md)
 - 개발 규칙: [CLAUDE.md](CLAUDE.md)
@@ -24,10 +33,12 @@ npx supabase start       # 로컬 Supabase (Docker 필요, docs/local-dev.md)
 pnpm dev
 ```
 
+GitHub App 설정은 [docs/setup-github.md](docs/setup-github.md), 환경 변수는 [.env.example](.env.example) 을 보세요. Slack·Sentry·`ANTHROPIC_API_KEY` 는 없어도 앱이 뜹니다(없으면 Slack 연결 버튼이 꺼지고, 점검은 정적 탐지 결과만 저장합니다).
+
 ## 구조
 
 - `src/app` — 라우트 전용
-- `src/features/{auth,projects,scans,context,specs,live,concepts,marketing}` — 기능별 components / hooks / actions / services / repository / schemas
+- `src/features/{auth,projects,members,scans,findings,context,specs,live,notifications,concepts,admin,marketing}` — 기능별 components / hooks / actions / services / repository / schemas
 - `src/shared` — 공용 UI(shadcn/ui), 유틸
 - `packages/scanner` — 프레임워크 무관 스캔 엔진 (`@lego/scanner`)
 - `supabase` — 마이그레이션 (`pnpm db:migrate`, 공유 프로젝트라 db push 금지)
@@ -72,4 +83,12 @@ npx tsx scripts/stack-bench.mts   # 다시 재기
 ```bash
 pnpm test        # 규칙·서비스 단위 테스트
 pnpm e2e         # Playwright (로그인 흐름은 pnpm e2e:login 으로 세션을 먼저 저장)
+```
+
+GitHub 로그인 없이 로컬 Supabase 의 테스트 사용자로 돌릴 수도 있습니다.
+
+```bash
+GITHUB_API_URL=http://localhost:4010 pnpm dev   # GitHub 모의 서버를 쓰는 개발 서버
+pnpm e2e:local-seed
+pnpm e2e --project=local-signed-in
 ```
