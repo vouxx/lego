@@ -4,7 +4,7 @@ import { getConceptList } from "@/features/concepts/services/views";
 import { PageHeader } from "@/shared/ui/page-header";
 
 export const metadata: Metadata = {
-  title: "개념 사전 · 레고",
+  title: "개념 사전 · Lego",
   description:
     "AI 로 앱을 만들 때 꼭 알아야 할 보안·웹 개념을 쉽게 정리했습니다.",
 };

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const concept = await getConceptPage((await params).slug);
   return concept
     ? {
-        title: `${concept.title} · 레고 개념 사전`,
+        title: `${concept.title} · Lego 개념 사전`,
         description: concept.summary,
       }
     : {};
