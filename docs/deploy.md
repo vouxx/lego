@@ -104,3 +104,14 @@ E2E_BASE_URL=https://vouxx-lego.vercel.app pnpm e2e --project=prod-signed-in
 
 - 규칙 파일(vouxx/ZEEK), 점검 결과의 개념 링크, 스펙, 공개 리포 등록·삭제를 한 번씩 돈다. 약 2분, AI 비용 약 $0.25.
 - `onboarding-flow` 는 등록 안 된 공개 리포(`E2E_ONBOARD_REPO`)로 등록 → 점검 → 프롬프트 복사까지 시간을 잰다(3분 기준).
+
+## Supabase 프로젝트 분리 절차
+
+레고를 공유 프로젝트(`kqspyogrfebnlitqchvd`)에서 독립 프로젝트로 옮길 때의 순서다. 분리하기 전까지는 레고의 secret 키가 유출되면 같은 프로젝트의 다른 앱까지 영향을 받는다.
+
+1. 새 프로젝트를 만든다(추가 비용 있음). 마이그레이션 전체를 새 프로젝트에 적용한다. 새 프로젝트는 레고 전용이므로 `pnpm db:migrate` 를 그대로 쓸 수 있다.
+2. GitHub OAuth 를 새 프로젝트에 설정한다(GitHub OAuth App 의 Callback URL 도 바꾼다). Site URL 과 Redirect URLs 를 레고 주소로 설정한다.
+3. `scan-worker` 주소와 비밀값을 새 프로젝트의 Vault 에 넣는다.
+4. 공유 프로젝트의 `lego` 스키마 데이터를 내보내 새 프로젝트로 옮긴다. `auth.users` 는 레고 사용자(`lego.profiles` 의 id)와 그 `auth.identities` 만 옮긴다. id 가 유지돼야 외래 키가 맞는다.
+5. Vercel 의 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` 를 바꿔 재배포한다. 기존 세션은 끊기므로 사용자는 다시 로그인한다.
+6. 동작을 확인한 뒤 공유 프로젝트에서 cron 작업을 끄고, 며칠 뒤 `lego` 스키마를 지운다.

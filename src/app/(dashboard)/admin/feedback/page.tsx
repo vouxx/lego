@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { IgnoreReasonList } from "@/features/admin/components/IgnoreReasonList";
 import { RuleFeedbackTable } from "@/features/admin/components/RuleFeedbackTable";
 import { getFeedbackOverview } from "@/features/admin/services/feedback";
 import { isAdmin, requireUser } from "@/lib/auth";
+import { buttonVariants } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
 
 export default function FeedbackPage() {
@@ -12,6 +14,14 @@ export default function FeedbackPage() {
         trail={[{ label: "관리" }, { label: "오탐 피드백" }]}
         title="오탐 피드백"
         description="모든 사용자의 점검 결과에서 AI 가 오탐으로 본 것과 사용자가 무시한 것을 규칙별로 모읍니다. 잡음 비율이 높은 규칙부터 손봅니다. 같은 문제가 스캔·커밋마다 반복돼도 한 건으로 셉니다."
+        actions={
+          <Link
+            href="/admin/usage"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            사용 현황
+          </Link>
+        }
       />
       <Suspense
         fallback={<p className="text-muted-foreground text-sm">불러오는 중…</p>}

@@ -88,3 +88,13 @@ export async function getMyProject(projectId: string) {
 export async function deleteProjectRow(projectId: string) {
   return createAdminClient().from("projects").delete().eq("id", projectId);
 }
+
+/** 내 이번 달 사용량(RLS 로 본인 행만 읽는다). */
+export async function getMyQuota(period: string) {
+  const supabase = await createClient();
+  return supabase
+    .from("usage_quotas")
+    .select("scans_used, scans_limit, tokens_used, tokens_limit")
+    .eq("period", period)
+    .maybeSingle();
+}

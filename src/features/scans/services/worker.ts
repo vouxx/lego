@@ -3,6 +3,7 @@ import { reportError } from "@/lib/monitoring";
 import {
   ackScanJob,
   archiveScanJob,
+  countStuckScans,
   readScanJobs,
   updateScan,
 } from "../repository";
@@ -63,4 +64,10 @@ export async function runScanWorker({ maxJobs = 3 } = {}) {
     }
   }
   return { processed, picked };
+}
+
+/** 가동 감시용: 워커가 멈춰 끝나지 않은 점검이 없는지. */
+export async function isQueueHealthy() {
+  const { count, error } = await countStuckScans();
+  return !error && count === 0;
 }

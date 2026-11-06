@@ -99,7 +99,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - PR 규칙(PR-001 테스트 삭제·skip, PR-002 검사 끄기, PR-003 RLS 약화, PR-004 문서 없는 환경 변수, PR-005 이름을 흉내 낸 패키지·설치 스크립트)은 diff 로 확정되므로 AI 대신 고정 수정 프롬프트를 쓴다. 보안 후보만 AI 판별·설명.
 - GitHub 게시: 상태 체크(남은 문제에 치명·높음이 있으면 failure) + 리뷰(COMMENT, 추가된 줄에만 줄 코멘트, 최대 20개). 권한이 없으면 결과는 레고에만 남기고 summary.note 에 이유를 쓴다.
 - 커밋 사이 비교는 fingerprint(규칙+파일+코드 줄). 직전 리뷰에 있던 문제는 다시 코멘트하지 않고(`github_comment_id` 를 이어받음), 사라진 문제는 그 코멘트에 '해결됨' 답글 + GraphQL 로 대화를 접는다. 같은 문제의 AI 판별은 다시 하지 않는다.
-- `/lego ignore 이유`: 레고 줄 코멘트에 답글(pull_request_review_comment 이벤트). author_association 이 OWNER·MEMBER·COLLABORATOR 일 때만, 코멘트가 그 설치·리포·PR 의 것인지 확인한 뒤 무시하고 체크를 다시 계산한다. 다음 커밋에도 이어진다.
+- `/lego ignore 이유`: 레고 줄 코멘트에 답글(pull_request_review_comment 이벤트). GitHub API 로 쓰기 권한을 확인하고(자기 PR 은 admin 만), 코멘트가 그 설치·리포·PR 의 것인지 확인한 뒤 무시하고 체크를 다시 계산한다. 다음 커밋에도 이어진다.
 - 엄격도(`projects.pr_guard_strictness`): strict=medium 이상 실패, normal=high 이상 실패(기본), relaxed=critical 만 실패·low 는 줄 코멘트 없음. 기준은 `schemas.ts STRICTNESS_RULES`. 리뷰 summary.strictness 에 남겨 무시 후 재계산도 같은 기준을 쓴다. GitHub 리뷰별 코멘트 API 는 line 을 비워 주므로 코멘트 id 는 PR 전체 코멘트 목록에서 pull_request_review_id 로 찾는다.
 - 스펙 작업 ↔ PR(`spec_task_prs`): pull_request webhook 에서 PR 제목 `[T-n]`·브랜치 이름 `t-n` 으로 작업을 잇는다(PR 가드를 꺼도 동작). 머지되면 작업 완료(done_commit=머지 커밋). PR 가드 결론은 `setTaskPrCheck` 로 같은 PR 에 남긴다.
 - 운영 점검 → 코드 위치: `schemaFromMigrations` 가 테이블·RLS·버킷을 만든 파일:줄을 돌려주고 `linkToCode` 가 LIVE-001/002/006 에 붙인다(수정 프롬프트에도 적음). 마지막 보안 점검 커밋 기준.
@@ -114,7 +114,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 - 코드는 `features/live`, 판정은 `packages/scanner/src/live`(LIVE-001~007, AI 안 씀). 화면은 메뉴 `/live`(프로젝트별 대상·최근 결과)와 `/projects/[projectId]/live`.
 - **소유 확인 전에는 점검하지 않는다.** 사이트의 `/.well-known/lego-verify.txt` 에 토큰이 있어야 한다. Supabase 주소·공개 키는 사용자에게 받지 않고 배포된 JS 에서 찾는다(공격자가 보는 그대로).
-- 서버 요청은 `@/lib/net/safe-fetch` 만 쓴다: https 만, DNS 로 풀어 사설 IP 거절, 리다이렉트마다 재검사, 8초·2MB, 점검 한 번에 요청 80개. 개발 환경에서만 localhost http 허용.
+- 서버 요청은 `@/lib/net/safe-fetch` 만 쓴다: https 만, 공인 IP·443/8443 만, 연결할 때도 DNS 재검사, 리다이렉트마다 재검사, 8초·2MB, 점검 한 번에 요청 80개. 개발 환경에서만 localhost http 허용.
 - 읽기 요청만 보낸다(테이블은 `limit=1` + `count=exact`, 버킷은 목록 5개). 응답 내용(행·파일·키 원문)은 저장하지 않고 판정만 `live_checks.results` 에 남긴다.
 - 코드 비교(LIVE-006)는 가장 최근 스캔 커밋의 마이그레이션으로 한다. 직전 점검에 없던 항목은 '새로 생김'. 수동 점검은 2분 간격.
 - 하루 한 번: pg_cron 의 `lego.kick_scan_worker()` 가 하루 지난 대상이 있으면 `/api/scan-worker` 를 부르고, 워커가 `runDueLiveChecks()` 로 3개씩 점검한다.
@@ -131,7 +131,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 ## 팀 멤버
 
 - 코드는 `features/members`. 소유자가 프로젝트 화면에서 GitHub 아이디로 초대 링크를 만들고, 그 계정이 `/invites/[token]` 에서 수락한다. 메일은 보내지 않는다(링크는 소유자가 전달). 7일, 한 번만, 프로젝트당 10명.
-- 토큰은 해시(`project_invites.token_hash`)만 저장한다. 수락은 `lego.accept_project_invite`(service_role 전용)가 초대 삭제와 멤버 추가를 한 트랜잭션으로 한다. GitHub 아이디는 user_metadata 라서 사용자가 바꿀 수 있다. 토큰이 진짜 자격이고 아이디는 추가 확인이다.
+- 토큰은 해시(`project_invites.token_hash`)만 저장한다. 수락은 `lego.accept_project_invite`(service_role 전용)가 초대 삭제와 멤버 추가를 한 트랜잭션으로 한다. 토큰과 GitHub 계정(identities)이 모두 맞아야 수락된다.
 - 멤버는 **보기 전용**이다. 읽기 정책은 scans·findings·pr_reviews·pr_review_findings·live_targets·live_checks 에만 더했다. 규칙 파일·스펙·Slack 연결은 소유자 전용.
 - **`lego.projects` 의 읽기 정책은 넓히지 않는다.** 쓰기 전 소유 확인이 projects 를 RLS 로 읽는 방식(`findMyProject`, `getMyProject`)이라, 여기를 멤버에게 열면 멤버가 쓰기까지 하게 된다. 멤버 화면의 프로젝트 정보는 `getProjectAccess`(멤버십 확인 뒤 secret 키)로 읽는다.
 - 위 결과 표를 읽어서 쓰기를 허용하면 안 된다(예: `getMyTarget` 만으로 대상 삭제). 쓰기는 `ownedTarget` 처럼 projects 로 소유자를 확인한다.
@@ -169,6 +169,8 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 
 ## 모니터링
 
+- `/api/health`: 30분 넘게 끝나지 않은 점검이 있으면 503. Sentry Uptime 이 이 주소를 본다. pg_cron 은 일이 있을 때만 워커를 부르므로 워커 자체에 cron 체크인을 달지 않는다.
+- `/admin/usage`: 사용자 흐름과 최근 30일 AI 비용(관리자 전용). 외부 분석 도구는 쓰지 않는다(초대 토큰이 경로에 들어가므로).
 - Sentry 는 NEXT_PUBLIC_SENTRY_DSN 이 있을 때만 켜진다. 서버에서 처리한 오류는 `@/lib/monitoring` 의 reportError 로 남긴다.
 - 사용자 코드·쿠키·헤더·요청 본문은 보내지 않는다(`shared/lib/sentry.ts`). extra 에는 id 만 넣는다.
 

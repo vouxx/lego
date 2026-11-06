@@ -18,7 +18,7 @@ test.skip(!isLocal, "로컬 Supabase 에서만 돈다");
 test.describe.configure({ mode: "serial" });
 
 // Suspense 안의 notFound() 는 스트리밍이라 상태 코드가 200 이다.
-const NOT_FOUND = "This page could not be found";
+const NOT_FOUND = "페이지를 찾을 수 없습니다";
 const REPO = "e2e/members-repo";
 const EMAIL = "e2e-guest@lego.test";
 const LOGIN = "lego-e2e-guest";

@@ -454,3 +454,12 @@ export async function listMyRecentPrReviews() {
     .order("created_at", { ascending: false })
     .limit(30);
 }
+
+/** 30분 넘게 끝나지 않은 점검 수. 워커가 멈췄는지 가동 감시에서 본다. */
+export async function countStuckScans() {
+  return createAdminClient()
+    .from("scans")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["queued", "running"])
+    .lt("created_at", new Date(Date.now() - 30 * 60_000).toISOString());
+}

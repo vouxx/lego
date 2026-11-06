@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ProjectList } from "@/features/projects/components/ProjectList";
+import { UsageMeter } from "@/features/projects/components/UsageMeter";
 import { getSharedProjects } from "@/features/members/services/members";
 import { getMyProjects } from "@/features/projects/services/projects";
+import { getMyUsage } from "@/features/projects/services/usage";
 import { requireUser } from "@/lib/auth";
 import { buttonVariants } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -30,9 +32,10 @@ export default function ProjectsPage() {
 
 async function Projects() {
   const user = await requireUser();
-  const [result, shared] = await Promise.all([
+  const [result, shared, usage] = await Promise.all([
     getMyProjects(),
     getSharedProjects(user),
+    getMyUsage(),
   ]);
   if (!result.ok)
     return (
@@ -42,6 +45,7 @@ async function Projects() {
     );
   return (
     <>
+      <UsageMeter {...usage} />
       <ProjectList projects={result.data} />
       {shared.length > 0 ? (
         <section

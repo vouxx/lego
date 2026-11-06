@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, IBM_Plex_Sans_KR } from "next/font/google";
+import { siteUrl } from "@/shared/lib/site-url";
 import "./globals.css";
 
 // 한글 본문 글꼴. 한글 글리프는 unicode-range 로 필요한 조각만 받는다.
@@ -15,10 +16,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION =
+  "AI 로 만드는 앱의 작업대 — 스펙, 규칙 파일, 보안 점검, PR 가드, 운영 점검";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: "Lego",
-  description:
-    "AI 로 만드는 앱의 작업대 — 스펙, 규칙 파일, 보안 점검, PR 가드, 운영 점검",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "Lego",
+    description: DESCRIPTION,
+    siteName: "Lego",
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
