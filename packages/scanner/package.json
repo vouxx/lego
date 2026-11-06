@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@babel/types": "^8.0.10",
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.6.6",
     "tsx": "^4.23.15"
   }
 }
