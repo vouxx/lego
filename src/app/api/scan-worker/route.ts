@@ -25,21 +25,17 @@ export async function POST(request: NextRequest) {
   }
   if (request.nextUrl.searchParams.get("wait") === "1") {
     try {
-      const scans = await runScanWorker();
       const live = await runDueLiveChecks();
       const weekly = await runWeeklyDigests();
+      const scans = await runScanWorker();
       return NextResponse.json({ ...scans, live, weekly });
     } catch (error) {
       reportError(error, { area: "scan-worker" });
       return NextResponse.json({ error: "worker_failed" }, { status: 500 });
     }
   }
+  // 스캔은 함수 시간 제한으로 끊길 수 있어 맨 뒤에 둔다(앞의 작업까지 함께 끊기지 않게).
   after(async () => {
-    try {
-      await runScanWorker();
-    } catch (error) {
-      reportError(error, { area: "scan-worker" });
-    }
     // 하루가 지난 운영 점검 대상(pg_cron 이 대상이 있을 때도 부른다).
     try {
       await runDueLiveChecks();
@@ -50,6 +46,11 @@ export async function POST(request: NextRequest) {
       await runWeeklyDigests();
     } catch (error) {
       reportError(error, { area: "slack.weekly" });
+    }
+    try {
+      await runScanWorker();
+    } catch (error) {
+      reportError(error, { area: "scan-worker" });
     }
   });
   return NextResponse.json({ accepted: true }, { status: 202 });

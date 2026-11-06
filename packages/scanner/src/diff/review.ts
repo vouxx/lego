@@ -1,4 +1,6 @@
+import { isEnvFile, isEnvTemplate } from "../files";
 import { STATIC_RULES } from "../rules";
+import { findSecrets } from "../secrets";
 import type { Candidate, Rule } from "../types";
 import { parsePatch, touchesAdded } from "./patch";
 import { PR_RULES, type ChangedFile, type PrInput } from "./rules";
@@ -53,6 +55,38 @@ export function reviewPullRequest(
         ruleId: rule.id,
         message: error instanceof Error ? error.message : String(error),
       });
+    }
+  }
+
+  for (const file of files) {
+    if (file.status === "removed") continue;
+    // .env 내용은 읽지 않는다. 파일이 PR 에 들어왔다는 것만으로 문제다.
+    if (isEnvFile(file.path) && !isEnvTemplate(file.path)) {
+      candidates.push({
+        ruleId: "SEC-002",
+        severity: "critical",
+        filePath: file.path,
+        lineStart: 1,
+        lineEnd: 1,
+        snippet: file.path,
+        reason: "환경 변수 파일이 PR 에 포함됨",
+      });
+      continue;
+    }
+    // 내용을 읽지 않은 파일(형식 밖, 개수 제한 초과)도 추가된 줄의 비밀값은 확인한다.
+    if (file.content !== undefined) continue;
+    for (const { line, text } of parsePatch(file.patch).added) {
+      for (const secret of findSecrets(text)) {
+        candidates.push({
+          ruleId: "SEC-001",
+          severity: "critical",
+          filePath: file.path,
+          lineStart: line,
+          lineEnd: line,
+          snippet: text.trim(),
+          reason: `${secret.name} 형식의 값`,
+        });
+      }
     }
   }
 

@@ -3,7 +3,10 @@ import remarkGfm from "remark-gfm";
 
 type Props = { content: string };
 
-/** 규칙 파일 미리보기. HTML 은 렌더링하지 않는다(react-markdown 기본값). */
+/**
+ * 규칙 파일 미리보기. HTML 은 렌더링하지 않는다(react-markdown 기본값).
+ * 이미지는 불러오지 않는다. 외부 주소로 내용을 흘리는 데 쓰일 수 있다.
+ */
 export function MarkdownPreview({ content }: Props) {
   if (!content.trim()) {
     return <p className="text-muted-foreground text-sm">내용이 없습니다.</p>;
@@ -12,6 +15,8 @@ export function MarkdownPreview({ content }: Props) {
     <div className="flex flex-col gap-3 text-sm leading-relaxed">
       <Markdown
         remarkPlugins={[remarkGfm]}
+        disallowedElements={["img"]}
+        unwrapDisallowed
         components={{
           h1: (props) => <h1 className="text-lg font-semibold" {...props} />,
           h2: (props) => (

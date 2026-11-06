@@ -5,14 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 
 // 읽기는 사용자 세션(RLS), 쓰기는 secret 키. 쓰기 전 권한 확인은 services 가 한다.
 
-export async function findInstallation(installationId: number) {
-  return createAdminClient()
-    .from("github_installations")
-    .select("user_id")
-    .eq("installation_id", installationId)
-    .maybeSingle();
-}
-
 export async function upsertInstallation(row: {
   userId: string;
   installationId: number;
@@ -24,7 +16,7 @@ export async function upsertInstallation(row: {
       installation_id: row.installationId,
       account_login: row.accountLogin,
     },
-    { onConflict: "installation_id" },
+    { onConflict: "user_id,installation_id" },
   );
 }
 

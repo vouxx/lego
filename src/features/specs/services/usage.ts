@@ -22,5 +22,5 @@ export function usageRecorder(userId: string, specId: string): UsageSink {
 
 export async function hasTokenQuota(userId: string) {
   const { data } = await addTokenUsage(userId, 0);
-  return data !== false;
+  return data === true;
 }

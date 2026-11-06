@@ -8,6 +8,7 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { linkGithubIdentity } from "./github-identity";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
@@ -47,6 +48,7 @@ const user = existing
       })
     ).data.user;
 if (!user) throw new Error("테스트 사용자를 만들지 못했습니다.");
+linkGithubIdentity(user.id, metadata.user_name, metadata.provider_id);
 
 await lego
   .from("profiles")

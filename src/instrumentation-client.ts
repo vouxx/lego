@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { SENTRY_DATA_COLLECTION } from "@/shared/lib/sentry";
+import { SENTRY_DATA_COLLECTION, SENTRY_SCRUB } from "@/shared/lib/sentry";
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -7,6 +7,7 @@ Sentry.init({
   environment: process.env.NODE_ENV,
   tracesSampleRate: 0.1,
   dataCollection: SENTRY_DATA_COLLECTION,
+  ...SENTRY_SCRUB,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

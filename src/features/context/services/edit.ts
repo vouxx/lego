@@ -1,6 +1,7 @@
 import "server-only";
 import type { CurrentUser } from "@/lib/auth";
 import { getInstallationAccess } from "@/lib/github/app";
+import { assertRepoWrite } from "@/features/projects/services/repo-access";
 import { openFilePullRequest } from "@/lib/github/pull-request";
 import { reportError } from "@/lib/monitoring";
 import { err, ok, type Result } from "@/shared/lib/result";
@@ -148,6 +149,7 @@ function branchName(target: ContextTarget) {
 
 /** 현재 버전을 새 브랜치에 커밋하고 PR 을 연다. */
 export async function openContextPr(
+  user: CurrentUser,
   contextFileId: string,
 ): Promise<Result<{ prUrl: string }>> {
   const file = await ownedFile(contextFileId);
@@ -170,6 +172,12 @@ export async function openContextPr(
       "PR 을 만들려면 GitHub 에서 레고의 쓰기 권한을 승인해야 합니다.",
     );
   }
+
+  const denied = await assertRepoWrite(user, {
+    installation_id: installationId,
+    repo_full_name: file.projects.repo_full_name,
+  });
+  if (denied) return denied;
 
   const { data: versions } = await getVersionContents([
     file.current_version_id,

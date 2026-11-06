@@ -49,7 +49,7 @@ export async function getTargetForWorker(targetId: string) {
   return createAdminClient()
     .from("live_targets")
     .select(
-      "id, user_id, site_url, verified_at, last_checked_at, projects(id, installation_id, repo_full_name, default_branch)",
+      "id, user_id, site_url, verify_token, verified_at, last_checked_at, projects(id, installation_id, repo_full_name, default_branch)",
     )
     .eq("id", targetId)
     .maybeSingle();

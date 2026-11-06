@@ -2,6 +2,7 @@ import "server-only";
 import { getProjectAccess } from "@/features/members/services/access";
 import type { CurrentUser } from "@/lib/auth";
 import { installationOctokit } from "@/lib/github/app";
+import { canWrite, repoPermission } from "@/lib/github/repo-access";
 import {
   PublicRepoNotFoundError,
   publicRepoRefs,
@@ -63,10 +64,38 @@ export async function getMyInstallations() {
   );
 }
 
-/** 내 GitHub App 설치들이 접근할 수 있는 리포 목록. */
-export async function listInstallableRepos(): Promise<
-  Result<InstallableRepo[]>
-> {
+const MAX_PROJECTS = 30;
+const MAX_CHECKED_REPOS = 200;
+const PERMISSION_CONCURRENCY = 8;
+
+/** 조직 설치의 리포는 쓰기 권한이 있는 것만 남긴다. 내 계정 설치는 전부 내 리포다. */
+async function writableRepos<T extends { fullName: string }>(
+  user: CurrentUser,
+  installationId: number,
+  repos: T[],
+) {
+  const queue = repos.slice(0, MAX_CHECKED_REPOS);
+  const allowed = new Set<string>();
+  const check = async () => {
+    for (let repo = queue.shift(); repo; repo = queue.shift()) {
+      const permission = await repoPermission(
+        installationId,
+        repo.fullName,
+        user.githubLogin,
+      );
+      if (canWrite(permission)) allowed.add(repo.fullName);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: PERMISSION_CONCURRENCY }, () => check()),
+  );
+  return repos.filter((r) => allowed.has(r.fullName));
+}
+
+/** 내 GitHub App 설치의 리포 중 내가 쓰기 권한을 가진 리포 목록. */
+export async function listInstallableRepos(
+  user: CurrentUser,
+): Promise<Result<InstallableRepo[]>> {
   const [installations, projects] = await Promise.all([
     getMyInstallations(),
     getMyProjects(),
@@ -79,19 +108,22 @@ export async function listInstallableRepos(): Promise<
   // 설치마다 따로 묻는다. 다른 GitHub App(개발용 등)의 설치나 이미 지운 설치는
   // 이 App 으로 접근할 수 없으므로 건너뛰고, 모두 실패할 때만 오류로 본다.
   const perInstallation = await Promise.allSettled(
-    installations.data.map(async ({ installationId }) => {
+    installations.data.map(async ({ installationId, accountLogin }) => {
       const octokit = await installationOctokit(installationId);
       const repos = await octokit.paginate(
         octokit.rest.apps.listReposAccessibleToInstallation,
         { per_page: 100 },
       );
-      return repos.map((r) => ({
+      const mapped = repos.map((r) => ({
         fullName: r.full_name,
         installationId,
         defaultBranch: r.default_branch,
         isPrivate: r.private,
         alreadyAdded: added.has(r.full_name),
       }));
+      const isMine =
+        accountLogin.toLowerCase() === user.githubLogin.toLowerCase();
+      return isMine ? mapped : writableRepos(user, installationId, mapped);
     }),
   );
   const repos = perInstallation.flatMap((r) =>
@@ -154,17 +186,32 @@ async function readRepoSnapshot(
   return { rootEntries, srcEntries, packageJson };
 }
 
-/** 내 설치로 접근 가능한 리포만 프로젝트로 등록한다. */
+const tooManyProjects = (count: number) =>
+  count >= MAX_PROJECTS
+    ? err(
+        "too_many_projects",
+        `프로젝트는 ${MAX_PROJECTS}개까지 등록할 수 있습니다.`,
+      )
+    : null;
+
+/** 내가 쓰기 권한을 가진 설치 리포만 프로젝트로 등록한다. */
 export async function createProject(
   user: CurrentUser,
   repoFullName: string,
 ): Promise<Result<{ projectId: string }>> {
-  const repos = await listInstallableRepos();
+  const repos = await listInstallableRepos(user);
   if (!repos.ok) return repos;
+  const mine = await getMyProjects();
+  if (!mine.ok) return mine;
+  const limited = tooManyProjects(mine.data.length);
+  if (limited) return limited;
 
   const repo = repos.data.find((r) => r.fullName === repoFullName);
   if (!repo)
-    return err("repo_not_accessible", "읽기를 허용하지 않은 리포입니다.");
+    return err(
+      "repo_not_accessible",
+      "읽기를 허용하지 않았거나 쓰기 권한이 없는 리포입니다.",
+    );
   if (repo.alreadyAdded) return err("already_added", "이미 등록한 리포입니다.");
 
   let snapshot;
@@ -214,6 +261,8 @@ export async function addPublicRepo(
 
   const projects = await getMyProjects();
   if (!projects.ok) return projects;
+  const limited = tooManyProjects(projects.data.length);
+  if (limited) return limited;
   if (
     projects.data.some(
       (p) => p.repoFullName.toLowerCase() === fullName.toLowerCase(),

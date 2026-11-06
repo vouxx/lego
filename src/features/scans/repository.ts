@@ -261,7 +261,7 @@ export async function getPrReviewForWorker(reviewId: string) {
   return createAdminClient()
     .from("pr_reviews")
     .select(
-      "id, user_id, pr_number, pr_title, pr_url, head_sha, status, projects(id, installation_id, repo_full_name, detected_stack, pr_guard_strictness)",
+      "id, user_id, pr_number, pr_title, pr_url, head_sha, status, trusted_author, projects(id, installation_id, repo_full_name, detected_stack, pr_guard_strictness)",
     )
     .eq("id", reviewId)
     .maybeSingle();
@@ -294,7 +294,7 @@ export async function replacePrReviewFindings(
 }
 
 const PR_FINDING_COLUMNS =
-  "id, fingerprint, rule_id, rule_title, severity, file_path, line, reason, ai_verdict, explanation, fix_prompt, github_comment_id, state, ignore_reason, ignored_by";
+  "id, fingerprint, rule_id, rule_title, severity, file_path, line, reason, ai_verdict, explanation, fix_prompt, context_hash, github_comment_id, state, ignore_reason, ignored_by";
 
 /** 같은 PR 의 직전(끝난) 리뷰와 그 발견 항목. 커밋 사이 비교에 쓴다. */
 export async function getPreviousPrReview(

@@ -126,7 +126,7 @@ export async function processScan(scanId: string) {
       scan.user_id,
       usage.inputTokens + usage.outputTokens,
     );
-    return hasRemaining !== false;
+    return hasRemaining === true;
   };
 
   const stack = stackLabel(project.detected_stack);

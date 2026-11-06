@@ -79,7 +79,7 @@ test.beforeAll(async () => {
       installation_id: INSTALLATION,
       account_login: "e2e",
     },
-    { onConflict: "installation_id" },
+    { onConflict: "user_id,installation_id" },
   );
 
   const { data: project } = await admin

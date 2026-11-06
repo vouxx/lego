@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { expect, test, type Browser } from "@playwright/test";
 import { createServerClient } from "@supabase/ssr";
+import { linkGithubIdentity } from "./github-identity";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -73,6 +74,7 @@ test.beforeAll(async () => {
         })
       ).data.user;
   guestId = guest!.id;
+  linkGithubIdentity(guestId, LOGIN, metadata.provider_id);
   await admin.from("profiles").upsert({ id: guestId, github_login: LOGIN });
 
   const ssr = createServerClient(url, publishableKey, {
@@ -264,4 +266,25 @@ test("소유자가 내보내면 바로 볼 수 없다", async ({ page, browser }
   await guest.goto(`/projects/${projectId}/scans/${scanId}`);
   await expect(guest.getByText(NOT_FOUND)).toBeVisible();
   await context.close();
+});
+
+test("user_metadata 를 바꿔도 GitHub 계정은 바뀌지 않는다", async () => {
+  const auth = createClient(url, publishableKey, {
+    auth: { persistSession: false },
+  });
+  const { data } = await auth.auth.signInWithPassword({
+    email: EMAIL,
+    password: guestPassword,
+  });
+  const { data: updated, error } = await auth.auth.updateUser({
+    data: { user_name: "vercel", provider_id: "1" },
+  });
+  expect(error).toBeNull();
+  expect(updated.user?.user_metadata.user_name).toBe("vercel");
+
+  // 앱은 고칠 수 없는 identities 를 읽으므로 초대 대상은 여전히 원래 계정이다.
+  expect(
+    data.user?.identities?.find((i) => i.provider === "github")?.identity_data
+      ?.user_name,
+  ).toBe(LOGIN);
 });

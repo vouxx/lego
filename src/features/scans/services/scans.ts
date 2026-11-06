@@ -1,4 +1,5 @@
 import "server-only";
+import { assertRepoWrite } from "@/features/projects/services/repo-access";
 import type { CurrentUser } from "@/lib/auth";
 import { latestCommitSha } from "@/lib/github/repo-files";
 import { err, ok, type Result } from "@/shared/lib/result";
@@ -35,6 +36,8 @@ export async function startScan(
   if (error) return err("db_error", "프로젝트를 불러오지 못했습니다.");
   if (!project || project.user_id !== user.id)
     return err("not_found", "프로젝트를 찾을 수 없습니다.");
+  const denied = await assertRepoWrite(user, project);
+  if (denied) return denied;
 
   const { data: active } = await findActiveScan(projectId);
   if (active) return ok({ scanId: active.id });

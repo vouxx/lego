@@ -1,7 +1,9 @@
 import "server-only";
 import { completeCheckRun, replyToReviewComment } from "@/lib/github/pulls";
+import { canWrite, repoPermission } from "@/lib/github/repo-access";
 import { reportError } from "@/lib/monitoring";
 import { err, ok, type Result } from "@/shared/lib/result";
+import { safeMarkdown } from "@/shared/lib/untrusted-text";
 import {
   findPrFindingByComment,
   getLatestPrReview,
@@ -24,8 +26,6 @@ import {
 } from "./pr-guard-publish";
 
 const IGNORE = /^\s*\/lego\s+ignore\b\s*([\s\S]*)$/i;
-// 리포에 쓰기 권한이 있는 사람만 무시할 수 있다.
-const TRUSTED = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 /**
  * pull_request_review_comment: 레고 줄 코멘트에 `/lego ignore 이유` 로 답글을 달면
@@ -77,10 +77,24 @@ export async function handleReviewCommentEvent(
       body,
     ).catch((e) => reportError(e, { area: "pr-guard.ignore.reply" }));
 
-  if (!TRUSTED.has(comment.author_association)) {
+  // author_association 은 쓰기 권한을 뜻하지 않으므로(MEMBER 도 읽기만 가능할 수 있다) 직접 묻는다.
+  const permission = await repoPermission(
+    installation.id,
+    repository.full_name,
+    comment.user.login,
+  );
+  if (!canWrite(permission)) {
     await reply(
       "리포에 쓰기 권한이 있는 사람만 `/lego ignore` 를 쓸 수 있어요.",
     );
+    return ok({ handled: true });
+  }
+  // 자기 PR 의 검사는 스스로 넘기지 못한다. 혼자 쓰는 리포의 소유자(admin)는 예외.
+  if (
+    pull_request.user.login === comment.user.login &&
+    permission !== "admin"
+  ) {
+    await reply("내가 올린 PR 의 문제는 다른 사람이 무시해 줘야 해요.");
     return ok({ handled: true });
   }
   const reason = command[1]!.trim().slice(0, 300) || "이유 없음";
@@ -111,7 +125,7 @@ export async function handleReviewCommentEvent(
       findings,
       resolved: summary.resolved,
       risk: summary.risk,
-      scope: summary.scope,
+      hasScope: !!summary.scope,
       strictness: summary.strictness,
     });
     const open = findings.filter((f) => f.state === "open");
@@ -139,7 +153,7 @@ export async function handleReviewCommentEvent(
       ).catch((e) => reportError(e, { area: "pr-guard.ignore.check" }));
   }
   await reply(
-    `🙈 @${comment.user.login} 님 요청으로 무시했어요: ${reason}\n\n이 PR 에서는 다음 커밋에도 \`${finding.rule_id}\` 를 체크에서 뺍니다.`,
+    `🙈 ${safeMarkdown(comment.user.login)} 님 요청으로 무시했어요: ${safeMarkdown(reason)}\n\n이 PR 에서는 다음 커밋에도 \`${finding.rule_id}\` 를 체크에서 뺍니다.`,
   );
   return ok({ handled: true });
 }

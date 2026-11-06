@@ -5,7 +5,8 @@ export type * from "./types";
 export { codeContext } from "./context";
 export { fingerprint } from "./fingerprint";
 export { isEnvFile, isEnvTemplate, isJsFile, isSqlFile } from "./files";
-export { maskSecrets } from "./secrets";
+export { findSecrets, maskSecrets } from "./secrets";
+export { isClientFile } from "./detectors/server-file";
 export { auditDependencies } from "./dependencies/osv";
 export {
   isDependencyFile,

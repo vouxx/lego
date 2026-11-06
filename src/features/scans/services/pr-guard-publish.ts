@@ -1,16 +1,19 @@
 import "server-only";
 import type { CheckAnnotation } from "@/lib/github/pulls";
+import { codeSpan, fenced, safeMarkdown } from "@/shared/lib/untrusted-text";
 import {
   SEVERITIES,
   STRICTNESS_RULES,
   type PrFindingRef,
   type PrRiskArea,
-  type PrScope,
   type Severity,
   type Strictness,
 } from "../schemas";
 
-/** GitHub 에 올리는 문구. 리뷰 본문·줄 코멘트·상태 체크가 같은 모양을 쓴다. */
+/**
+ * GitHub 에 올리는 문구. 리뷰 본문·줄 코멘트·상태 체크가 같은 모양을 쓴다.
+ * 공개 리포의 PR 은 누구나 읽으므로 스펙 내용은 올리지 않고, 파일 이름·LLM 글은 정리해서 넣는다.
+ */
 
 export const CHECK_NAME = "레고 PR 가드";
 
@@ -64,9 +67,9 @@ export function conclusionOf(
 }
 
 const line = (r: PublishedFinding) =>
-  `- **${r.severity}** \`${r.rule_id}\` ${r.rule_title} — \`${r.file_path}:${r.line}\``;
+  `- **${r.severity}** \`${r.rule_id}\` ${r.rule_title} — ${codeSpan(`${r.file_path}:${r.line}`)}`;
 
-export function riskMarkdown(risk: PrRiskArea[], scope: PrScope | null) {
+export function riskMarkdown(risk: PrRiskArea[], hasScope: boolean) {
   const parts: string[] = [];
   if (risk.length > 0) {
     parts.push(
@@ -77,7 +80,7 @@ export function riskMarkdown(risk: PrRiskArea[], scope: PrScope | null) {
             a.files.length > 0
               ? ` — ${a.files
                   .slice(0, 4)
-                  .map((f) => `\`${f}\``)
+                  .map((f) => codeSpan(f))
                   .join(
                     ", ",
                   )}${a.files.length > 4 ? ` 외 ${a.files.length - 4}개` : ""}`
@@ -87,18 +90,8 @@ export function riskMarkdown(risk: PrRiskArea[], scope: PrScope | null) {
         .join("\n"),
     );
   }
-  if (scope && scope.tasks.length > 0) {
-    const tasks = scope.tasks.map((t) => `${t.key} ${t.title}`).join(", ");
-    parts.push(
-      `#### 스펙 작업 범위 (${tasks})`,
-      scope.outside.length === 0
-        ? "바뀐 파일이 모두 작업 범위 안으로 보입니다."
-        : `작업과 관계없어 보이는 파일 ${scope.outside.length}개:\n` +
-            scope.outside
-              .map((o) => `- \`${o.path}\` — ${o.reason}`)
-              .join("\n"),
-    );
-  }
+  if (hasScope)
+    parts.push("스펙 작업 범위 확인 결과는 레고 화면에서 볼 수 있습니다.");
   return parts.join("\n\n");
 }
 
@@ -109,11 +102,11 @@ export function reviewBody(params: {
   inlineCount: number;
   resolved: PrFindingRef[];
   risk: PrRiskArea[];
-  scope: PrScope | null;
+  hasScope: boolean;
 }) {
   const parts = [`### ${CHECK_NAME}`];
   if (params.isFirst) {
-    const risk = riskMarkdown(params.risk, params.scope);
+    const risk = riskMarkdown(params.risk, params.hasScope);
     if (risk) parts.push(risk);
   }
   if (params.added.length > 0) {
@@ -132,7 +125,7 @@ export function reviewBody(params: {
       params.resolved
         .map(
           (r) =>
-            `- ~~\`${r.ruleId}\` ${r.ruleTitle} — \`${r.filePath}:${r.line}\`~~`,
+            `- ~~\`${r.ruleId}\` ${r.ruleTitle} — ${codeSpan(`${r.filePath}:${r.line}`)}~~`,
         )
         .join("\n"),
     );
@@ -145,9 +138,9 @@ export function reviewBody(params: {
 export function commentBody(r: PublishedFinding) {
   return [
     `**${r.severity}** \`${r.rule_id}\` ${r.rule_title}`,
-    r.explanation ?? r.reason,
+    safeMarkdown(r.explanation ?? r.reason),
     r.fix_prompt
-      ? `<details><summary>AI 코딩 도구에 붙여넣을 수정 프롬프트</summary>\n\n\`\`\`\n${r.fix_prompt}\n\`\`\`\n</details>`
+      ? `<details><summary>AI 코딩 도구에 붙여넣을 수정 프롬프트 (붙여넣기 전에 내용을 확인하세요)</summary>\n\n${fenced(r.fix_prompt)}\n</details>`
       : "",
   ]
     .filter(Boolean)
@@ -159,36 +152,44 @@ export function checkOutput(params: {
   findings: PublishedFinding[];
   resolved: PrFindingRef[];
   risk: PrRiskArea[];
-  scope: PrScope | null;
+  hasScope: boolean;
+  /** 개수 제한으로 내용을 보지 못한 파일 수 */
+  unchecked?: number;
   strictness: Strictness;
 }) {
   const open = bySeverity(params.findings.filter((f) => f.state === "open"));
   const ignored = params.findings.filter((f) => f.state === "ignored");
-  const conclusion = conclusionOf(countBySeverity(open), params.strictness);
+  const unchecked = params.unchecked ?? 0;
+  const judged = conclusionOf(countBySeverity(open), params.strictness);
+  // 보지 못한 파일이 있으면 통과라고 말하지 않는다.
+  const conclusion = judged === "success" && unchecked > 0 ? "neutral" : judged;
   const rule = STRICTNESS_RULES[params.strictness];
   const title = [
     open.length === 0 ? "남은 문제 없음" : `남은 문제 ${open.length}개`,
     params.resolved.length > 0 ? `해결 ${params.resolved.length}개` : "",
     ignored.length > 0 ? `무시 ${ignored.length}개` : "",
+    unchecked > 0 ? `미확인 파일 ${unchecked}개` : "",
   ]
     .filter(Boolean)
     .join(" · ");
   const summary = [
     open.length > 0
       ? `#### 남은 문제\n${open.map(line).join("\n")}`
-      : "바뀐 줄에서 남은 보안 문제나 위험한 변경이 없습니다.",
+      : unchecked > 0
+        ? `확인한 파일에서는 남은 문제가 없지만, 파일이 많아 ${unchecked}개는 내용을 보지 못했습니다. PR 을 나누면 모두 점검합니다.`
+        : "바뀐 줄에서 남은 보안 문제나 위험한 변경이 없습니다.",
     ignored.length > 0
       ? `#### 무시함\n${ignored
           .map(
             (r) =>
-              `${line(r)} — ${r.ignore_reason ?? ""} (@${r.ignored_by ?? "?"})`,
+              `${line(r)} — ${safeMarkdown(r.ignore_reason ?? "")} (${safeMarkdown(r.ignored_by ?? "?")})`,
           )
           .join("\n")}`
       : "",
     params.resolved.length > 0
-      ? `#### 해결됨\n${params.resolved.map((r) => `- \`${r.ruleId}\` ${r.ruleTitle} — \`${r.filePath}:${r.line}\``).join("\n")}`
+      ? `#### 해결됨\n${params.resolved.map((r) => `- \`${r.ruleId}\` ${r.ruleTitle} — ${codeSpan(`${r.filePath}:${r.line}`)}`).join("\n")}`
       : "",
-    riskMarkdown(params.risk, params.scope),
+    riskMarkdown(params.risk, params.hasScope),
     `<sub>엄격도 ${rule.label}: ${rule.description}</sub>`,
   ]
     .filter(Boolean)

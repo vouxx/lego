@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-const PROTECTED_PREFIXES = ["/projects"];
+const PROTECTED_PREFIXES = ["/projects", "/specs", "/guard", "/live", "/admin"];
 
 export async function proxy(request: NextRequest) {
   const { response, isSignedIn } = await updateSession(request);

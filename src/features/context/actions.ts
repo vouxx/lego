@@ -93,5 +93,5 @@ export async function openContextPrAction(
   if (!parsed.success) return firstIssue(parsed.error);
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED;
-  return openContextPr(parsed.data.contextFileId);
+  return openContextPr(user, parsed.data.contextFileId);
 }

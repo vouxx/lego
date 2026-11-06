@@ -509,6 +509,7 @@ export type Database = {
       pr_review_findings: {
         Row: {
           ai_verdict: string | null;
+          context_hash: string | null;
           created_at: string;
           explanation: string | null;
           file_path: string;
@@ -531,6 +532,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           ai_verdict?: string | null;
+          context_hash?: string | null;
           created_at?: string;
           explanation?: string | null;
           file_path: string;
@@ -552,6 +554,7 @@ export type Database = {
         };
         Update: {
           ai_verdict?: string | null;
+          context_hash?: string | null;
           created_at?: string;
           explanation?: string | null;
           file_path?: string;
@@ -601,6 +604,7 @@ export type Database = {
           project_id: string;
           status: string;
           summary: NonNullable<Json>;
+          trusted_author: boolean;
           updated_at: string;
           user_id: string;
         };
@@ -617,6 +621,7 @@ export type Database = {
           project_id: string;
           status?: string;
           summary?: NonNullable<Json>;
+          trusted_author?: boolean;
           updated_at?: string;
           user_id: string;
         };
@@ -632,6 +637,7 @@ export type Database = {
           project_id?: string;
           status?: string;
           summary?: NonNullable<Json>;
+          trusted_author?: boolean;
           updated_at?: string;
           user_id?: string;
         };
@@ -800,18 +806,18 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "projects_installation_id_fkey";
-            columns: ["installation_id"];
-            isOneToOne: false;
-            referencedRelation: "github_installations";
-            referencedColumns: ["installation_id"];
-          },
-          {
             foreignKeyName: "projects_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "projects_user_installation_fkey";
+            columns: ["user_id", "installation_id"];
+            isOneToOne: false;
+            referencedRelation: "github_installations";
+            referencedColumns: ["user_id", "installation_id"];
           },
         ];
       };

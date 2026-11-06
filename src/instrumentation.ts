@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { SENTRY_DATA_COLLECTION } from "@/shared/lib/sentry";
+import { SENTRY_DATA_COLLECTION, SENTRY_SCRUB } from "@/shared/lib/sentry";
 
 // NEXT_PUBLIC_SENTRY_DSN 이 없으면 Sentry 는 아무것도 보내지 않는다(로컬 개발 기본값).
 export async function register() {
@@ -13,6 +13,7 @@ export async function register() {
       environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
       tracesSampleRate: 0.1,
       dataCollection: SENTRY_DATA_COLLECTION,
+      ...SENTRY_SCRUB,
     });
   }
 }

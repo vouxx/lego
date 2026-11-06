@@ -26,6 +26,10 @@ export function FixPromptBox({ prompt }: Props) {
         </Button>
       }
     >
+      <p className="text-muted-foreground mb-2 text-xs">
+        리포 코드를 읽고 AI 가 쓴 글입니다. 붙여넣기 전에 명령어와 주소를 한 번
+        읽어 보세요.
+      </p>
       <pre className="font-mono whitespace-pre-wrap">{prompt}</pre>
     </TerminalWindow>
   );

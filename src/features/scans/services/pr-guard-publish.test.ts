@@ -26,7 +26,7 @@ describe("PR 가드 엄격도", () => {
       findings: [],
       resolved: [],
       risk: [],
-      scope: null,
+      hasScope: false,
       strictness: "relaxed",
     });
     expect(out.conclusion).toBe("success");

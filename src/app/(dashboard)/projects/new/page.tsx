@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { requireUser } from "@/lib/auth";
 import { PrivateRepoSection } from "@/features/projects/components/PrivateRepoSection";
 import { PublicRepoSection } from "@/features/projects/components/PublicRepoSection";
 import {
@@ -37,9 +38,10 @@ async function PrivateRepos({
   searchParams,
 }: Pick<PageProps<"/projects/new">, "searchParams">) {
   const { notice, error } = await searchParams;
+  const user = await requireUser();
   const installations = await getMyInstallations();
   const hasInstallations = installations.ok && installations.data.length > 0;
-  const repos = hasInstallations ? await listInstallableRepos() : null;
+  const repos = hasInstallations ? await listInstallableRepos(user) : null;
 
   return (
     <PrivateRepoSection

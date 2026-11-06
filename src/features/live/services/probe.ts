@@ -15,7 +15,7 @@ import {
 } from "@lego/scanner";
 import { readRepoAtCommit } from "@/lib/github/repo-files";
 import { reportError } from "@/lib/monitoring";
-import { safeFetch, type SafeResponse } from "@/lib/net/safe-fetch";
+import { sameSite, safeFetch, type SafeResponse } from "@/lib/net/safe-fetch";
 
 /** 점검 한 번에 보내는 요청 수 상한. 남의 서버에 부담을 주지 않게 작게 둔다. */
 const MAX_REQUESTS = 80;
@@ -102,8 +102,13 @@ export async function probeSite(
   };
 
   // 1. 첫 페이지: 보안 헤더, 스크립트 목록
-  const home = await get(siteUrl);
-  if (!home) throw new Error("사이트에 연결하지 못했습니다.");
+  // 소유를 확인한 사이트만 점검한다. 다른 사이트로 넘기는 리다이렉트는 따라가지 않는다.
+  const onSite = { stayOn: sameSite(siteUrl) };
+  const home = await get(siteUrl, onSite);
+  if (!home)
+    throw new Error(
+      "사이트에 연결하지 못했습니다. 다른 사이트로 이동하는 주소는 점검하지 않습니다.",
+    );
   if (home.url.startsWith("https:"))
     findings.push(...checkHeaders(home.headers));
   else notes.push("http 주소라 HSTS 등 보안 헤더 점검을 건너뛰었습니다.");
@@ -112,12 +117,12 @@ export async function probeSite(
   const scripts = scriptSrcs(home.body, home.url);
   const texts = [home.body];
   for (const [i, src] of scripts.entries()) {
-    const res = await get(src);
+    const res = await get(src, onSite);
     if (!res || res.status !== 200) continue;
     texts.push(res.body);
     findings.push(...checkBundle(new URL(src).pathname, res.body));
     if (i < 3) {
-      const map = await get(`${src}.map`);
+      const map = await get(`${src}.map`, onSite);
       if (map)
         findings.push(
           ...checkSourceMap(new URL(src).pathname, map.status, map.body),
@@ -127,7 +132,7 @@ export async function probeSite(
 
   // 3. 열려 있으면 안 되는 파일
   for (const { path } of SENSITIVE_PATHS) {
-    const res = await get(new URL(path, home.url).toString());
+    const res = await get(new URL(path, home.url).toString(), onSite);
     if (res) findings.push(...checkExposedFile(path, res.status, res.body));
   }
 

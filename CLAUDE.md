@@ -119,6 +119,15 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 코드 비교(LIVE-006)는 가장 최근 스캔 커밋의 마이그레이션으로 한다. 직전 점검에 없던 항목은 '새로 생김'. 수동 점검은 2분 간격.
 - 하루 한 번: pg_cron 의 `lego.kick_scan_worker()` 가 하루 지난 대상이 있으면 `/api/scan-worker` 를 부르고, 워커가 `runDueLiveChecks()` 로 3개씩 점검한다.
 
+## 신뢰하지 않는 입력
+
+- 리포 내용·파일 이름·PR 제목·LLM 출력은 공격자가 쓸 수 있다. 스캐너에 백트래킹이 큰 정규식을 넣지 않는다(`adversarial.test.ts` 가 200KB 입력으로 지킨다).
+- GitHub 계정은 `lib/github/identity.ts` 로 `identities` 에서만 읽는다. `user_metadata` 는 사용자가 바꿀 수 있다.
+- GitHub 설치는 사용자마다 따로 연결한다. 연결은 권한이 아니다. 리포를 다루는 동작은 `assertRepoWrite` 로 그때 쓰기 권한을 확인한다.
+- GitHub 코멘트·규칙 파일에 넣는 값은 `shared/lib/untrusted-text.ts` 로 정리한다. 공개 PR 에 스펙 내용을 올리지 않는다.
+- 외부 기여자의 PR(`trusted_author = false`)은 AI 판별과 스펙 범위 확인을 건너뛴다.
+- 서버가 사용자 주소로 요청할 때는 `safeFetch` 만 쓰고, 소유를 확인한 사이트는 `stayOn: sameSite(url)` 를 붙인다.
+
 ## 팀 멤버
 
 - 코드는 `features/members`. 소유자가 프로젝트 화면에서 GitHub 아이디로 초대 링크를 만들고, 그 계정이 `/invites/[token]` 에서 수락한다. 메일은 보내지 않는다(링크는 소유자가 전달). 7일, 한 번만, 프로젝트당 10명.

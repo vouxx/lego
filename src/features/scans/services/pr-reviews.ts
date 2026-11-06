@@ -1,5 +1,7 @@
 import "server-only";
 import { getProjectAccess } from "@/features/members/services/access";
+import { assertRepoWrite } from "@/features/projects/services/repo-access";
+import type { CurrentUser } from "@/lib/auth";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
   findMyProject,
@@ -24,6 +26,7 @@ import {
 
 /** PR 가드 켜기/끄기. 본인 프로젝트이고 GitHub App 으로 연결한 리포여야 한다. */
 export async function changePrGuard(
+  user: CurrentUser,
   projectId: string,
   enabled: boolean,
 ): Promise<Result<{ enabled: boolean }>> {
@@ -34,12 +37,15 @@ export async function changePrGuard(
       "not_supported",
       "주소로 등록한 공개 리포는 PR 가드를 쓸 수 없습니다. GitHub App 으로 연결해 주세요.",
     );
+  const denied = await assertRepoWrite(user, project);
+  if (denied) return denied;
   const { error } = await setPrGuard(projectId, enabled);
   return error ? err("db_error", error.message) : ok({ enabled });
 }
 
 /** PR 가드 엄격도 바꾸기. 다음 PR 커밋부터 적용된다. */
 export async function changePrGuardStrictness(
+  user: CurrentUser,
   projectId: string,
   strictness: Strictness,
 ): Promise<Result<{ strictness: Strictness }>> {
@@ -50,6 +56,8 @@ export async function changePrGuardStrictness(
       "not_supported",
       "주소로 등록한 공개 리포는 PR 가드를 쓸 수 없습니다. GitHub App 으로 연결해 주세요.",
     );
+  const denied = await assertRepoWrite(user, project);
+  if (denied) return denied;
   const { error } = await setPrGuardStrictness(projectId, strictness);
   return error ? err("db_error", error.message) : ok({ strictness });
 }

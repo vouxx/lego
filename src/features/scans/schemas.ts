@@ -151,6 +151,7 @@ export const pullRequestEvent = z.object({
     title: z.string(),
     html_url: z.string(),
     draft: z.boolean().default(false),
+    author_association: z.string().default("NONE"),
     head: z.object({ sha: z.string().regex(/^[0-9a-f]{40}$/) }),
   }),
 });
@@ -250,12 +251,14 @@ export const reviewCommentEvent = z.object({
   action: z.string(),
   installation: z.object({ id: z.number() }).optional(),
   repository: z.object({ full_name: z.string() }),
-  pull_request: z.object({ number: z.number() }),
+  pull_request: z.object({
+    number: z.number(),
+    user: z.object({ login: z.string() }),
+  }),
   comment: z.object({
     id: z.number(),
     body: z.string(),
     in_reply_to_id: z.number().optional(),
-    author_association: z.string(),
     user: z.object({ login: z.string(), type: z.string() }),
   }),
 });

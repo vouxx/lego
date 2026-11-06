@@ -36,8 +36,15 @@ export function lineAt(content: string, offset: number) {
   return line;
 }
 
-/** 번들·압축된 JS. 사람이 쓴 코드가 아니라 규칙이 엉뚱한 곳을 가리키므로 건너뛴다. */
+/**
+ * 번들·압축된 JS. 사람이 쓴 코드가 아니라 규칙이 엉뚱한 곳을 가리키므로 건너뛴다.
+ * 평균이 아니라 중앙값을 본다. 긴 주석 한 줄을 넣어 규칙을 건너뛰게 만들 수 없도록.
+ */
 export function isMinified(content: string) {
-  const lines = content.split("\n");
-  return content.length > 5_000 && content.length / lines.length > 300;
+  if (content.length <= 5_000) return false;
+  const lengths = content
+    .split("\n")
+    .map((line) => line.length)
+    .sort((a, b) => a - b);
+  return lengths[Math.floor(lengths.length / 2)]! > 300;
 }

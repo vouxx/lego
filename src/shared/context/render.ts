@@ -1,3 +1,4 @@
+import { codeSpan, safeLine } from "@/shared/lib/untrusted-text";
 import { STACK_LABELS, type StackTag } from "@/shared/stack/schema";
 import type { ContextAnalysis, ContextTarget, RuleLine } from "./schema";
 
@@ -15,6 +16,9 @@ const VERSION_PACKAGE: Partial<Record<StackTag, string>> = {
   typescript: "typescript",
   tailwind: "tailwindcss",
 };
+
+const SAFE_COMMAND = /^[\w:.@/ -]{1,120}$/;
+const SAFE_PATH = /^[\w.@()[\]/ +-]{1,200}$/;
 
 /** "^16.4.3" → "16". 범위·태그 같은 알 수 없는 값이면 null. */
 export function majorVersion(range: string | undefined) {
@@ -61,16 +65,20 @@ export function renderContext({
   if (stack) blocks.push(`## 기술 스택\n\n${stack}`);
 
   if (analysis.commands.length > 0) {
-    const lines = analysis.commands.map(
-      (c) => `- ${c.label}: \`${c.command}\``,
-    );
-    blocks.push(`## 명령어\n\n${lines.join("\n")}`);
+    // 스크립트·폴더 이름은 리포에서 온 값이다. 평범한 이름이 아니면 규칙 파일에 넣지 않는다.
+    const lines = analysis.commands
+      .filter((c) => SAFE_COMMAND.test(c.command))
+      .map((c) => `- ${safeLine(c.label, 40)}: ${codeSpan(c.command)}`);
+    if (lines.length > 0) blocks.push(`## 명령어\n\n${lines.join("\n")}`);
   }
 
-  if (analysis.folders.length > 0) {
-    const lines = analysis.folders.map((f) =>
-      f.summary ? `- \`${f.path}/\` — ${f.summary}` : `- \`${f.path}/\``,
-    );
+  const folders = analysis.folders.filter((f) => SAFE_PATH.test(f.path));
+  if (folders.length > 0) {
+    const lines = folders.map((f) => {
+      const summary = safeLine(f.summary);
+      const path = codeSpan(`${f.path}/`);
+      return summary ? `- ${path} — ${summary}` : `- ${path}`;
+    });
     blocks.push(`## 폴더 구조\n\n${lines.join("\n")}`);
   }
 
@@ -87,7 +95,7 @@ export function renderContext({
 
   if (analysis.cautions.length > 0) {
     const lines = analysis.cautions.map((c) => {
-      const where = c.files.map((f) => `\`${f}\``).join(", ");
+      const where = c.files.map((f) => codeSpan(f)).join(", ");
       const more =
         c.count > c.files.length ? ` 외 ${c.count - c.files.length}곳` : "";
       return `- [${c.ruleId}] ${c.title} — ${where}${more}. 비슷한 코드를 만들 때 특히 확인한다.`;

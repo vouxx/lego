@@ -6,6 +6,7 @@ import {
   BlockedUrlError,
   assertPublicUrl,
   safeFetch,
+  sameSite,
 } from "@/lib/net/safe-fetch";
 import { reportError } from "@/lib/monitoring";
 import { err, ok, type Result } from "@/shared/lib/result";
@@ -73,7 +74,7 @@ export async function getLivePage(projectId: string) {
   const view: LiveTargetView = {
     id: target.id,
     siteUrl: target.site_url,
-    verifyToken: target.verify_token,
+    verifyToken: project.readOnly ? "" : target.verify_token,
     verified: !!target.verified_at,
     lastCheckedAt: target.last_checked_at,
   };
@@ -108,6 +109,18 @@ export async function createTarget(
   return error ? err("db_error", error.message) : ok({ token });
 }
 
+async function stillVerified(siteUrl: string, token: string) {
+  try {
+    const res = await safeFetch(new URL(VERIFY_PATH, siteUrl).toString(), {
+      stayOn: sameSite(siteUrl),
+    });
+    return res.status === 200 && res.body.includes(token);
+  } catch {
+    // 잠깐 연결이 안 되는 건 소유가 바뀐 게 아니다. 점검 쪽에서 실패로 남긴다.
+    return true;
+  }
+}
+
 /** 사이트의 /.well-known/lego-verify.txt 에 토큰이 있으면 소유를 확인한다. */
 export async function verifyTarget(
   projectId: string,
@@ -117,6 +130,7 @@ export async function verifyTarget(
   try {
     const res = await safeFetch(
       new URL(VERIFY_PATH, target.site_url).toString(),
+      { stayOn: sameSite(target.site_url) },
     );
     if (res.status !== 200 || !res.body.includes(target.verify_token))
       return err(
@@ -174,6 +188,14 @@ export async function runCheck(
   const project = target?.projects;
   if (!target?.verified_at || !project)
     return err("not_found", "점검할 대상이 없습니다.");
+  // 도메인 주인이 바뀌었을 수 있으니 점검할 때마다 소유 확인 파일을 다시 본다.
+  if (!(await stillVerified(target.site_url, target.verify_token))) {
+    await updateTarget(targetId, { verified_at: null });
+    return err(
+      "not_verified",
+      "소유 확인 파일을 찾지 못해 점검을 멈췄습니다. 다시 확인해 주세요.",
+    );
+  }
   await updateTarget(targetId, { last_checked_at: new Date().toISOString() });
   const { data: check, error } = await insertCheck({
     target_id: targetId,

@@ -1,4 +1,5 @@
 import "server-only";
+import { githubIdentity } from "@/lib/github/identity";
 import { err, ok, type Result } from "@/shared/lib/result";
 import { exchangeCodeForSession, upsertProfile } from "../repository";
 
@@ -11,15 +12,15 @@ export async function completeGitHubSignIn(
     return err("auth_exchange_failed", "GitHub 로그인을 완료하지 못했습니다.");
   }
 
-  const meta = data.user.user_metadata;
-  if (typeof meta.user_name !== "string") {
+  const github = githubIdentity(data.user);
+  if (!github) {
     return err("not_github_user", "GitHub 계정으로 로그인해 주세요.");
   }
 
   const { error: profileError } = await upsertProfile({
     id: data.user.id,
-    githubLogin: meta.user_name,
-    avatarUrl: typeof meta.avatar_url === "string" ? meta.avatar_url : null,
+    githubLogin: github.login,
+    avatarUrl: github.avatarUrl,
   });
   if (profileError) {
     return err("profile_upsert_failed", "프로필을 저장하지 못했습니다.");

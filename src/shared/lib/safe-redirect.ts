@@ -4,8 +4,16 @@ export function safeNextPath(
   fallback = "/projects",
 ) {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
-  if (next.includes("\\")) return fallback;
-  return next;
+  // URL 파서는 탭·줄바꿈을 지우고 \ 를 / 로 읽는다. "/\t/evil.com" 은 //evil.com 이 된다.
+  if (/[\\\u0000-\u001f\u007f]/.test(next)) return fallback;
+  try {
+    const base = "https://lego.invalid";
+    const url = new URL(next, base);
+    if (url.origin !== base) return fallback;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return fallback;
+  }
 }
 
 /**

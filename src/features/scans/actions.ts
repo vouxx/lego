@@ -58,6 +58,7 @@ export async function setPrGuardAction(
   const user = await getCurrentUser();
   if (!user) return err("unauthorized", "로그인이 필요합니다.");
   const result = await changePrGuard(
+    user,
     parsed.data.projectId,
     parsed.data.enabled,
   );
@@ -73,6 +74,7 @@ export async function setPrGuardStrictnessAction(
   const user = await getCurrentUser();
   if (!user) return err("unauthorized", "로그인이 필요합니다.");
   const result = await changePrGuardStrictness(
+    user,
     parsed.data.projectId,
     parsed.data.strictness,
   );

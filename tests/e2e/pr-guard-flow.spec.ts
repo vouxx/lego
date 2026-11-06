@@ -135,6 +135,8 @@ let server: Server;
 const slackPosts: string[] = [];
 let slack: Server;
 
+let repoPermissionLevel = "admin";
+
 function startMock() {
   server = createServer((req, res) => {
     let raw = "";
@@ -153,6 +155,8 @@ function startMock() {
           expires_at: new Date(Date.now() + 3_600_000).toISOString(),
           permissions: {},
         });
+      if (/\/collaborators\/[^/]+\/permission$/.test(path))
+        return send(200, { permission: repoPermissionLevel });
       if (path === `/repos/${REPO}/pulls/7/files`) return send(200, pr.files);
       if (path === `/repos/${REPO}/pulls/7/commits`)
         return send(200, [{ commit: { message: "링크 미리보기 API [T-1]" } }]);
@@ -235,6 +239,7 @@ async function sendPullRequest(
   request: APIRequestContext,
   headSha: string,
   action = "opened",
+  association = "OWNER",
 ) {
   const body = JSON.stringify({
     action,
@@ -245,6 +250,7 @@ async function sendPullRequest(
       title: "링크 미리보기 추가",
       html_url: `https://github.com/${REPO}/pull/7`,
       draft: false,
+      author_association: association,
       head: { sha: headSha },
     },
   });
@@ -262,18 +268,18 @@ async function sendReply(
   request: APIRequestContext,
   inReplyTo: number,
   text: string,
-  association = "OWNER",
+  permission = "admin",
 ) {
+  repoPermissionLevel = permission;
   const body = JSON.stringify({
     action: "created",
     installation: { id: INSTALLATION },
     repository: { full_name: REPO },
-    pull_request: { number: 7 },
+    pull_request: { number: 7, user: { login: "someone-else" } },
     comment: {
       id: nextCommentId++,
       body: text,
       in_reply_to_id: inReplyTo,
-      author_association: association,
       user: { login: "vouxx", type: "User" },
     },
   });
@@ -344,7 +350,7 @@ test.beforeAll(async () => {
       installation_id: INSTALLATION,
       account_login: "e2e",
     },
-    { onConflict: "installation_id" },
+    { onConflict: "user_id,installation_id" },
   );
   const { data: project } = await admin
     .from("projects")
@@ -463,7 +469,9 @@ test("PR 을 열면 코멘트·상태 체크·위험 영역·스펙 범위를 �
   const posted = lastCall("POST", "/pulls/7/reviews");
   expect(posted?.body.commit_id).toBe(head);
   expect(String(posted?.body.body)).toContain("이 PR 이 건드린 위험 영역");
-  expect(String(posted?.body.body)).toContain("스펙 작업 범위 (T-1");
+  // 공개 PR 에는 스펙 내용을 올리지 않는다.
+  expect(String(posted?.body.body)).toContain("스펙 작업 범위 확인 결과는");
+  expect(String(posted?.body.body)).not.toContain("링크 미리보기 API");
   const comments = posted?.body.comments as { path: string; line: number }[];
   expect(comments).toEqual(
     expect.arrayContaining([
@@ -546,6 +554,25 @@ test("다음 커밋: 고친 문제는 해결 답글·대화 접기, 새 문제�
   ).toBeVisible();
 });
 
+test("낯선 기여자의 PR 은 AI 를 쓰지 않고 스펙을 찾지 않는다", async ({
+  request,
+}) => {
+  test.setTimeout(120_000);
+  calls.length = 0;
+  const head = sha();
+  await sendPullRequest(request, head, "synchronize", "NONE");
+  const review = await waitForReview(head);
+  expect(review.status).toBe("done");
+  const { data } = await admin
+    .from("pr_reviews")
+    .select("trusted_author")
+    .eq("id", review.id)
+    .single();
+  expect(data?.trusted_author).toBe(false);
+  expect(calls.some((c) => c.path.endsWith("/pulls/7/commits"))).toBe(false);
+  await admin.from("pr_reviews").delete().eq("id", review.id);
+});
+
 test("/lego ignore 답글로 무시하고, 권한 없는 사람은 거절하며, 다음 커밋에도 이어진다", async ({
   request,
   page,
@@ -561,7 +588,7 @@ test("/lego ignore 답글로 무시하고, 권한 없는 사람은 거절하며,
     request,
     commentId,
     "/lego ignore 외부 SDK 타입이 틀려서",
-    "NONE",
+    "read",
   );
   expect(
     calls.some((c) => String(c.body.body).includes("쓰기 권한이 있는 사람만")),

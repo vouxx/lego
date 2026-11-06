@@ -12,7 +12,6 @@ const ERRORS: Record<string, string> = {
   github_verify_failed:
     "GitHub에서 연결 정보를 확인하지 못했습니다. 다시 시도해 주세요.",
   installation_not_accessible: "이 연결에 접근할 권한이 없습니다.",
-  installation_taken: "다른 레고 사용자가 이미 연결한 계정입니다.",
   no_installations:
     "레고에 읽기를 허용한 리포를 찾지 못했습니다. 먼저 '리포 읽기 허용하기'를 눌러 주세요.",
   db_error: "연결 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",

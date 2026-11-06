@@ -167,9 +167,21 @@ async function readPublicRepoAtCommit(
   if (!res.ok) throw new Error(`GitHub codeload ${res.status}`);
   if (Number(res.headers.get("content-length") ?? 0) > MAX_TARBALL_BYTES)
     throw new Error("리포가 너무 커서 읽을 수 없습니다.");
-  const gz = Buffer.from(await res.arrayBuffer());
-  if (gz.length > MAX_TARBALL_BYTES)
-    throw new Error("리포가 너무 커서 읽을 수 없습니다.");
+  // content-length 가 없을 수 있으니 받으면서 잰다.
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  const reader = res.body?.getReader();
+  while (reader) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > MAX_TARBALL_BYTES) {
+      await reader.cancel();
+      throw new Error("리포가 너무 커서 읽을 수 없습니다.");
+    }
+    chunks.push(value);
+  }
+  const gz = Buffer.concat(chunks);
 
   // tarball 의 모든 경로는 "<repo>-<sha>/" 로 시작한다.
   const entries = [

@@ -56,3 +56,19 @@ test("webhook 은 서명이 없으면 거절한다", async ({ request }) => {
   });
   expect(res.status()).toBe(401);
 });
+
+test("모든 페이지에 보안 헤더가 붙는다", async ({ request }) => {
+  const headers = (await request.get("/")).headers();
+  expect(headers["content-security-policy"]).toContain(
+    "frame-ancestors 'none'",
+  );
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["referrer-policy"]).toBe("same-origin");
+});
+
+test("로그인 뒤 이동 주소로 다른 사이트를 넘길 수 없다", async ({ page }) => {
+  await page.goto("/login?next=/%09/evil.example");
+  const next = await page.locator('input[name="next"]').first().inputValue();
+  expect(next).toBe("/projects");
+});

@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { notifyPrGuard } from "@/features/notifications/services/notify";
 import {
   codeContext,
@@ -70,10 +71,12 @@ const REVIEWED_ACTIONS = new Set([
   "ready_for_review",
 ]);
 // 내용을 읽어 보안 규칙을 돌릴 파일. 나머지(이미지, 문서)는 patch 만 본다.
-const READ_CONTENT = /\.(?:[cm]?[jt]sx?|sql)$|(^|\/)package\.json$/;
+const READ_CONTENT = /\.(?:[cm]?[jt]sx?|sql|json|ya?ml|toml)$/;
 const MAX_CONTENT_FILES = 60;
 const MAX_COMMENTS = 20;
 const ENV_TEMPLATES = [".env.example", ".env.local.example", ".env.sample"];
+// 리포에 권한이 있는 사람. 그 밖의 사람(공개 리포의 낯선 기여자)의 PR 은 소유자의 토큰을 쓰지 않는다.
+const TRUSTED_AUTHORS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 const RULE_TITLES = new Map<string, string>([
   ...STATIC_RULES.map((r) => [r.id, r.title] as const),
@@ -115,6 +118,9 @@ export async function handlePullRequestEvent(
       pr_title: event.pull_request.title.slice(0, 300),
       pr_url: event.pull_request.html_url,
       head_sha: event.pull_request.head.sha,
+      trusted_author: TRUSTED_AUTHORS.has(
+        event.pull_request.author_association,
+      ),
     });
     if (insertError) return err("db_error", insertError.message);
     if (data) reviews.push({ reviewId: data.id });
@@ -136,18 +142,17 @@ async function readPullRequest(r: Repo, prNumber: number) {
   const pullFiles = await listPullFiles(r.installationId, r.repo, prNumber);
   const files: ChangedFile[] = [];
   let read = 0;
+  let unchecked = 0;
   for (const f of pullFiles) {
     const status = f.status as ChangedFile["status"];
     let content: string | undefined;
-    if (
-      status !== "removed" &&
-      READ_CONTENT.test(f.path) &&
-      read < MAX_CONTENT_FILES
-    ) {
-      read++;
-      content =
-        (await readFileAtRef(r.installationId, r.repo, f.path, r.headSha)) ??
-        undefined;
+    if (status !== "removed" && READ_CONTENT.test(f.path)) {
+      if (read < MAX_CONTENT_FILES) {
+        read++;
+        content =
+          (await readFileAtRef(r.installationId, r.repo, f.path, r.headSha)) ??
+          undefined;
+      } else unchecked++;
     }
     files.push({ path: f.path, status, patch: f.patch, content });
   }
@@ -156,35 +161,52 @@ async function readPullRequest(r: Repo, prNumber: number) {
     const text = await readFileAtRef(r.installationId, r.repo, name, r.headSha);
     if (text !== null) templates.push(text);
   }
-  return { files, templates };
+  return { files, templates, unchecked };
 }
 
-type Item = JudgeItem & { candidate: Candidate; fingerprint: string };
+type Item = JudgeItem & {
+  candidate: Candidate;
+  fingerprint: string;
+  contextHash: string;
+};
 type Judged = {
   verdict: AiVerdict | null;
   explanation: string | null;
   fixPrompt: string | null;
+  contextHash?: string | null;
 };
 
+/** 줄 번호를 뺀 주변 코드의 해시. 위에 줄이 추가돼 밀린 것만으로는 달라지지 않는다. */
+const contextHashOf = (context: string) =>
+  createHash("sha256")
+    .update(context.replace(/^\s*\d+ \| /gm, ""))
+    .digest("hex");
+
 /**
- * 보안 규칙 후보만 AI 판별·설명. 직전 커밋에서 이미 판별한 같은 문제(fingerprint)는 그 결과를 다시 쓴다.
+ * 보안 규칙 후보만 AI 판별·설명. 직전 커밋에서 이미 판별한 같은 문제는 그 결과를 다시 쓴다.
+ * 주변 코드가 바뀌면 다시 판별한다(막아 주던 코드를 다음 커밋에서 지우는 경우).
  * PR 규칙은 diff 로 확정되므로 고정 안내를 쓴다.
+ * useLlm 이 false 면(외부 기여자, 토큰 소진) 판별하지 않고 그대로 보여 준다.
  */
 async function judgeItems(
   items: Item[],
   previous: Map<string, Judged>,
   stack: string,
+  useLlm: boolean,
   onUsage: (purpose: "triage" | "explain", usage: LlmUsage) => Promise<boolean>,
 ) {
   const results = new Map<number, Judged>();
   const fresh: Item[] = [];
   for (const item of items) {
     const before = previous.get(item.fingerprint);
-    if (before?.verdict) results.set(item.id, before);
+    const unchanged =
+      !item.ruleId.startsWith("SEC-") ||
+      before?.contextHash === item.contextHash;
+    if (before?.verdict && unchanged) results.set(item.id, before);
     else if (item.ruleId.startsWith("SEC-")) fresh.push(item);
   }
   let llm: PrReviewSummary["llm"] = fresh.length === 0 ? undefined : "done";
-  if (fresh.length > 0 && !isLlmConfigured()) llm = "skipped";
+  if (fresh.length > 0 && (!useLlm || !isLlmConfigured())) llm = "skipped";
   else if (fresh.length > 0) {
     const noop = async () => {};
     const triaged = await triage(fresh, stack, onUsage, noop);
@@ -245,7 +267,10 @@ export async function processPrReview(reviewId: string) {
   }
 
   try {
-    const { files, templates } = await readPullRequest(r, review.pr_number);
+    const { files, templates, unchecked } = await readPullRequest(
+      r,
+      review.pr_number,
+    );
     const { candidates, errors } = reviewPullRequest(
       files,
       templates.length > 0 ? templates : null,
@@ -267,18 +292,22 @@ export async function processPrReview(reviewId: string) {
       const fp = fingerprint(c);
       if (!byFp.has(fp)) byFp.set(fp, c);
     }
-    const items: Item[] = [...byFp].map(([fp, c], id) => ({
-      id,
-      fingerprint: fp,
-      candidate: c,
-      ruleId: c.ruleId,
-      ruleTitle: RULE_TITLES.get(c.ruleId) ?? c.ruleId,
-      filePath: c.filePath,
-      lineStart: c.lineStart,
-      lineEnd: c.lineEnd,
-      reason: c.reason,
-      context: codeContext(contents.get(c.filePath), c),
-    }));
+    const items: Item[] = [...byFp].map(([fp, c], id) => {
+      const context = codeContext(contents.get(c.filePath), c);
+      return {
+        id,
+        fingerprint: fp,
+        candidate: c,
+        ruleId: c.ruleId,
+        ruleTitle: RULE_TITLES.get(c.ruleId) ?? c.ruleId,
+        filePath: c.filePath,
+        lineStart: c.lineStart,
+        lineEnd: c.lineEnd,
+        reason: c.reason,
+        context,
+        contextHash: contextHashOf(context),
+      };
+    });
 
     const prev = await getPreviousPrReview(
       project.id,
@@ -302,8 +331,11 @@ export async function processPrReview(reviewId: string) {
         review.user_id,
         usage.inputTokens + usage.outputTokens,
       );
-      return hasRemaining !== false;
+      return hasRemaining === true;
     };
+    // 토큰이 없으면 호출 자체를 하지 않는다. 낯선 사람의 PR 에는 소유자의 토큰을 쓰지 않는다.
+    const { data: hasTokens } = await addTokenUsage(review.user_id, 0);
+    const useLlm = review.trusted_author && hasTokens === true;
     const { results, llm } = await judgeItems(
       items,
       new Map(
@@ -313,17 +345,19 @@ export async function processPrReview(reviewId: string) {
             verdict: f.ai_verdict as AiVerdict | null,
             explanation: f.explanation,
             fixPrompt: f.fix_prompt,
+            contextHash: f.context_hash,
           },
         ]),
       ),
       stackLabel(project.detected_stack),
+      useLlm,
       onUsage,
     );
 
     // 위험 영역 + 스펙 작업 범위(첫 리뷰에서만 AI 를 쓴다)
     const risk = riskAreas(files);
     let scope: PrScope | null = null;
-    if (!prev.review) {
+    if (!prev.review && review.trusted_author) {
       try {
         const commits = await listPullCommitMessages(
           r.installationId,
@@ -363,6 +397,7 @@ export async function processPrReview(reviewId: string) {
         reason: item.reason,
         ai_verdict: judged?.verdict ?? null,
         explanation: judged?.explanation ?? null,
+        context_hash: judged?.verdict ? item.contextHash : null,
         fix_prompt:
           judged?.fixPrompt ??
           PR_FIX_PROMPTS[item.ruleId]?.(item.filePath, item.lineStart) ??
@@ -434,7 +469,7 @@ export async function processPrReview(reviewId: string) {
               inlineCount: inline.length,
               resolved,
               risk,
-              scope,
+              hasScope: !!scope,
             }),
             comments: inline.map((x) => ({
               path: x.file_path,
@@ -494,7 +529,8 @@ export async function processPrReview(reviewId: string) {
       findings: shown,
       resolved,
       risk,
-      scope,
+      hasScope: !!scope,
+      unchecked,
       strictness,
     });
     let postedCheck = false;
