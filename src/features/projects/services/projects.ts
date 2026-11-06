@@ -1,4 +1,5 @@
 import "server-only";
+import { getProjectAccess } from "@/features/members/services/access";
 import type { CurrentUser } from "@/lib/auth";
 import { installationOctokit } from "@/lib/github/app";
 import {
@@ -39,15 +40,15 @@ export async function getMyProjects(): Promise<Result<ProjectSummary[]>> {
 export async function getProject(
   projectId: string,
 ): Promise<Result<ProjectSummary>> {
-  const { data, error } = await getMyProject(projectId);
-  if (error) return err("db_error", "프로젝트를 불러오지 못했습니다.");
-  if (!data) return err("not_found", "프로젝트를 찾을 수 없습니다.");
-  const stack = detectedStackSchema.safeParse(data.detected_stack);
+  const access = await getProjectAccess(projectId);
+  if (!access) return err("not_found", "프로젝트를 찾을 수 없습니다.");
+  const stack = detectedStackSchema.safeParse(access.detectedStack);
   return ok({
-    id: data.id,
-    repoFullName: data.repo_full_name,
-    defaultBranch: data.default_branch,
+    id: projectId,
+    repoFullName: access.repoFullName,
+    defaultBranch: access.defaultBranch,
     stack: stack.success ? stack.data : null,
+    role: access.role,
   });
 }
 

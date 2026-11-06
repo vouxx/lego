@@ -677,6 +677,92 @@ export type Database = {
         };
         Relationships: [];
       };
+      project_invites: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          github_login: string;
+          id: string;
+          invited_by: string;
+          project_id: string;
+          token_hash: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          github_login: string;
+          id?: string;
+          invited_by: string;
+          project_id: string;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          github_login?: string;
+          id?: string;
+          invited_by?: string;
+          project_id?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_invites_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_invites_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_members: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string;
+          github_login: string;
+          project_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          avatar_url?: string | null;
+          created_at?: string;
+          github_login: string;
+          project_id: string;
+          user_id: string;
+        };
+        Update: {
+          avatar_url?: string | null;
+          created_at?: string;
+          github_login?: string;
+          project_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       projects: {
         Row: {
           created_at: string;
@@ -943,9 +1029,11 @@ export type Database = {
           channel_name: string;
           created_at: string;
           last_error: string | null;
+          last_weekly_at: string;
           notify_guard: boolean;
           notify_live: boolean;
           notify_scan: boolean;
+          notify_weekly: boolean;
           project_id: string;
           team_id: string;
           team_name: string;
@@ -959,9 +1047,11 @@ export type Database = {
           channel_name?: string;
           created_at?: string;
           last_error?: string | null;
+          last_weekly_at?: string;
           notify_guard?: boolean;
           notify_live?: boolean;
           notify_scan?: boolean;
+          notify_weekly?: boolean;
           project_id: string;
           team_id: string;
           team_name?: string;
@@ -974,9 +1064,11 @@ export type Database = {
           channel_name?: string;
           created_at?: string;
           last_error?: string | null;
+          last_weekly_at?: string;
           notify_guard?: boolean;
           notify_live?: boolean;
           notify_scan?: boolean;
+          notify_weekly?: boolean;
           project_id?: string;
           team_id?: string;
           team_name?: string;
@@ -1246,6 +1338,15 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_project_invite: {
+        Args: {
+          p_avatar: string;
+          p_login: string;
+          p_token_hash: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       ack_scan_job: { Args: { p_msg_id: number }; Returns: boolean };
       add_token_usage: {
         Args: { p_tokens: number; p_user_id: string };

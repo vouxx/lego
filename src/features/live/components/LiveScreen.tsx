@@ -13,9 +13,17 @@ type Props = {
   repoFullName: string;
   target: LiveTargetView | null;
   checks: LiveCheckView[];
+  /** 초대받은 멤버: 결과만 본다 */
+  readOnly?: boolean;
 };
 
-export function LiveScreen({ projectId, repoFullName, target, checks }: Props) {
+export function LiveScreen({
+  projectId,
+  repoFullName,
+  target,
+  checks,
+  readOnly = false,
+}: Props) {
   const latest = checks[0];
   return (
     <div className="flex flex-col gap-6">
@@ -28,7 +36,7 @@ export function LiveScreen({ projectId, repoFullName, target, checks }: Props) {
         title="운영 상태 점검"
         description="코드가 아니라 배포된 사이트를 밖에서 공격자가 보는 그대로 확인합니다. 로그인 없이 읽히는 테이블·버킷, 배포된 JS 의 비밀 키, 보안 헤더, 열려 있는 .env·.git 을 봅니다. 읽기 요청만 보내고, 응답 내용은 저장하지 않습니다."
         actions={
-          target ? (
+          target && !readOnly ? (
             <DeleteButton
               action={removeLiveTargetAction.bind(null, { projectId })}
               redirectTo={`/projects/${projectId}/live`}
@@ -38,14 +46,22 @@ export function LiveScreen({ projectId, repoFullName, target, checks }: Props) {
           ) : null
         }
       />
-      <section className="flex flex-col gap-2">
-        <p className="text-sm font-semibold">배포 주소</p>
-        <LiveTargetForm projectId={projectId} current={target?.siteUrl} />
-      </section>
-      {target && !target.verified ? (
+      {readOnly ? (
+        <p className="text-muted-foreground text-sm">
+          {target?.verified
+            ? `점검 대상: ${target.siteUrl}`
+            : "소유자가 아직 점검 대상을 확인하지 않았습니다."}
+        </p>
+      ) : (
+        <section className="flex flex-col gap-2">
+          <p className="text-sm font-semibold">배포 주소</p>
+          <LiveTargetForm projectId={projectId} current={target?.siteUrl} />
+        </section>
+      )}
+      {target && !target.verified && !readOnly ? (
         <LiveVerifyBox projectId={projectId} target={target} />
       ) : null}
-      {target?.verified ? (
+      {target?.verified && !readOnly ? (
         <div className="flex flex-wrap items-center gap-3">
           <LiveActionButton
             action={runLiveCheckAction.bind(null, { projectId })}

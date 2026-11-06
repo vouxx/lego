@@ -35,7 +35,7 @@ export default defineConfig({
     {
       name: "local-signed-in",
       testMatch:
-        /(context|spec|webhook|pr-guard|live|admin|trend|slack)-flow\.spec\.ts/,
+        /(context|spec|webhook|pr-guard|live|admin|trend|slack|weekly|members)-flow\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         storageState: existsSync(LOCAL_AUTH_STATE)

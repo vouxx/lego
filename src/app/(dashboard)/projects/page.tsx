@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ProjectList } from "@/features/projects/components/ProjectList";
+import { getSharedProjects } from "@/features/members/services/members";
 import { getMyProjects } from "@/features/projects/services/projects";
+import { requireUser } from "@/lib/auth";
 import { buttonVariants } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/ui/page-header";
 
@@ -27,12 +29,31 @@ export default function ProjectsPage() {
 }
 
 async function Projects() {
-  const result = await getMyProjects();
+  const user = await requireUser();
+  const [result, shared] = await Promise.all([
+    getMyProjects(),
+    getSharedProjects(user),
+  ]);
   if (!result.ok)
     return (
       <p role="alert" className="text-destructive text-sm">
         {result.error.message}
       </p>
     );
-  return <ProjectList projects={result.data} />;
+  return (
+    <>
+      <ProjectList projects={result.data} />
+      {shared.length > 0 ? (
+        <section
+          className="flex flex-col gap-3"
+          aria-labelledby="shared-projects-title"
+        >
+          <h2 id="shared-projects-title" className="font-medium">
+            초대받은 프로젝트
+          </h2>
+          <ProjectList projects={shared} />
+        </section>
+      ) : null}
+    </>
+  );
 }

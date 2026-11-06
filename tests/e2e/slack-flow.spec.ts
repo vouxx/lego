@@ -103,7 +103,10 @@ test("Slack 에 추가하면 채널이 연결되고, 알림 설정·시험 메�
   await expect(section).toContainText("e2e-team");
   // 서버가 code 를 client secret 과 함께 바꿨고, 확인 메시지를 보냈다.
   expect(exchanged.code).toBe("mock-code");
-  expect(exchanged.client_secret).toBe("local-test-secret");
+  // 실패해도 값이 출력되지 않게 같은지만 본다(.env.local 에 실제 값이 있을 수 있다).
+  expect(exchanged.client_secret === process.env.SLACK_CLIENT_SECRET).toBe(
+    true,
+  );
   expect(posts.at(-1)?.body.text).toContain(`${REPO} 알림이 이 채널로 옵니다`);
 
   // webhook 주소는 사용자 세션으로 읽을 수 없다(서버 전용).

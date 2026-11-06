@@ -1,4 +1,5 @@
 import type { SlackMessage } from "@/lib/slack/client";
+import type { WeeklySummary } from "./weekly-summary";
 
 /** Slack 메시지 모양. 화면·네트워크 없이 문구만 만든다(단위 테스트 대상). */
 
@@ -110,6 +111,35 @@ export function scanMessage(params: {
         }`,
       ),
       ...linkButton(params.url, "결과와 수정 프롬프트 보기"),
+    ],
+  };
+}
+
+export function weeklyMessage(params: {
+  repo: string;
+  summary: WeeklySummary;
+  url: string | null;
+}): SlackMessage {
+  const { scan, pr, live } = params.summary;
+  const lines = [
+    scan.total === 0
+      ? "*보안 점검* 아직 끝난 점검이 없습니다."
+      : `*보안 점검* 남은 문제 ${scan.open}개(치명·높음 ${scan.serious}개) · 지난주 새로 생김 ${scan.added}개 · 해결 ${scan.fixed}개`,
+    pr.total === 0
+      ? "*PR 가드* 지난주 점검한 PR 이 없습니다."
+      : `*PR 가드* PR ${pr.total}개 중 ${pr.passed}개 통과`,
+    ...(live.checks === 0
+      ? []
+      : [
+          `*운영 점검* ${live.checks}번 점검 · 새 문제 ${live.added}개 · 남은 문제 ${live.open}개`,
+        ]),
+  ];
+  return {
+    text: `[레고] ${params.repo} 주간 요약: 남은 문제 ${scan.open}개`,
+    blocks: [
+      section(`*주간 요약* · ${esc(params.repo)}`),
+      section(lines.join("\n")),
+      ...linkButton(params.url, "레고에서 보기"),
     ],
   };
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { getProjectAccess } from "@/features/members/services/access";
 import { err, ok, type Result } from "@/shared/lib/result";
 import {
   findMyProject,
@@ -104,7 +105,11 @@ export async function getPrReviewDetail(reviewId: string) {
   return {
     ...toRow(review),
     projectId: review.project_id,
-    repoFullName: review.projects?.repo_full_name ?? "",
+    // 멤버에게는 projects 가 보이지 않는다.
+    repoFullName:
+      review.projects?.repo_full_name ??
+      (await getProjectAccess(review.project_id))?.repoFullName ??
+      "",
     headSha: review.head_sha,
     error: review.error,
     findings: views,

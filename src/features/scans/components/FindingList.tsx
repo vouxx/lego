@@ -3,11 +3,16 @@ import { FindingCard } from "./FindingCard";
 
 type Props = {
   findings: FindingView[];
+  readOnly?: boolean;
   /** 직전 점검에는 없던 항목 id */
   newFindingIds?: string[];
 };
 
-export function FindingList({ findings, newFindingIds = [] }: Props) {
+export function FindingList({
+  findings,
+  newFindingIds = [],
+  readOnly = false,
+}: Props) {
   const newIds = new Set(newFindingIds);
   const visible = findings.filter((f) => f.aiVerdict !== "false_positive");
   const falsePositives = findings.filter(
@@ -24,7 +29,11 @@ export function FindingList({ findings, newFindingIds = [] }: Props) {
         <ul className="flex flex-col gap-4">
           {visible.map((finding) => (
             <li key={finding.id}>
-              <FindingCard finding={finding} isNew={newIds.has(finding.id)} />
+              <FindingCard
+                finding={finding}
+                isNew={newIds.has(finding.id)}
+                readOnly={readOnly}
+              />
             </li>
           ))}
         </ul>
@@ -37,7 +46,7 @@ export function FindingList({ findings, newFindingIds = [] }: Props) {
           <ul className="mt-4 flex flex-col gap-4">
             {falsePositives.map((finding) => (
               <li key={finding.id}>
-                <FindingCard finding={finding} />
+                <FindingCard finding={finding} readOnly={readOnly} />
               </li>
             ))}
           </ul>

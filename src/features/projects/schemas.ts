@@ -27,4 +27,6 @@ export type ProjectSummary = {
   repoFullName: string;
   defaultBranch: string;
   stack: DetectedStack | null;
+  /** getProject 만 채운다. viewer 는 초대받아 보기만 하는 사람. */
+  role?: "owner" | "viewer";
 };

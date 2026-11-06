@@ -4,6 +4,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import type { DetectedStack } from "@/shared/stack/schema";
 import { StackTags } from "./StackTags";
 import { DeleteButton } from "@/shared/ui/delete-button";
+import { Badge } from "@/shared/ui/badge";
 import { deleteProjectAction } from "../actions";
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
   stack: DetectedStack | null;
   /** 보안 점검 시작 버튼(scans 기능) */
   scanAction?: ReactNode;
+  /** 있으면 초대받은 멤버 화면: 도구 없이 이 동작(나가기)만 보여 준다 */
+  viewerAction?: ReactNode;
 };
 
 /** 프로젝트 머리말과 이 리포에서 쓰는 도구 네 칸. */
@@ -20,7 +23,32 @@ export function ProjectHeader({
   repoFullName,
   stack,
   scanAction,
+  viewerAction,
 }: Props) {
+  if (viewerAction) {
+    return (
+      <div className="flex flex-col gap-3">
+        <PageHeader
+          trail={[
+            { href: "/projects", label: "프로젝트" },
+            { label: repoFullName },
+          ]}
+          title={<span className="font-mono">{repoFullName}</span>}
+          description={stack ? <StackTags tags={stack.tags} /> : null}
+          actions={viewerAction}
+        />
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <Badge variant="secondary">보기 전용</Badge>
+          <Link
+            href={`/projects/${projectId}/live`}
+            className="font-medium hover:underline"
+          >
+            운영 점검 결과 보기 →
+          </Link>
+        </div>
+      </div>
+    );
+  }
   const tools = [
     {
       command: "scan",

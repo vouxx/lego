@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { getProjectAccess } from "@/features/members/services/access";
 import { ScanReport } from "@/features/scans/components/ScanReport";
 import {
   getScan,
@@ -23,8 +24,11 @@ export default function ScanPage({ params }: { params: Params }) {
 
 async function Scan({ params }: { params: Params }) {
   const { projectId, scanId } = await params;
-  const scan = await getScan(scanId);
-  if (!scan.ok || scan.data.projectId !== projectId) notFound();
+  const [scan, access] = await Promise.all([
+    getScan(scanId),
+    getProjectAccess(projectId),
+  ]);
+  if (!scan.ok || scan.data.projectId !== projectId || !access) notFound();
 
   const [findings, diff] =
     scan.data.status === "done"
@@ -36,6 +40,7 @@ async function Scan({ params }: { params: Params }) {
       scan={scan.data}
       findings={findings}
       diff={diff?.ok ? diff.data : null}
+      readOnly={access.role === "viewer"}
     />
   );
 }

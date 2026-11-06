@@ -28,6 +28,7 @@ export async function getSlackState(projectId: string): Promise<{
             live: data.notify_live,
             guard: data.notify_guard,
             scan: data.notify_scan,
+            weekly: data.notify_weekly,
           },
           lastError: data.last_error,
         }
@@ -39,6 +40,7 @@ const COLUMN = {
   live: "notify_live",
   guard: "notify_guard",
   scan: "notify_scan",
+  weekly: "notify_weekly",
 } as const;
 
 export async function changeNotify(
@@ -49,6 +51,10 @@ export async function changeNotify(
 ): Promise<Result<null>> {
   const { data, error } = await updateSlackConnection(projectId, user.id, {
     [COLUMN[kind]]: enabled,
+    // 꺼 둔 사이의 요약을 켜자마자 보내지 않는다.
+    ...(kind === "weekly" && enabled
+      ? { last_weekly_at: new Date().toISOString() }
+      : {}),
   });
   if (error) return err("db_error", error.message);
   return data ? ok(null) : err("not_found", "Slack 연결이 없습니다.");

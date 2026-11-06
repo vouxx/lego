@@ -106,6 +106,7 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 관리자 오탐 피드백(`/admin/feedback`): `ADMIN_USER_IDS`(auth user id, 쉼표) 계정만. user_metadata 는 사용자가 바꿀 수 있으니 쓰지 않는다. 집계는 `lego.rule_feedback()`(service_role 전용), 같은 (프로젝트, fingerprint) 는 한 건.
 - 프로젝트 보안 추이: `services/trend.ts computeTrend`(순수 함수) — 끝난 점검 최근 30개, 오탐·무시 제외, 해결 시간 중앙값.
 - 사용자용 Slack 알림(`features/notifications`, `slack_connections`): "Slack 에 추가" = OAuth v2 `incoming-webhook` 스코프만(봇 서버·토큰 저장 없음). `/api/slack/oauth/start` 가 state 쿠키(nonce.projectId)를 두고, callback 이 맞춰 본 뒤 webhook 을 저장한다. webhook_url 은 authenticated 에 열 권한이 없다(서버 전용). 보내는 곳: 운영 점검(새 문제), PR 가드(첫 리뷰 실패 또는 새 문제로 실패), 보안 점검(기본 꺼짐). 실패는 삼키고 last_error 에 남긴다. 로컬 E2E 는 `SLACK_API_URL` 모의 서버(운영에서는 무시, webhook 은 hooks.slack.com 만).
+- 주간 요약(`notifications/services/weekly.ts`): 매주 월요일 00:00 UTC(09:00 KST) 뒤 첫 워커 호출에서 지난주(월~일) 요약을 보낸다. `kick_scan_worker` 가 대상이 있을 때도 워커를 부른다. `last_weekly_at` 을 먼저 차지하고 보내므로 겹쳐 돌아도 한 번만 가고, 실패해도 그 주는 다시 보내지 않는다. 아무 일도 없고 남은 문제도 없는 주는 보내지 않는다.
 - 위험 영역(`scanner/diff/risk.ts`: 로그인·DB·결제·설정·CI·의존성·큰 변경)과 스펙 작업 범위(제목·커밋의 [T-n] → 작업 설명과 바뀐 파일을 Haiku 로 비교, 첫 리뷰에서만)를 리뷰 본문·체크·화면에 보여 준다.
 - GitHub API 주소는 `GITHUB_API_URL` 로 바꿀 수 있다(production 이 아닐 때만). 로컬 E2E 는 모의 서버(localhost:4010)를 쓴다.
 
@@ -117,6 +118,14 @@ pnpm 이 PATH 에 없으면 `npx pnpm@12.16.1 <명령>` 으로 실행한다.
 - 읽기 요청만 보낸다(테이블은 `limit=1` + `count=exact`, 버킷은 목록 5개). 응답 내용(행·파일·키 원문)은 저장하지 않고 판정만 `live_checks.results` 에 남긴다.
 - 코드 비교(LIVE-006)는 가장 최근 스캔 커밋의 마이그레이션으로 한다. 직전 점검에 없던 항목은 '새로 생김'. 수동 점검은 2분 간격.
 - 하루 한 번: pg_cron 의 `lego.kick_scan_worker()` 가 하루 지난 대상이 있으면 `/api/scan-worker` 를 부르고, 워커가 `runDueLiveChecks()` 로 3개씩 점검한다.
+
+## 팀 멤버
+
+- 코드는 `features/members`. 소유자가 프로젝트 화면에서 GitHub 아이디로 초대 링크를 만들고, 그 계정이 `/invites/[token]` 에서 수락한다. 메일은 보내지 않는다(링크는 소유자가 전달). 7일, 한 번만, 프로젝트당 10명.
+- 토큰은 해시(`project_invites.token_hash`)만 저장한다. 수락은 `lego.accept_project_invite`(service_role 전용)가 초대 삭제와 멤버 추가를 한 트랜잭션으로 한다. GitHub 아이디는 user_metadata 라서 사용자가 바꿀 수 있다. 토큰이 진짜 자격이고 아이디는 추가 확인이다.
+- 멤버는 **보기 전용**이다. 읽기 정책은 scans·findings·pr_reviews·pr_review_findings·live_targets·live_checks 에만 더했다. 규칙 파일·스펙·Slack 연결은 소유자 전용.
+- **`lego.projects` 의 읽기 정책은 넓히지 않는다.** 쓰기 전 소유 확인이 projects 를 RLS 로 읽는 방식(`findMyProject`, `getMyProject`)이라, 여기를 멤버에게 열면 멤버가 쓰기까지 하게 된다. 멤버 화면의 프로젝트 정보는 `getProjectAccess`(멤버십 확인 뒤 secret 키)로 읽는다.
+- 위 결과 표를 읽어서 쓰기를 허용하면 안 된다(예: `getMyTarget` 만으로 대상 삭제). 쓰기는 `ownedTarget` 처럼 projects 로 소유자를 확인한다.
 
 ## 인증 / 권한
 

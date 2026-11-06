@@ -449,7 +449,7 @@ export async function listMyRecentPrReviews() {
   return supabase
     .from("pr_reviews")
     .select(
-      "id, project_id, pr_number, pr_title, pr_url, status, summary, created_at, projects(repo_full_name)",
+      "id, project_id, pr_number, pr_title, pr_url, status, summary, created_at, projects!inner(repo_full_name)",
     )
     .order("created_at", { ascending: false })
     .limit(30);

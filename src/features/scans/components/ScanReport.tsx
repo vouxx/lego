@@ -12,9 +12,11 @@ type Props = {
   scan: ScanView;
   findings: Result<FindingView[]> | null;
   diff: ScanDiffView | null;
+  /** 초대받은 멤버: 상태를 바꾸지 못한다 */
+  readOnly?: boolean;
 };
 
-export function ScanReport({ scan, findings, diff }: Props) {
+export function ScanReport({ scan, findings, diff, readOnly = false }: Props) {
   return (
     <>
       <PageHeader
@@ -45,6 +47,7 @@ export function ScanReport({ scan, findings, diff }: Props) {
         <FindingList
           findings={findings.data}
           newFindingIds={diff?.newFindingIds}
+          readOnly={readOnly}
         />
       ) : null}
       {findings && !findings.ok ? (

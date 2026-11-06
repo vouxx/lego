@@ -9,6 +9,8 @@ type Props = {
   enabled: boolean;
   strictness: Strictness;
   reviews: PrReviewRow[];
+  /** 초대받은 멤버: 리뷰만 본다 */
+  readOnly?: boolean;
 };
 
 /** 프로젝트 화면의 PR 가드: 켜기/끄기와 최근 PR 점검 */
@@ -18,6 +20,7 @@ export function PrGuardSection({
   enabled,
   strictness,
   reviews,
+  readOnly = false,
 }: Props) {
   return (
     <section className="flex flex-col gap-3" aria-labelledby="pr-guard-title">
@@ -32,14 +35,16 @@ export function PrGuardSection({
             문서에 없는 환경 변수, 이름을 흉내 낸 패키지를 찾습니다.
           </p>
         </div>
-        {available ? (
+        {available && !readOnly ? (
           <PrGuardToggle projectId={projectId} enabled={enabled} />
         ) : null}
       </div>
-      {available && enabled ? (
+      {available && enabled && !readOnly ? (
         <PrGuardStrictness projectId={projectId} strictness={strictness} />
       ) : null}
-      {available ? (
+      {readOnly ? (
+        <PrReviewList projectId={projectId} reviews={reviews} />
+      ) : available ? (
         enabled || reviews.length > 0 ? (
           <PrReviewList projectId={projectId} reviews={reviews} />
         ) : null

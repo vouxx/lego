@@ -28,6 +28,7 @@ async function Live({ params }: Pick<Props, "params">) {
     <LiveScreen
       projectId={projectId}
       repoFullName={page.project.repo_full_name}
+      readOnly={page.project.readOnly}
       target={page.target}
       checks={page.checks}
     />

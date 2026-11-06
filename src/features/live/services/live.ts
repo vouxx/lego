@@ -1,4 +1,5 @@
 import "server-only";
+import { getProjectAccess } from "@/features/members/services/access";
 import { notifyLiveCheck } from "@/features/notifications/services/notify";
 import { randomBytes } from "node:crypto";
 import {
@@ -41,10 +42,22 @@ const MANUAL_GAP_MS = 2 * 60 * 1000;
 
 const key = (r: { id: string; target: string }) => `${r.id}|${r.target}`;
 
-/** 화면용: 대상과 최근 점검 */
-export async function getLivePage(projectId: string) {
+/** 쓰기 전 확인. live_targets 는 멤버도 읽으므로 소유자만 읽히는 projects 로 확인한다. */
+async function ownedTarget(projectId: string) {
   const { data: project } = await findMyProject(projectId);
   if (!project) return null;
+  const { data: target } = await getMyTarget(projectId);
+  return target;
+}
+
+/** 화면용: 대상과 최근 점검 */
+export async function getLivePage(projectId: string) {
+  const access = await getProjectAccess(projectId);
+  if (!access) return null;
+  const project = {
+    repo_full_name: access.repoFullName,
+    readOnly: access.role === "viewer",
+  };
   const { data: target } = await getMyTarget(projectId);
   if (!target) return { project, target: null, checks: [] };
   const { data: rows } = await listMyChecks(target.id);
@@ -99,7 +112,7 @@ export async function createTarget(
 export async function verifyTarget(
   projectId: string,
 ): Promise<Result<{ verified: true }>> {
-  const { data: target } = await getMyTarget(projectId);
+  const target = await ownedTarget(projectId);
   if (!target) return err("not_found", "먼저 배포 주소를 등록해 주세요.");
   try {
     const res = await safeFetch(
@@ -127,7 +140,7 @@ export async function verifyTarget(
 export async function removeTarget(
   projectId: string,
 ): Promise<Result<{ removed: true }>> {
-  const { data: target } = await getMyTarget(projectId);
+  const target = await ownedTarget(projectId);
   if (!target) return ok({ removed: true });
   const { error } = await deleteTarget(target.id);
   return error ? err("db_error", error.message) : ok({ removed: true });
@@ -137,7 +150,7 @@ export async function removeTarget(
 export async function runManualCheck(
   projectId: string,
 ): Promise<Result<{ checkId: string }>> {
-  const { data: target } = await getMyTarget(projectId);
+  const target = await ownedTarget(projectId);
   if (!target) return err("not_found", "먼저 배포 주소를 등록해 주세요.");
   if (!target.verified_at)
     return err("not_verified", "소유 확인을 먼저 해 주세요.");

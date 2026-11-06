@@ -3,7 +3,13 @@ import { postWebhook, type SlackMessage } from "@/lib/slack/client";
 import { reportError } from "@/lib/monitoring";
 import { getSlackConnectionForWorker, setSlackError } from "../repository";
 import type { NotifyKind } from "../schemas";
-import { guardMessage, liveMessage, scanMessage } from "./messages";
+import {
+  guardMessage,
+  liveMessage,
+  scanMessage,
+  weeklyMessage,
+} from "./messages";
+import type { WeeklySummary } from "./weekly-summary";
 
 /**
  * 점검이 끝난 뒤 부른다. 연결이 없거나 그 종류를 껐으면 아무것도 안 한다.
@@ -21,6 +27,7 @@ async function send(
       live: conn.notify_live,
       guard: conn.notify_guard,
       scan: conn.notify_scan,
+      weekly: conn.notify_weekly,
     }[kind];
     if (!enabled) return;
     await postWebhook(
@@ -102,5 +109,11 @@ export function notifyScan(params: {
       total: params.total,
       url: link(`/projects/${params.projectId}/scans/${params.scanId}`),
     }),
+  );
+}
+
+export function notifyWeekly(projectId: string, summary: WeeklySummary) {
+  return send(projectId, "weekly", (repo) =>
+    weeklyMessage({ repo, summary, url: link(`/projects/${projectId}`) }),
   );
 }

@@ -12,9 +12,13 @@ const VERDICT_NOTE: Record<string, string> = {
   false_positive: "AI가 오탐으로 판단한 항목입니다.",
 };
 
-type Props = { finding: FindingView; isNew?: boolean };
+type Props = { finding: FindingView; isNew?: boolean; readOnly?: boolean };
 
-export function FindingCard({ finding, isNew = false }: Props) {
+export function FindingCard({
+  finding,
+  isNew = false,
+  readOnly = false,
+}: Props) {
   const location =
     finding.lineStart === finding.lineEnd
       ? `${finding.filePath}:${finding.lineStart}`
@@ -49,10 +53,14 @@ export function FindingCard({ finding, isNew = false }: Props) {
         ) : null}
         {finding.fixPrompt ? <FixPromptBox prompt={finding.fixPrompt} /> : null}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <FindingStatusControl
-            findingId={finding.id}
-            status={finding.status}
-          />
+          {readOnly ? (
+            <span />
+          ) : (
+            <FindingStatusControl
+              findingId={finding.id}
+              status={finding.status}
+            />
+          )}
           <Link
             href={`/concepts/rule/${finding.ruleId}`}
             className="text-muted-foreground text-sm hover:underline"
