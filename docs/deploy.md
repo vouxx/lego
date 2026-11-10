@@ -115,3 +115,7 @@ E2E_BASE_URL=https://vouxx-lego.vercel.app pnpm e2e --project=prod-signed-in
 4. 공유 프로젝트의 `lego` 스키마 데이터를 내보내 새 프로젝트로 옮긴다. `auth.users` 는 레고 사용자(`lego.profiles` 의 id)와 그 `auth.identities` 만 옮긴다. id 가 유지돼야 외래 키가 맞는다.
 5. Vercel 의 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` 를 바꿔 재배포한다. 기존 세션은 끊기므로 사용자는 다시 로그인한다.
 6. 동작을 확인한 뒤 공유 프로젝트에서 cron 작업을 끄고, 며칠 뒤 `lego` 스키마를 지운다.
+
+## Preview 배포
+
+`main` 밖의 브랜치는 배포하지 않는다(`vercel.json` 의 `git.deploymentEnabled`). Preview 환경에는 환경 변수를 넣지 않는다. 넣으면 Dependabot PR 을 포함한 모든 브랜치 빌드가 운영 DB 의 secret 키를 갖게 된다. PR 의 코드 검사는 GitHub Actions(`ci`)가 한다.
