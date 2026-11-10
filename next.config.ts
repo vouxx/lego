@@ -5,9 +5,11 @@ const isDev = process.env.NODE_ENV !== "production";
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseWs = supabase.replace(/^http/, "ws");
 
-// 포트폴리오 사이트가 공개 페이지(랜딩·개념 사전)를 iframe 으로 미리 보여 준다.
+// 공개 페이지(랜딩·개념 사전)를 iframe 으로 띄울 수 있는 출처. 공백으로 구분해 환경 변수로만 받는다.
 // 로그인 뒤 화면은 클릭재킹을 막기 위해 어디에도 넣을 수 없게 한다.
-const EMBED_ORIGINS = ["https://vouxx-resume.vercel.app"];
+const EMBED_ORIGINS = (process.env.FRAME_ANCESTORS ?? "")
+  .split(/\s+/)
+  .filter((origin) => /^https:\/\/[\w.-]+$/.test(origin));
 
 // Next 의 인라인 부트스트랩 때문에 script 는 'unsafe-inline' 이 필요하다(nonce 를 쓰면 정적 렌더링이 꺼진다).
 // 대신 외부 스크립트, 프레임 삽입, 외부 이미지, 폼 전송 대상을 막는다.

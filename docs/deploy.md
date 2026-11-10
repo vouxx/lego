@@ -119,3 +119,7 @@ E2E_BASE_URL=https://vouxx-lego.vercel.app pnpm e2e --project=prod-signed-in
 ## Preview 배포
 
 `main` 밖의 브랜치는 배포하지 않는다(`vercel.json` 의 `git.deploymentEnabled`). Preview 환경에는 환경 변수를 넣지 않는다. 넣으면 Dependabot PR 을 포함한 모든 브랜치 빌드가 운영 DB 의 secret 키를 갖게 된다. PR 의 코드 검사는 GitHub Actions(`ci`)가 한다.
+
+## iframe 허용 출처
+
+공개 페이지(`/`, `/concepts…`)를 다른 사이트에서 iframe 으로 띄우려면 Vercel production 환경 변수 `FRAME_ANCESTORS` 에 출처를 공백으로 구분해 넣는다(`https://` 로 시작하는 출처만 받는다). 값은 리포에 적지 않는다. 비우면 레고 자신만 띄울 수 있다.

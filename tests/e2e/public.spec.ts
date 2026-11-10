@@ -73,13 +73,13 @@ test("로그인 뒤 이동 주소로 다른 사이트를 넘길 수 없다", asy
   expect(next).toBe("/projects");
 });
 
-test("공개 페이지는 포트폴리오 사이트에서만 iframe 으로 띄울 수 있다", async ({
+test("공개 페이지는 허용한 출처에서만 iframe 으로 띄울 수 있다", async ({
   request,
 }) => {
   for (const path of ["/", "/concepts", "/concepts/hardcoded-secrets"]) {
     const headers = (await request.get(path)).headers();
     expect(headers["content-security-policy"], path).toContain(
-      "frame-ancestors 'self' https://vouxx-resume.vercel.app",
+      "frame-ancestors 'self'",
     );
     expect(headers["x-frame-options"], path).toBeUndefined();
   }
