@@ -57,8 +57,8 @@ test("webhook 은 서명이 없으면 거절한다", async ({ request }) => {
   expect(res.status()).toBe(401);
 });
 
-test("모든 페이지에 보안 헤더가 붙는다", async ({ request }) => {
-  const headers = (await request.get("/")).headers();
+test("로그인 뒤 화면은 iframe 에 넣을 수 없다", async ({ request }) => {
+  const headers = (await request.get("/login")).headers();
   expect(headers["content-security-policy"]).toContain(
     "frame-ancestors 'none'",
   );
@@ -71,4 +71,20 @@ test("로그인 뒤 이동 주소로 다른 사이트를 넘길 수 없다", asy
   await page.goto("/login?next=/%09/evil.example");
   const next = await page.locator('input[name="next"]').first().inputValue();
   expect(next).toBe("/projects");
+});
+
+test("공개 페이지는 포트폴리오 사이트에서만 iframe 으로 띄울 수 있다", async ({
+  request,
+}) => {
+  for (const path of ["/", "/concepts", "/concepts/hardcoded-secrets"]) {
+    const headers = (await request.get(path)).headers();
+    expect(headers["content-security-policy"], path).toContain(
+      "frame-ancestors 'self' https://vouxx-resume.vercel.app",
+    );
+    expect(headers["x-frame-options"], path).toBeUndefined();
+  }
+  for (const path of ["/projects", "/invites/x", "/api/health"]) {
+    const headers = (await request.get(path, { maxRedirects: 0 })).headers();
+    expect(headers["x-frame-options"], path).toBe("DENY");
+  }
 });
