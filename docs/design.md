@@ -257,7 +257,7 @@ Next.js 15 (App Router), React 19, TypeScript(strict), Supabase(PostgreSQL), Tai
 
 ## 명령어
 - 개발: pnpm dev / 타입 체크: pnpm typecheck / 테스트: pnpm test
-- DB 타입 생성: pnpm supabase gen types typescript --local > src/lib/supabase/types.ts
+- DB 타입 생성: pnpm db:types (운영) / pnpm supabase gen types typescript --schema lego (로컬, v3 기본값)
 
 ## 라우팅 (Next.js App Router)
 - app/ 에는 라우트 파일(page, layout, loading, error, route)만 둔다.
