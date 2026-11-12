@@ -1,30 +1,21 @@
 import { Suspense } from "react";
 import { HeaderAccount } from "@/features/auth/components/HeaderAccount";
-import { StartLink } from "@/features/auth/components/StartLink";
-import { SiteHeader } from "@/shared/layout/SiteHeader";
+import { LoginLink } from "@/features/marketing/components/LoginLink";
+import { MarketingFooter } from "@/features/marketing/components/MarketingFooter";
+import { MarketingHeader } from "@/features/marketing/components/MarketingHeader";
 
 export default function MarketingLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col break-keep">
-      <SiteHeader
+      <MarketingHeader
         account={
-          <Suspense fallback={<StartLink />}>
-            <HeaderAccount />
+          <Suspense fallback={<LoginLink />}>
+            <HeaderAccount signedOut={<LoginLink />} />
           </Suspense>
         }
       />
       {children}
-      <footer className="text-muted-foreground border-t">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-6 font-mono text-xs sm:px-6">
-          <span>lego_ · AI 로 만드는 앱의 작업대</span>
-          <a
-            href="https://github.com/vouxx/lego"
-            className="hover:text-foreground"
-          >
-            github.com/vouxx/lego
-          </a>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

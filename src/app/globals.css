@@ -14,6 +14,8 @@
   --color-sev-high: var(--sev-high);
   --color-sev-medium: var(--sev-medium);
   --color-sev-low: var(--sev-low);
+  --color-sev-critical-soft: var(--sev-critical-soft);
+  --color-diff-add: var(--diff-add);
   --color-ok: var(--ok);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
@@ -87,10 +89,13 @@
   --terminal-foreground: oklch(0.93 0.005 260);
   --terminal-muted: oklch(0.68 0.01 260);
   --terminal-border: oklch(0.32 0.01 260);
-  --sev-critical: oklch(0.58 0.22 25);
-  --sev-high: oklch(0.66 0.17 50);
-  --sev-medium: oklch(0.75 0.15 85);
-  --sev-low: oklch(0.6 0.1 240);
+  /* 심각도: 치명 #B42318 · 높음 #E0620B · 보통 #E9B949 · 낮음 #8A94A3. 항상 글자 라벨과 같이 쓴다. */
+  --sev-critical: #b42318;
+  --sev-high: #e0620b;
+  --sev-medium: #e9b949;
+  --sev-low: #8a94a3;
+  --sev-critical-soft: #fbe9e7;
+  --diff-add: #eaf5ee;
   --ok: oklch(0.62 0.15 150);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -107,10 +112,12 @@
   --terminal-foreground: oklch(0.93 0.005 260);
   --terminal-muted: oklch(0.66 0.01 260);
   --terminal-border: oklch(0.28 0.01 260);
-  --sev-critical: oklch(0.7 0.19 25);
-  --sev-high: oklch(0.75 0.15 55);
-  --sev-medium: oklch(0.82 0.14 90);
-  --sev-low: oklch(0.72 0.1 240);
+  --sev-critical: #f2685c;
+  --sev-high: #f08a3e;
+  --sev-medium: #ecc45e;
+  --sev-low: #9aa4b2;
+  --sev-critical-soft: oklch(0.3 0.07 25);
+  --diff-add: oklch(0.3 0.05 150);
   --ok: oklch(0.74 0.15 150);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
