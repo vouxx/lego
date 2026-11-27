@@ -13,11 +13,11 @@
     "bench": "tsx benchmark/run.ts"
   },
   "dependencies": {
-    "@babel/parser": "^8.1.0"
+    "@babel/parser": "^8.1.3"
   },
   "devDependencies": {
-    "@babel/types": "^8.1.0",
-    "@types/node": "^26.6.6",
+    "@babel/types": "^8.1.3",
+    "@types/node": "^26.6.7",
     "tsx": "^4.23.15"
   }
 }
